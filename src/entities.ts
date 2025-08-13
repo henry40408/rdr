@@ -1,6 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class Feed {
+  @ApiProperty({ description: 'Unique identifier' })
+  id!: string;
+
   @ApiProperty({ description: 'Feed title' })
   title!: string;
 
@@ -12,6 +15,9 @@ export class Feed {
 }
 
 export class Category {
+  @ApiProperty({ description: 'Unique identifier' })
+  id!: string;
+
   @ApiProperty({ description: 'Category name' })
   name!: string;
 

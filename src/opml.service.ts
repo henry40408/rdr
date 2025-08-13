@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import fs from 'fs/promises';
 import { Builder, parseStringPromise } from 'xml2js';
 import { Category, Feed } from './entities';
+import { createHash } from 'crypto';
 
 export interface OpmlOutlineFeed {
   $: {
@@ -57,16 +58,21 @@ export class OpmlService implements OnApplicationBootstrap {
     for (const category of body.outline) {
       if (!category.outline) continue;
       const feeds: Feed[] = [];
-      const cCategory = category.$;
+      const cOutline = category.$;
       for (const feed of category.outline) {
         const fOutline = feed.$;
         feeds.push({
+          id: this.hash(fOutline.xmlUrl),
           htmlUrl: fOutline.htmlUrl,
           title: fOutline.title || fOutline.text,
           xmlUrl: fOutline.xmlUrl,
         });
       }
-      this._categories.push({ name: cCategory.text, feeds });
+      this._categories.push({
+        id: this.hash(cOutline.text),
+        name: cOutline.text,
+        feeds,
+      });
     }
 
     this.logger.log(
@@ -101,5 +107,11 @@ export class OpmlService implements OnApplicationBootstrap {
     };
     const builder = new Builder();
     return builder.buildObject(obj);
+  }
+
+  hash(data: string): string {
+    const hasher = createHash('shake256', { outputLength: 4 });
+    hasher.update(data);
+    return hasher.digest('hex');
   }
 }
