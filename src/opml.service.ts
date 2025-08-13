@@ -37,11 +37,16 @@ export class OpmlService implements OnApplicationBootstrap {
   private readonly logger = new Logger(OpmlService.name);
 
   private _categories: Category[] = [];
+  private _feedMap: Map<string, Feed> = new Map();
 
   constructor(private readonly configService: ConfigService) {}
 
   get categories() {
     return this._categories;
+  }
+
+  get feedMap() {
+    return this._feedMap;
   }
 
   async onApplicationBootstrap() {
@@ -55,22 +60,23 @@ export class OpmlService implements OnApplicationBootstrap {
     const parsed: OpmlParsed = await parseStringPromise(opmlContent);
 
     const body = parsed.opml.body[0];
-    for (const category of body.outline) {
-      if (!category.outline) continue;
+    for (const cOutline of body.outline) {
+      if (!cOutline.outline) continue;
       const feeds: Feed[] = [];
-      const cOutline = category.$;
-      for (const feed of category.outline) {
-        const fOutline = feed.$;
-        feeds.push({
-          id: this.hash(fOutline.xmlUrl),
-          htmlUrl: fOutline.htmlUrl,
-          title: fOutline.title || fOutline.text,
-          xmlUrl: fOutline.xmlUrl,
-        });
+      for (const fOutline of cOutline.outline) {
+        const id = this.hash(fOutline.$.xmlUrl);
+        const feed = {
+          id,
+          htmlUrl: fOutline.$.htmlUrl,
+          title: fOutline.$.title || fOutline.$.text,
+          xmlUrl: fOutline.$.xmlUrl,
+        };
+        feeds.push(feed);
+        this._feedMap.set(id, feed);
       }
       this._categories.push({
-        id: this.hash(cOutline.text),
-        name: cOutline.text,
+        id: this.hash(cOutline.$.text),
+        name: cOutline.$.text,
         feeds,
       });
     }
