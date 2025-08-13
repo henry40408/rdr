@@ -50,10 +50,7 @@ export class OpmlService implements OnApplicationBootstrap {
   }
 
   async onApplicationBootstrap() {
-    const opmlFilePath = this.configService.get<string>(
-      'OPML_FILE_PATH',
-      'data/feeds.opml',
-    );
+    const opmlFilePath = this.configService.get<string>('OPML_FILE_PATH', 'data/feeds.opml');
     const opmlContent = await fs.readFile(opmlFilePath, 'utf-8');
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -81,9 +78,7 @@ export class OpmlService implements OnApplicationBootstrap {
       });
     }
 
-    this.logger.log(
-      `Loaded ${this.categories.length} categories from OPML file.`,
-    );
+    this.logger.log(`Loaded ${this.categories.length} categories from OPML file.`);
   }
 
   exportOPML(): string {

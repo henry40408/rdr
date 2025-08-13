@@ -1,17 +1,6 @@
-import {
-  Controller,
-  Get,
-  Header,
-  NotFoundException,
-  Param,
-  Post,
-} from '@nestjs/common';
+import { Controller, Get, Header, NotFoundException, Param } from '@nestjs/common';
 import { OpmlService } from './opml.service';
-import {
-  ApiCreatedResponse,
-  ApiOkResponse,
-  ApiOperation,
-} from '@nestjs/swagger';
+import { ApiOkResponse, ApiOperation } from '@nestjs/swagger';
 import { Category, Entry, Feed } from './entities';
 import { FeedService } from './feed.service';
 
@@ -43,13 +32,13 @@ export class FeedsController {
     return this.opmlService.exportOPML();
   }
 
-  @Post(':id/download')
-  @ApiOperation({ summary: 'Download a specific feed' })
-  @ApiCreatedResponse({ type: Entry, isArray: true })
-  async downloadFeed(@Param('id') id: string): Promise<Entry[]> {
+  @Get(':id/entries')
+  @ApiOperation({ summary: 'Get entries from a specific feed' })
+  @ApiOkResponse({ type: Entry, isArray: true })
+  async getEntries(@Param('id') id: string): Promise<Entry[]> {
     const feed = this.findFeed(id);
     if (!feed) throw new NotFoundException(`Feed with id ${id} not found`);
-    return await this.feedService.downloadCachedFeed(feed);
+    return await this.feedService.getCachedEntries(feed);
   }
 
   private findFeed(id: string): Feed | undefined {

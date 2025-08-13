@@ -5,10 +5,11 @@ import { ConfigModule } from '@nestjs/config';
 import { FeedsController } from './feeds.controller';
 import { TerminusModule } from '@nestjs/terminus';
 import { FeedService } from './feed.service';
+import { AppConfigService } from './app-config.service';
 
 @Module({
   imports: [ConfigModule.forRoot({ isGlobal: true }), TerminusModule.forRoot()],
   controllers: [AppController, FeedsController],
-  providers: [FeedService, OpmlService],
+  providers: [AppConfigService, FeedService, OpmlService],
 })
 export class AppModule {}

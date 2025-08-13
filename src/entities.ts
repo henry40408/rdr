@@ -43,6 +43,20 @@ export class Feed {
   htmlUrl?: string;
 }
 
+export class CachedFeed {
+  lastModified: string;
+  feed: Feed;
+  entries: Entry[];
+
+  merge(entries: Entry[]) {
+    const guids = new Set(this.entries.map((e) => e.guid));
+    for (const entry of entries) {
+      if (guids.has(entry.guid)) continue;
+      this.entries.push(entry);
+    }
+  }
+}
+
 export class Category {
   @ApiProperty({ description: 'Unique identifier' })
   id!: string;

@@ -26,6 +26,7 @@
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/swagger": "^11.2.0",
     "@nestjs/terminus": "^11.0.0",
+    "date-fns": "^4.1.0",
     "feedparser": "^2.2.10",
     "got": "^14.4.7",
     "reflect-metadata": "^0.2.2",
