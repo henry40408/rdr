@@ -7,8 +7,8 @@ import { Category, Feed } from './entities';
 export interface OpmlOutlineFeed {
   $: {
     text: string;
+    xmlUrl: string;
     title?: string;
-    xmlUrl?: string;
     htmlUrl?: string;
     type?: string;
   };
@@ -35,9 +35,13 @@ export interface OpmlParsed {
 export class OpmlService implements OnApplicationBootstrap {
   private readonly logger = new Logger(OpmlService.name);
 
-  private categories: Category[] = [];
+  private _categories: Category[] = [];
 
   constructor(private readonly configService: ConfigService) {}
+
+  get categories() {
+    return this._categories;
+  }
 
   async onApplicationBootstrap() {
     const opmlFilePath = this.configService.get<string>(
@@ -56,9 +60,13 @@ export class OpmlService implements OnApplicationBootstrap {
       const cCategory = category.$;
       for (const feed of category.outline) {
         const fOutline = feed.$;
-        feeds.push({ title: fOutline.title || fOutline.text });
+        feeds.push({
+          htmlUrl: fOutline.htmlUrl,
+          title: fOutline.title || fOutline.text,
+          xmlUrl: fOutline.xmlUrl,
+        });
       }
-      this.categories.push({ name: cCategory.text, feeds });
+      this._categories.push({ name: cCategory.text, feeds });
     }
 
     this.logger.log(
