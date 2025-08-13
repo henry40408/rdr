@@ -5,6 +5,7 @@ import { Readable } from 'stream';
 import path from 'path';
 import fs from 'fs/promises';
 import { AppConfigService } from './app-config.service';
+import { milliseconds } from 'date-fns';
 
 @Injectable()
 export class FeedService {
@@ -35,7 +36,10 @@ export class FeedService {
     const { xmlUrl } = feed;
     this.logger.log(`Downloading feed ${feed.id} from ${xmlUrl}`);
 
-    const content = await got(xmlUrl).text();
+    const content = await got(xmlUrl, {
+      headers: { 'user-agent': 'Feedly/1.0' },
+      timeout: { request: milliseconds({ seconds: 90 }) },
+    }).text();
 
     const resolved = await new Promise<Entry[]>((resolve, reject) => {
       const stream = Readable.from([content]);
@@ -61,6 +65,8 @@ export class FeedService {
     cached.lastModified = new Date().toISOString();
     cached.feed = feed;
     cached.entries = resolved;
+
+    this.logger.log(`Feed ${feed.id} downloaded`);
 
     await this.updateCache(cached).catch((err) => {
       this.logger.error(err);
