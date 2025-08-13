@@ -44,6 +44,15 @@ export class FeedsController {
     return await this.feedService.getEntries(feed);
   }
 
+  @Post(':id/refresh')
+  @ApiOperation({ summary: 'Refresh entries for a specific feed' })
+  @ApiCreatedResponse({ description: 'Entries refreshed successfully', type: Object })
+  async refreshFeed(@Param('id') id: string): Promise<Entry[]> {
+    const feed = this.findFeed(id);
+    if (!feed) throw new NotFoundException(`Feed with id ${id} not found`);
+    return await this.feedService.getEntries(feed);
+  }
+
   @Post('refresh')
   @ApiOperation({ summary: 'Refresh entries for all feeds' })
   @ApiCreatedResponse({ description: 'Entries refreshed successfully', type: Object })

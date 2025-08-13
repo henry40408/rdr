@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { AppConfigService } from './app-config.service';
-import { CachedFeed, Entry, Feed } from './entities';
+import { CachedFeed, Feed } from './entities';
 import { MutexMap } from './mutex-map';
 import path from 'path';
 import fs from 'fs/promises';
@@ -21,15 +21,14 @@ export class FeedCacheService {
     try {
       const cachedFeedPath = this.cachedFeedPath(cached.feed);
       const content = await fs.readFile(cachedFeedPath, 'utf-8').catch(() => null);
-
-      let existingEntries: Entry[] = [];
       if (content) {
         const parsed = JSON.parse(content) as CachedFeed;
-        existingEntries = parsed.entries;
+        parsed.merge(cached.entries);
+        await fs.writeFile(cachedFeedPath, JSON.stringify(parsed));
+      } else {
+        await fs.writeFile(cachedFeedPath, JSON.stringify(cached));
       }
-      cached.merge(existingEntries);
-
-      await fs.writeFile(cachedFeedPath, JSON.stringify(cached));
+      this.logger.log(`Feed ${cached.feed.id} cached successfully`);
     } finally {
       release();
     }
@@ -41,8 +40,8 @@ export class FeedCacheService {
       const cachedFeedPath = this.cachedFeedPath(feed);
       const content = await fs.readFile(cachedFeedPath, 'utf-8').catch(() => null);
       if (content) {
-        this.logger.log(`Cache hit for feed ${feed.id}`);
         const parsed = JSON.parse(content) as CachedFeed;
+        this.logger.log(`Cache hit for feed ${feed.id}: ${parsed.lastModified}`);
         if (this.isCacheFresh(parsed)) return parsed;
       }
       this.logger.log(`Cache miss for feed ${feed.id}`);
