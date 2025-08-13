@@ -26,11 +26,23 @@ export class FeedService {
       this.logger.log(`Found cached feed ${feed.id}, last modified at ${parsed.lastModified}`);
       if (this.isCacheFresh(now, parsed)) return parsed.entries;
     }
-    this.logger.log(`Cache miss for feed ${feed.id}`);
-    return await this.getEntries(feed);
+    return [];
   }
 
   async getEntries(feed: Feed): Promise<Entry[]> {
+    const now = new Date();
+    const cachedPath = this.cachedFeedPath(feed);
+    const content = await fs.readFile(cachedPath, 'utf8').catch(() => null);
+    if (content) {
+      const parsed = JSON.parse(content) as CachedFeed;
+      this.logger.log(`Found cached feed ${feed.id}, last modified at ${parsed.lastModified}`);
+      if (this.isCacheFresh(now, parsed)) return parsed.entries;
+    }
+    this.logger.log(`Cache miss for feed ${feed.id}`);
+    return await this.fetchEntries(feed);
+  }
+
+  async fetchEntries(feed: Feed): Promise<Entry[]> {
     const { default: got } = await import('got');
 
     const { xmlUrl } = feed;
@@ -39,9 +51,10 @@ export class FeedService {
     const content = await got(xmlUrl, {
       headers: { 'user-agent': 'Feedly/1.0' },
       timeout: { request: milliseconds({ seconds: 90 }) },
+      dnsLookupIpVersion: 4,
     }).text();
 
-    const resolved = await new Promise<Entry[]>((resolve, reject) => {
+    const entries = await new Promise<Entry[]>((resolve, reject) => {
       const stream = Readable.from([content]);
       const parser = new FeedParser({});
 
@@ -64,7 +77,7 @@ export class FeedService {
     const cached = new CachedFeed();
     cached.lastModified = new Date().toISOString();
     cached.feed = feed;
-    cached.entries = resolved;
+    cached.entries = entries;
 
     this.logger.log(`Feed ${feed.id} downloaded`);
 

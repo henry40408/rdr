@@ -1,10 +1,10 @@
 import { Controller, Get, Header, Logger, NotFoundException, Param, Post } from '@nestjs/common';
 import { OpmlService } from './opml.service';
 import { ApiCreatedResponse, ApiOkResponse, ApiOperation } from '@nestjs/swagger';
-import { Category, Entry, Feed } from './entities';
+import { Entry, Feed } from './entities';
 import { FeedService } from './feed.service';
 
-@Controller({ version: '1' })
+@Controller({ version: '1', path: 'feeds' })
 export class FeedsController {
   private readonly logger = new Logger(FeedsController.name);
 
@@ -13,11 +13,11 @@ export class FeedsController {
     private readonly opmlService: OpmlService,
   ) {}
 
-  @Get('feeds')
+  @Get('')
   @ApiOperation({ summary: 'Get feeds' })
-  @ApiOkResponse({ description: 'List of all feeds', type: Category, isArray: true })
-  feeds(): Category[] {
-    return this.opmlService.categories;
+  @ApiOkResponse({ description: 'List of all feeds', type: Feed, isArray: true })
+  getFeeds(): Feed[] {
+    return Array.from(this.opmlService.feedMap.values());
   }
 
   @Get('export_opml')
@@ -38,18 +38,18 @@ export class FeedsController {
   @Get(':id/entries')
   @ApiOperation({ summary: 'Get entries from a specific feed' })
   @ApiOkResponse({ description: 'List of entries for the specified feed', type: Entry, isArray: true })
-  async getEntries(@Param('id') id: string): Promise<Entry[]> {
+  async getFeedEntries(@Param('id') id: string): Promise<Entry[]> {
     const feed = this.findFeed(id);
     if (!feed) throw new NotFoundException(`Feed with id ${id} not found`);
-    return await this.feedService.getCachedEntries(feed);
+    return await this.feedService.getEntries(feed);
   }
 
-  @Post('feeds/refresh')
+  @Post('refresh')
   @ApiOperation({ summary: 'Refresh entries for all feeds' })
   @ApiCreatedResponse({ description: 'Entries refreshed successfully', type: Object })
-  async fetchEntries() {
+  async refreshFeeds() {
     const feeds = Array.from(this.opmlService.feedMap.values());
-    const settled = await Promise.allSettled(feeds.map((feed) => this.feedService.getCachedEntries(feed)));
+    const settled = await Promise.allSettled(feeds.map((feed) => this.feedService.getEntries(feed)));
     for (let i = 0; i < feeds.length; i += 1) {
       const feed = feeds[i];
       const result = settled[i];
