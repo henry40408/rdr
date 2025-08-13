@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Header } from '@nestjs/common';
 import { OpmlService } from './opml.service';
 import { ApiOkResponse, ApiOperation } from '@nestjs/swagger';
 import { Category } from './entities';
@@ -12,5 +12,19 @@ export class FeedsController {
   @ApiOkResponse({ type: Category, isArray: true })
   feeds(): Category[] {
     return this.opmlService.categories;
+  }
+
+  @Get('export_opml')
+  @ApiOperation({ summary: 'Export feeds as OPML file' })
+  @ApiOkResponse({
+    type: String,
+    content: {
+      'application/xml': { schema: { type: 'string', format: 'binary' } },
+    },
+  })
+  @Header('Content-Type', 'application/xml')
+  @Header('Content-Disposition', 'attachment; filename="feeds.opml"')
+  exportOpml(): string {
+    return this.opmlService.exportOPML();
   }
 }
