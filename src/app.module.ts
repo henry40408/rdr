@@ -8,10 +8,11 @@ import { FeedService } from './feed.service';
 import { AppConfigService } from './app-config.service';
 import { EntriesController } from './entries.controller';
 import { CategoriesController } from './categories.controller';
+import { FeedCacheService } from './feed-cache.service';
 
 @Module({
   imports: [ConfigModule.forRoot({ isGlobal: true }), TerminusModule.forRoot()],
   controllers: [AppController, CategoriesController, EntriesController, FeedsController],
-  providers: [AppConfigService, FeedService, OpmlService],
+  providers: [AppConfigService, FeedService, FeedCacheService, OpmlService],
 })
 export class AppModule {}

@@ -2,44 +2,25 @@ import { Injectable, Logger } from '@nestjs/common';
 import { CachedFeed, Entry, Feed } from './entities';
 import FeedParser from 'feedparser';
 import { Readable } from 'stream';
-import path from 'path';
-import fs from 'fs/promises';
-import { AppConfigService } from './app-config.service';
 import { milliseconds } from 'date-fns';
+import { FeedCacheService } from './feed-cache.service';
 
 @Injectable()
 export class FeedService {
   private readonly logger = new Logger(FeedService.name);
 
-  constructor(private readonly appConfigService: AppConfigService) {}
-
-  cachedFeedPath(feed: Feed): string {
-    return path.join(this.appConfigService.dataPath, `${feed.id}.json`);
-  }
+  constructor(private readonly feedCacheService: FeedCacheService) {}
 
   async getCachedEntries(feed: Feed): Promise<Entry[]> {
-    const now = new Date();
-    const cachedPath = this.cachedFeedPath(feed);
-    const content = await fs.readFile(cachedPath, 'utf8').catch(() => null);
-    if (content) {
-      const parsed = JSON.parse(content) as CachedFeed;
-      this.logger.log(`Found cached feed ${feed.id}, last modified at ${parsed.lastModified}`);
-      if (this.isCacheFresh(now, parsed)) return parsed.entries;
-    }
-    return [];
+    const cached = await this.feedCacheService.getCachedFeed(feed);
+    if (!cached) return [];
+    return cached.entries;
   }
 
   async getEntries(feed: Feed): Promise<Entry[]> {
-    const now = new Date();
-    const cachedPath = this.cachedFeedPath(feed);
-    const content = await fs.readFile(cachedPath, 'utf8').catch(() => null);
-    if (content) {
-      const parsed = JSON.parse(content) as CachedFeed;
-      this.logger.log(`Found cached feed ${feed.id}, last modified at ${parsed.lastModified}`);
-      if (this.isCacheFresh(now, parsed)) return parsed.entries;
-    }
-    this.logger.log(`Cache miss for feed ${feed.id}`);
-    return await this.fetchEntries(feed);
+    const cached = await this.feedCacheService.getCachedFeed(feed);
+    if (!cached) return await this.fetchEntries(feed);
+    return cached.entries;
   }
 
   async fetchEntries(feed: Feed): Promise<Entry[]> {
@@ -50,7 +31,10 @@ export class FeedService {
 
     const content = await got(xmlUrl, {
       headers: { 'user-agent': 'Feedly/1.0' },
-      timeout: { request: milliseconds({ seconds: 90 }) },
+      timeout: {
+        connect: milliseconds({ seconds: 3 }),
+        request: milliseconds({ seconds: 90 }),
+      },
       dnsLookupIpVersion: 4,
     }).text();
 
@@ -81,20 +65,10 @@ export class FeedService {
 
     this.logger.log(`Feed ${feed.id} downloaded`);
 
-    await this.updateCache(cached).catch((err) => {
+    await this.feedCacheService.cacheFeed(cached).catch((err) => {
       this.logger.error(err);
     });
 
     return cached.entries;
-  }
-
-  isCacheFresh(now: Date, cached: CachedFeed): boolean {
-    const lastModified = new Date(cached.lastModified).valueOf();
-    return now.valueOf() - lastModified < this.appConfigService.cacheTTLMs;
-  }
-
-  async updateCache(cached: CachedFeed) {
-    const cachedPath = this.cachedFeedPath(cached.feed);
-    await fs.writeFile(cachedPath, JSON.stringify(cached));
   }
 }
