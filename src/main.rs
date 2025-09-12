@@ -43,7 +43,11 @@ struct Opts {
 
 #[derive(Template)]
 #[template(path = "index.j2")]
-struct IndexTemplate {
+struct IndexTemplate {}
+
+#[derive(Template)]
+#[template(path = "feeds.j2")]
+struct FeedsTemplate {
     categories: Vec<Outline>,
 }
 
@@ -68,8 +72,14 @@ where
     }
 }
 
-async fn index_route(State(state): State<AppState>) -> anyhow::Result<Html<String>, AppError> {
-    let t = IndexTemplate {
+async fn index_route() -> anyhow::Result<Html<String>, AppError> {
+    let t = IndexTemplate {};
+    let rendered = t.render()?;
+    Ok(Html(rendered))
+}
+
+async fn feeds_route(State(state): State<AppState>) -> anyhow::Result<Html<String>, AppError> {
+    let t = FeedsTemplate {
         categories: state.opml.body.outlines.clone(),
     };
     let rendered = t.render()?;
@@ -119,6 +129,7 @@ async fn try_main() -> anyhow::Result<()> {
             "/htmx.js",
             get(|| async { ([(header::CONTENT_TYPE, "text/javascript")], HTMX) }),
         )
+        .route("/feeds", get(feeds_route))
         .route("/", get(index_route))
         .with_state(app_state);
     info!("Listening on {}", listener.local_addr()?);
