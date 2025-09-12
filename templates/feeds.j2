@@ -14,15 +14,14 @@
     <p>{{ categories.len() }} categories</p>
     <ol>
       {% for category in categories %}
-      <li>{{ category.text }}, {{ category.outlines.len() }} feeds</li>
+      <li>{{ category.name }}, {{ category.feeds.len() }} feeds</li>
       <ol>
-        {% for feed in category.outlines %}
-        {% match feed.html_url %}
-        {% when Some with (html_url) %}
-        <li><a href="{{ html_url }}" target="_blank" rel="noopener noreferrer">{{ feed.text }}</a></li>
-        {% when None %}
-        <li>{{ feed.text }}</li>
-        {% endmatch %}
+        {% for feed in category.feeds %}
+        {% if feed.html_url.is_empty() %}
+        <li>{{ feed.title }}</li>
+        {% else %}
+        <li><a href="{{ feed.html_url }}" target="_blank" rel="noopener noreferrer">{{ feed.title }}</a></li>
+        {% endif %}
         {% endfor %}
       </ol>
       {% endfor %}

@@ -1,4 +1,4 @@
-use std::process::ExitCode;
+use std::{path::PathBuf, process::ExitCode};
 
 use askama::Template;
 use axum::{
@@ -12,17 +12,19 @@ use bon::Builder;
 use clap::Parser;
 use clio::Input;
 use no_color::is_no_color;
-use opml::{OPML, Outline};
-use tracing::{Level, debug, enabled, info};
+use opml::OPML;
+use rusqlite::Connection;
+use tracing::{Level, debug, enabled, info, warn};
 use tracing_subscriber::{EnvFilter, fmt::format::FmtSpan};
+
+static MIGRATIONS: &[&str] = &[include_str!("../migrations/0001-initial.sql")];
 
 static HTMX: &str = include_str!("../vendor/htmx.min.js");
 static PICO_CSS: &str = include_str!("../vendor/pico.min.css");
 
 #[derive(Builder, Clone, Debug)]
 struct AppState {
-    #[builder(into)]
-    opml: OPML,
+    categories: Vec<Category>,
 }
 
 #[derive(Debug, Parser)]
@@ -30,6 +32,9 @@ struct Opts {
     /// Bound address and port
     #[clap(long, default_value = "127.0.0.1:3000", env = "BIND")]
     bind: String,
+    /// Path to cache file
+    #[clap(long, value_parser, env = "CACHE_PATH")]
+    cache_path: Option<PathBuf>,
     /// Enable debug mode
     #[clap(long, short = 'd', env = "DEBUG")]
     debug: bool,
@@ -48,7 +53,7 @@ struct IndexTemplate {}
 #[derive(Template)]
 #[template(path = "feeds.j2")]
 struct FeedsTemplate {
-    categories: Vec<Outline>,
+    categories: Vec<Category>,
 }
 
 struct AppError(anyhow::Error);
@@ -80,10 +85,56 @@ async fn index_route() -> anyhow::Result<Html<String>, AppError> {
 
 async fn feeds_route(State(state): State<AppState>) -> anyhow::Result<Html<String>, AppError> {
     let t = FeedsTemplate {
-        categories: state.opml.body.outlines.clone(),
+        categories: state.categories,
     };
     let rendered = t.render()?;
     Ok(Html(rendered))
+}
+
+fn migrate(conn: &mut Connection) -> anyhow::Result<()> {
+    conn.execute("PRAGMA foreign_keys=ON", [])?;
+    for migration in MIGRATIONS {
+        conn.execute_batch(migration)?;
+        debug!("Applied migration: {migration:?}",);
+    }
+    Ok(())
+}
+
+#[derive(Clone, Debug)]
+struct Feed {
+    title: String,
+    html_url: String,
+}
+
+#[derive(Clone, Debug)]
+struct Category {
+    name: String,
+    feeds: Vec<Feed>,
+}
+
+fn parse_opml(opml: OPML) -> Vec<Category> {
+    let mut categories = Vec::new();
+
+    for outline in opml.body.outlines {
+        let category_name = outline.text.clone();
+        let mut feeds = Vec::new();
+
+        for feed_outline in outline.outlines {
+            let feed = Feed {
+                title: feed_outline.text.clone(),
+                html_url: feed_outline.html_url.clone().unwrap_or_default(),
+            };
+            feeds.push(feed);
+        }
+
+        let category = Category {
+            name: category_name,
+            feeds,
+        };
+        categories.push(category);
+    }
+
+    categories
 }
 
 async fn try_main() -> anyhow::Result<()> {
@@ -106,14 +157,27 @@ async fn try_main() -> anyhow::Result<()> {
         .compact()
         .init();
 
+    let mut db = match &opts.cache_path {
+        Some(path) => {
+            debug!("Using cache path: {:?}", path);
+            Connection::open(path)?
+        }
+        None => {
+            warn!("No cache path specified, using in-memory database");
+            Connection::open_in_memory()?
+        }
+    };
+    migrate(&mut db)?;
+
     let parsed = OPML::from_reader(&mut opts.file)?;
-    let app_state = AppState::builder().opml(parsed.clone()).build();
+    let categories = parse_opml(parsed);
+    let app_state = AppState::builder().categories(categories).build();
 
     if enabled!(Level::DEBUG) {
-        for category in &app_state.opml.body.outlines {
-            for feed in &category.outlines {
-                let category = &category.text;
-                let feed = &feed.text;
+        for category in &app_state.categories {
+            for feed in &category.feeds {
+                let category = &category.name;
+                let feed = &feed.title;
                 debug!("Feed: {:?} (Category: {:?})", feed, category);
             }
         }
