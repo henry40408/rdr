@@ -9,14 +9,17 @@
 <body>
     <h1>Feeds</h1>
     {% include "partials/nav.j2" %}
+    <blockquote>
+        <div>{{ categories.len() }} categories found.</div>
+    </blockquote>
     <ol>
         {% for category in categories %}
-        <li>{{ category.name() }}</li>
-        <ul>
+        <li>{{ category.name() }} ({{ category.feeds_count() }})</li>
+        <ol>
             {% for feed in category.feeds %}
-            <li><a href="{{ feed.html_url() }}">{{ feed.title() }}</a></li>
+            <li><a href="{{ feed.html_url() }}" target="_blank" rel="nofollow noopener">{{ feed.title() }}</a></li>
             {% endfor %}
-        </ul>
+        </ol>
         {% endfor %}
     </ol>
 </body>

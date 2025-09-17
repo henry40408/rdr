@@ -57,4 +57,8 @@ impl Category {
     pub(crate) fn name(&self) -> &str {
         &self.outline.text
     }
+
+    pub(crate) fn feeds_count(&self) -> usize {
+        self.feeds.len()
+    }
 }
