@@ -14,7 +14,7 @@
     </blockquote>
     <ol>
         {% for category in categories %}
-        <li>{{ category.name() }} ({{ category.feeds_count() }})</li>
+        <li>{{ category.name() }} <code>{{ category.feeds_count() }} feeds</code></li>
         <ol>
             {% for feed in category.feeds %}
             <li><a href="{{ feed.html_url() }}" target="_blank" rel="nofollow noopener">{{ feed.title() }}</a></li>
