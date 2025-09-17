@@ -1,4 +1,4 @@
-use std::{net::SocketAddr, process::ExitCode};
+use std::{io::Read, net::SocketAddr, process::ExitCode};
 
 use clap::Parser;
 use clio::Input;
@@ -32,8 +32,8 @@ struct Opts {
     file: Input,
 }
 
-fn parse_opml(file: &mut Input) -> anyhow::Result<OPML> {
-    let parsed = OPML::from_reader(file)?;
+fn parse_opml<R: Read>(reader: &mut R) -> anyhow::Result<OPML> {
+    let parsed = OPML::from_reader(reader)?;
     Ok(parsed)
 }
 
@@ -84,5 +84,30 @@ async fn main() -> ExitCode {
             eprintln!("Error: {err}");
             ExitCode::FAILURE
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::io::Cursor;
+
+    use crate::parse_opml;
+
+    #[test]
+    fn test_parse_opml() {
+        let data = r#"<?xml version="1.0" encoding="UTF-8"?>
+        <opml version="2.0">
+            <head>
+                <title>Example OPML</title>
+            </head>
+            <body>
+                <outline text="Category 1">
+                <outline text="Feed 1" type="rss" xmlUrl="http://example.com/feed1.xml" htmlUrl="http://example.com"/>
+                <outline text="Feed 2" type="rss" xmlUrl="http://example.com/feed2.xml"/>
+                </outline>
+            </body>
+        </opml>"#;
+        let mut input = Cursor::new(data);
+        parse_opml(&mut input).unwrap();
     }
 }
