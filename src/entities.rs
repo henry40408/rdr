@@ -2,14 +2,13 @@ use opml::{OPML, Outline};
 
 #[derive(Clone, Debug)]
 pub(crate) struct Feed {
-    title: String,
+    outline: Outline,
     xml_url: String,
-    html_url: Option<String>,
 }
 
 impl Feed {
     pub(crate) fn title(&self) -> &str {
-        &self.title
+        &self.outline.text
     }
 
     pub(crate) fn xml_url(&self) -> &str {
@@ -17,7 +16,7 @@ impl Feed {
     }
 
     pub(crate) fn html_url(&self) -> &str {
-        self.html_url.as_deref().unwrap_or_default()
+        self.outline.html_url.as_deref().unwrap_or_default()
     }
 }
 
@@ -39,9 +38,8 @@ impl Category {
             for feed_outline in &outline.outlines {
                 if let Some(xml_url) = &feed_outline.xml_url {
                     let feed = Feed {
-                        title: feed_outline.text.clone(),
+                        outline: feed_outline.clone(),
                         xml_url: xml_url.clone(),
-                        html_url: feed_outline.html_url.clone(),
                     };
                     feeds.push(feed);
                 }

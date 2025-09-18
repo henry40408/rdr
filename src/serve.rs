@@ -4,7 +4,7 @@ use askama::Template;
 use axum::{
     Router,
     extract::State,
-    http::{self, StatusCode, header},
+    http::{StatusCode, header},
     response::{Html, IntoResponse},
     routing::get,
 };
