@@ -11,6 +11,7 @@ use tracing_subscriber::{EnvFilter, fmt::format::FmtSpan};
 use crate::serve::AppState;
 
 mod entities;
+mod repository;
 mod serve;
 
 const VERSION: &str = env!("APP_VERSION");

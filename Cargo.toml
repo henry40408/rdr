@@ -10,17 +10,20 @@ anyhow = "1.0.99"
 askama = "0.14.0"
 axum = "0.8.4"
 bon = "3.7.2"
+chrono = "0.4.42"
 clap = { version = "4.5.47", features = ["derive", "env"] }
 clio = { version = "0.3.5", features = ["clap-parse"] }
 feed-rs = { version = "2.3.1", features = ["sanitize"] }
 no_color = "0.2.0"
 opml = "1.1.6"
+parking_lot = "0.12.4"
 reqwest = { version = "0.12.22", default-features = false, features = [
     "charset",
     "http2",
     "rustls-tls",
     "system-proxy",
 ] }
+rusqlite = { version = "0.37.0", features = ["bundled", "chrono"] }
 tokio = { version = "1.47.1", features = [
     "macros",
     "net",
@@ -30,6 +33,7 @@ tower = "0.5.1"
 tower-http = { version = "0.6.2", features = ["trace"] }
 tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.20", features = ["env-filter"] }
+xxhash-rust = { version = "0.8.15", features = ["xxh3"] }
 
 [profile.dev.package."*"]
 opt-level = 3

@@ -1,39 +1,81 @@
-use std::io::Cursor;
+use std::{hash::Hasher, io::Cursor};
 
+use bon::Builder;
+use chrono::{DateTime, Utc};
 use opml::{OPML, Outline};
+use xxhash_rust::xxh3::{Xxh3Builder, xxh3_64};
 
-#[derive(Clone, Debug)]
+#[derive(Builder, Clone, Debug)]
 pub(crate) struct Entry {
-    inner: feed_rs::model::Entry,
+    pub(crate) feed: Box<Feed>,
+    pub(crate) guid: String,
+    pub(crate) title: String,
+    pub(crate) description: String,
+    pub(crate) link: String,
+    pub(crate) published_at: DateTime<Utc>,
 }
 
-#[derive(Clone, Debug)]
+impl Entry {
+    pub(crate) fn from_entry(feed: Box<Feed>, entry: feed_rs::model::Entry) -> Self {
+        Self {
+            feed,
+            guid: entry.id.clone(),
+            title: entry
+                .title
+                .as_ref()
+                .map(|t| t.content.clone())
+                .unwrap_or_default(),
+            description: entry
+                .content
+                .as_ref()
+                .and_then(|c| c.body.clone())
+                .unwrap_or_default(),
+            link: entry
+                .links
+                .first()
+                .map(|l| l.href.clone())
+                .unwrap_or_default(),
+            published_at: entry.published.unwrap_or_else(Utc::now),
+        }
+    }
+}
+
+#[derive(Builder, Clone, Debug)]
 pub(crate) struct Feed {
-    outline: Outline,
-    xml_url: String,
+    #[builder(into)]
+    pub(crate) title: String,
+    #[builder(into)]
+    pub(crate) xml_url: String,
+    pub(crate) html_url: Option<String>,
+    #[builder(default)]
+    pub(crate) entries: Vec<Entry>,
 }
 
 impl Feed {
-    pub(crate) fn title(&self) -> &str {
-        &self.outline.text
+    pub(crate) fn from_outline<S: AsRef<str>>(xml_url: S, outline: &Outline) -> Self {
+        let xml_url = xml_url.as_ref().to_string();
+        Self::builder()
+            .xml_url(xml_url)
+            .title(outline.text.clone())
+            .build()
     }
 
-    pub(crate) fn xml_url(&self) -> &str {
-        &self.xml_url
+    pub(crate) fn generate_id(&self) -> u64 {
+        xxh3_64(self.xml_url.as_bytes())
     }
 
     pub(crate) fn html_url(&self) -> &str {
-        self.outline.html_url.as_deref().unwrap_or_default()
+        self.html_url.as_deref().unwrap_or_default()
     }
 
-    pub(crate) async fn fetch_entries(&self) -> anyhow::Result<Vec<Entry>> {
+    pub(crate) async fn fetch_entries(self: Box<Self>) -> anyhow::Result<Vec<Entry>> {
         let res = reqwest::get(&self.xml_url).await?;
         let reader = Cursor::new(res.text().await?);
         let parsed = feed_rs::parser::parse(reader)?;
 
         let mut entries = vec![];
         for entry in parsed.entries {
-            entries.push(Entry { inner: entry });
+            entries.push(Entry::from_entry(self.clone(), entry));
         }
         Ok(entries)
     }
@@ -56,10 +98,11 @@ impl Category {
             let mut feeds = vec![];
             for feed_outline in &outline.outlines {
                 if let Some(xml_url) = &feed_outline.xml_url {
-                    let feed = Feed {
-                        outline: feed_outline.clone(),
-                        xml_url: xml_url.clone(),
-                    };
+                    let feed = Feed::builder()
+                        .xml_url(xml_url.clone())
+                        .title(feed_outline.text.clone())
+                        .maybe_html_url(feed_outline.html_url.clone())
+                        .build();
                     feeds.push(feed);
                 }
             }
@@ -82,18 +125,17 @@ impl Category {
 
 #[cfg(test)]
 mod tests {
+    use crate::entities::Feed;
+
     #[tokio::test]
     async fn test_fetch_entries() {
         let mut server = mockito::Server::new_async().await;
         let url = server.url();
 
-        let feed = super::Feed {
-            outline: opml::Outline {
-                xml_url: Some(url.clone()),
-                ..Default::default()
-            },
-            xml_url: url.clone(),
-        };
+        let feed = Feed::builder()
+            .title("Hacker News: Best")
+            .xml_url(url)
+            .build();
 
         let mock = server
             .mock("GET", "/")
@@ -103,6 +145,7 @@ mod tests {
             .create_async()
             .await;
 
+        let feed = Box::new(feed);
         let result = feed.fetch_entries().await.unwrap();
         assert_eq!(30, result.len());
 
