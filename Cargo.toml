@@ -12,8 +12,15 @@ axum = "0.8.4"
 bon = "3.7.2"
 clap = { version = "4.5.47", features = ["derive", "env"] }
 clio = { version = "0.3.5", features = ["clap-parse"] }
+feed-rs = { version = "2.3.1", features = ["sanitize"] }
 no_color = "0.2.0"
 opml = "1.1.6"
+reqwest = { version = "0.12.22", default-features = false, features = [
+    "charset",
+    "http2",
+    "rustls-tls",
+    "system-proxy",
+] }
 tokio = { version = "1.47.1", features = [
     "macros",
     "net",
@@ -106,3 +113,6 @@ unused_self = "warn"
 useless_transmute = "warn"
 verbose_file_reads = "warn"
 zero_sized_map_values = "warn"
+
+[dev-dependencies]
+mockito = "1.7.0"
