@@ -2,24 +2,25 @@ use std::sync::Arc;
 
 use askama::Template;
 use axum::{
-    Router,
-    extract::State,
-    http::{StatusCode, header},
+    Json, Router,
+    extract::{Path, State},
+    http::StatusCode,
     response::{Html, IntoResponse},
-    routing::get,
+    routing::{get, post},
 };
 use bon::Builder;
+use serde_json::json;
+use tower_http::services::ServeDir;
 use tower_http::trace::{DefaultMakeSpan, DefaultOnResponse, TraceLayer};
-use tracing::Level;
+use tracing::{Level, error};
 
 use crate::entities::Category;
-
-const WATER_CSS: &str = include_str!("../vendor/water.css");
 
 pub(crate) struct AppError(anyhow::Error);
 
 impl IntoResponse for AppError {
     fn into_response(self) -> axum::response::Response {
+        error!("{:?}", self.0);
         (
             StatusCode::INTERNAL_SERVER_ERROR,
             format!("Something went wrong {}", self.0),
@@ -65,15 +66,35 @@ async fn feeds_route(State(state): State<Arc<AppState>>) -> Result<Html<String>,
     ))
 }
 
+async fn refresh_feed_route(
+    State(state): State<Arc<AppState>>,
+    Path(feed_id): Path<u64>,
+) -> Result<Json<serde_json::Value>, AppError> {
+    let feed = state
+        .categories
+        .iter()
+        .flat_map(|c| &c.feeds)
+        .find(|f| f.generate_id() == feed_id);
+    if let Some(feed) = feed {
+        let feed = Box::new(feed.clone());
+        let entries = feed.fetch_entries().await?;
+        Ok(Json(json!({
+           "status": "ok",
+           "feed_id": feed_id,
+           "count": entries.len()
+        })))
+    } else {
+        Err(AppError(anyhow::anyhow!("Feed not found")))
+    }
+}
+
 pub(crate) fn init_route(state: AppState) -> Router {
     let state = Arc::new(state);
     Router::new()
-        .route(
-            "/water.css",
-            get(|| async { ([(header::CONTENT_TYPE, "text/css")], WATER_CSS) }),
-        )
+        .nest_service("/assets", ServeDir::new("vendor"))
         .route("/", get(index_route))
         .route("/feeds", get(feeds_route))
+        .route("/api/feeds/{feed_id}/refresh", post(refresh_feed_route))
         .layer(
             TraceLayer::new_for_http()
                 .make_span_with(DefaultMakeSpan::new().level(Level::INFO))
