@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS entries (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    feed_id INTEGER NOT NULL,
+    feed_id TEXT NOT NULL,
     guid TEXT NOT NULL,
     title TEXT NOT NULL,
     description TEXT,

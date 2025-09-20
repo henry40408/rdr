@@ -67,7 +67,7 @@ impl Repository {
         Ok(())
     }
 
-    pub(crate) fn find_entry_by_feed(&self, feed: Box<Feed>) -> anyhow::Result<Vec<Entry>> {
+    pub(crate) fn find_entry_by_feed(&self, feed: &Feed) -> anyhow::Result<Vec<Entry>> {
         let conn = self.conn.lock();
 
         let mut stmt = conn.prepare(
@@ -118,19 +118,18 @@ mod tests {
             .title("Hacker News: Best")
             .xml_url(xml_url)
             .build();
-        let feed = Box::new(feed);
 
         let parsed: feed_rs::model::Feed =
             feed_rs::parser::parse(&include_bytes!("./fixtures/hnrss.xml")[..]).unwrap();
         let mut entries = vec![];
         for e in &parsed.entries {
-            entries.push(Entry::from_entry(feed.clone(), e.clone()));
+            entries.push(Entry::from_entry(&feed, e.clone()));
         }
 
         repository.upsert_entries(&entries).unwrap();
         repository.upsert_entries(&entries).unwrap(); // upsert again to test idempotency
 
-        let found = repository.find_entry_by_feed(feed).unwrap();
+        let found = repository.find_entry_by_feed(&feed).unwrap();
         assert_eq!(found.len(), entries.len());
     }
 }

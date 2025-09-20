@@ -1,13 +1,15 @@
-use std::{hash::Hasher, io::Cursor};
+use std::io::Cursor;
 
 use bon::Builder;
 use chrono::{DateTime, Utc};
 use opml::{OPML, Outline};
-use xxhash_rust::xxh3::{Xxh3Builder, xxh3_64};
+use reqwest::{Client, Method, Request, header};
+use tracing::{Instrument, debug, debug_span, error};
+use xxhash_rust::xxh3::xxh3_64;
 
 #[derive(Builder, Clone, Debug)]
 pub(crate) struct Entry {
-    pub(crate) feed: Box<Feed>,
+    pub(crate) feed: Feed,
     pub(crate) guid: String,
     pub(crate) title: String,
     pub(crate) description: String,
@@ -16,9 +18,9 @@ pub(crate) struct Entry {
 }
 
 impl Entry {
-    pub(crate) fn from_entry(feed: Box<Feed>, entry: feed_rs::model::Entry) -> Self {
+    pub(crate) fn from_entry(feed: &Feed, entry: feed_rs::model::Entry) -> Self {
         Self {
-            feed,
+            feed: feed.clone(),
             guid: entry.id.clone(),
             title: entry
                 .title
@@ -47,35 +49,42 @@ pub(crate) struct Feed {
     #[builder(into)]
     pub(crate) xml_url: String,
     pub(crate) html_url: Option<String>,
-    #[builder(default)]
-    pub(crate) entries: Vec<Entry>,
 }
 
 impl Feed {
-    pub(crate) fn from_outline<S: AsRef<str>>(xml_url: S, outline: &Outline) -> Self {
-        let xml_url = xml_url.as_ref().to_string();
-        Self::builder()
-            .xml_url(xml_url)
-            .title(outline.text.clone())
-            .build()
-    }
-
-    pub(crate) fn generate_id(&self) -> u64 {
-        xxh3_64(self.xml_url.as_bytes())
+    pub(crate) fn generate_id(&self) -> String {
+        format!("{:016x}", xxh3_64(self.xml_url.as_bytes()))
     }
 
     pub(crate) fn html_url(&self) -> &str {
         self.html_url.as_deref().unwrap_or_default()
     }
 
-    pub(crate) async fn fetch_entries(self: Box<Self>) -> anyhow::Result<Vec<Entry>> {
-        let res = reqwest::get(&self.xml_url).await?;
+    pub(crate) async fn fetch_entries(&self, client: &Client) -> anyhow::Result<Vec<Entry>> {
+        let span = debug_span!("fetch_feed_entries", xml_url = %self.xml_url);
+        let _ = span.enter();
+
+        let mut req = Request::new(Method::GET, self.xml_url.parse()?);
+        req.headers_mut()
+            .insert(header::USER_AGENT, "Feedly/1.0".parse()?);
+
+        debug!("Fetching feed from {}", self.xml_url);
+        let res = client.execute(req).instrument(span).await?;
+
+        let res = match res.error_for_status() {
+            Err(err) => {
+                error!("Failed to fetch {}: {:?}", self.xml_url, err);
+                return Err(err.into());
+            }
+            Ok(res) => res,
+        };
+
         let reader = Cursor::new(res.text().await?);
         let parsed = feed_rs::parser::parse(reader)?;
 
         let mut entries = vec![];
         for entry in parsed.entries {
-            entries.push(Entry::from_entry(self.clone(), entry));
+            entries.push(Entry::from_entry(self, entry));
         }
         Ok(entries)
     }
@@ -114,6 +123,10 @@ impl Category {
         categories
     }
 
+    pub(crate) fn generate_id(&self) -> String {
+        format!("{:016x}", xxh3_64(self.outline.text.as_bytes()))
+    }
+
     pub(crate) fn name(&self) -> &str {
         &self.outline.text
     }
@@ -121,10 +134,35 @@ impl Category {
     pub(crate) fn feeds_count(&self) -> usize {
         self.feeds.len()
     }
+
+    pub(crate) async fn fetch_entries(&self, client: &Client) -> anyhow::Result<Vec<Entry>> {
+        let span = debug_span!("fetch_category_entries", category = %self.name());
+        let _ = span.enter();
+
+        let mut all_entries = vec![];
+        let mut tasks = vec![];
+        for feed in &self.feeds {
+            tasks.push(feed.fetch_entries(client));
+        }
+        let results = futures::future::join_all(tasks).await;
+        for (result, feed) in results.iter().zip(&self.feeds) {
+            match result {
+                Ok(ls) => {
+                    all_entries.extend(ls.clone());
+                }
+                Err(err) => {
+                    error!("Failed to fetch entries from {}: {:?}", feed.xml_url, err);
+                }
+            }
+        }
+        Ok(all_entries)
+    }
 }
 
 #[cfg(test)]
 mod tests {
+    use reqwest::Client;
+
     use crate::entities::Feed;
 
     #[tokio::test]
@@ -146,7 +184,8 @@ mod tests {
             .await;
 
         let feed = Box::new(feed);
-        let result = feed.fetch_entries().await.unwrap();
+        let client = Client::new();
+        let result = feed.fetch_entries(&client).await.unwrap();
         assert_eq!(30, result.len());
 
         mock.assert_async().await;

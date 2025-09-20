@@ -9,21 +9,26 @@ use axum::{
     routing::{get, post},
 };
 use bon::Builder;
+use reqwest::Client;
 use serde_json::json;
 use tower_http::services::ServeDir;
 use tower_http::trace::{DefaultMakeSpan, DefaultOnResponse, TraceLayer};
-use tracing::{Level, error};
+use tracing::Level;
 
-use crate::entities::Category;
+use crate::{entities::Category, repository::Repository};
 
 pub(crate) struct AppError(anyhow::Error);
 
 impl IntoResponse for AppError {
     fn into_response(self) -> axum::response::Response {
-        error!("{:?}", self.0);
         (
             StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Something went wrong {}", self.0),
+            Json(json!({
+                "type": "about:blank",
+                "title": "Internal Server Error",
+                "status": 500,
+                "detail": format!("{}", self.0),
+            })),
         )
             .into_response()
     }
@@ -41,6 +46,7 @@ where
 #[derive(Builder)]
 pub(crate) struct AppState {
     categories: Vec<Category>,
+    repository: Repository,
 }
 
 #[derive(Template)]
@@ -66,10 +72,33 @@ async fn feeds_route(State(state): State<Arc<AppState>>) -> Result<Html<String>,
     ))
 }
 
+async fn refresh_category_route(
+    State(state): State<Arc<AppState>>,
+    Path(category_id): Path<String>,
+) -> Result<Json<serde_json::Value>, AppError> {
+    let category = state
+        .categories
+        .iter()
+        .find(|c| c.generate_id() == category_id);
+    if let Some(category) = category {
+        let client = Client::new();
+        let entries = category.fetch_entries(&client).await?;
+        state.repository.upsert_entries(&entries)?;
+        Ok(Json(json!({
+           "status": "ok",
+           "category_id": category_id,
+           "count": entries.len()
+        })))
+    } else {
+        Err(AppError(anyhow::anyhow!("Category not found")))
+    }
+}
+
 async fn refresh_feed_route(
     State(state): State<Arc<AppState>>,
-    Path(feed_id): Path<u64>,
+    Path(feed_id): Path<String>,
 ) -> Result<Json<serde_json::Value>, AppError> {
+    let client = Client::new();
     let feed = state
         .categories
         .iter()
@@ -77,7 +106,8 @@ async fn refresh_feed_route(
         .find(|f| f.generate_id() == feed_id);
     if let Some(feed) = feed {
         let feed = Box::new(feed.clone());
-        let entries = feed.fetch_entries().await?;
+        let entries = feed.fetch_entries(&client).await?;
+        state.repository.upsert_entries(&entries)?;
         Ok(Json(json!({
            "status": "ok",
            "feed_id": feed_id,
@@ -94,6 +124,10 @@ pub(crate) fn init_route(state: AppState) -> Router {
         .nest_service("/assets", ServeDir::new("vendor"))
         .route("/", get(index_route))
         .route("/feeds", get(feeds_route))
+        .route(
+            "/api/categories/{category_id}/refresh",
+            get(refresh_category_route),
+        )
         .route("/api/feeds/{feed_id}/refresh", post(refresh_feed_route))
         .layer(
             TraceLayer::new_for_http()

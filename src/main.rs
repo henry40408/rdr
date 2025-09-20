@@ -1,14 +1,14 @@
-use std::{io::Read, net::SocketAddr, process::ExitCode};
+use std::{io::Read, net::SocketAddr, path::PathBuf, process::ExitCode};
 
 use clap::Parser;
 use clio::Input;
 use no_color::is_no_color;
 use opml::OPML;
 use tokio::net::TcpListener;
-use tracing::{Level, debug, info};
+use tracing::{Level, debug};
 use tracing_subscriber::{EnvFilter, fmt::format::FmtSpan};
 
-use crate::serve::AppState;
+use crate::{repository::Repository, serve::AppState};
 
 mod entities;
 mod repository;
@@ -22,6 +22,9 @@ struct Opts {
     /// Bind host & port
     #[arg(long, short = 'b', env = "BIND", default_value = "127.0.0.1:3000")]
     bind: String,
+    /// Cache path
+    #[arg(long, env = "CACHE_PATH", default_value = "cache.sqlite3")]
+    cache_path: PathBuf,
     /// Debug mode
     #[arg(long, short = 'd', env = "DEBUG")]
     debug: bool,
@@ -45,7 +48,7 @@ async fn try_main() -> anyhow::Result<()> {
     let default_directive = if opts.debug {
         Level::DEBUG
     } else {
-        Level::INFO
+        Level::WARN
     };
     let env_filter = EnvFilter::builder()
         .with_default_directive(default_directive.into())
@@ -64,13 +67,17 @@ async fn try_main() -> anyhow::Result<()> {
     let categories = entities::Category::from_opml(parsed_opml);
     debug!("Extracted categories: {categories:?}");
 
-    let state = AppState::builder().categories(categories).build();
+    let repository = Repository::builder(Some(opts.cache_path)).build()?;
+    let state = AppState::builder()
+        .categories(categories)
+        .repository(repository)
+        .build();
     let router = serve::init_route(state);
 
     let version = VERSION;
     let listener = TcpListener::bind(&opts.bind).await?;
     let local_addr: SocketAddr = listener.local_addr()?;
-    info!(addr = %local_addr, %version, "server started");
+    debug!(addr = %local_addr, %version, "server started");
 
     axum::serve(listener, router).await?;
 
