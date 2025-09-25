@@ -4,6 +4,11 @@ import { describe, it } from "node:test";
 import { generateId } from "./helper.js";
 
 describe("generateId", () => {
+  it("should generate an 8 character hex string", () => {
+    const id = generateId("test");
+    assert.match(id, /^[a-f0-9]{16}$/);
+  });
+
   it("should generate a unique ID", () => {
     const id1 = generateId("a");
     const id2 = generateId("b");
