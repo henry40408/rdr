@@ -7,6 +7,10 @@ export default defineNitroPlugin(
     const config = useRuntimeConfig();
     nitroApp.logger = pino({
       level: config.logLevel || (isDevelopment ? "debug" : "info"),
+      formatters: {
+        bindings: () => ({}),
+        level: (label) => ({ level: label }),
+      },
     });
   }
 );

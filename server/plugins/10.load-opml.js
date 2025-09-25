@@ -6,12 +6,14 @@ import { Category, Feed } from "../utils/entities";
 export default defineNitroPlugin(
   /** @param {import('nitropack/types').NitroApp} nitroApp */
   async (nitroApp) => {
+    const logger = nitroApp.logger.child({ context: "load-opml" });
+
     nitroApp.categories = [];
 
     const config = useRuntimeConfig();
     const opmlPath = config.opmlPath;
 
-    nitroApp.logger.debug(`Loading OPML from ${opmlPath}`);
+    logger.debug({ msg: "Loading OPML", opmlPath });
 
     const content = await fs.readFile(resolve(opmlPath), "utf-8");
     const parsed = await xml2js.parseStringPromise(content);
@@ -33,8 +35,15 @@ export default defineNitroPlugin(
       nitroApp.categories.push(category);
     }
 
-    nitroApp.logger.info(
-      `Loaded ${nitroApp.categories.length} categories from OPML`
-    );
+    logger.info({
+      msg: "Loaded categories from OPML",
+      categoriesCount: nitroApp.categories.length,
+      feedsCount: nitroApp.categories.flatMap((c) => c.feeds).length,
+    });
+
+    nitroApp.hooks.hook("close", () => {
+      nitroApp.categories = [];
+      logger.info("Categories are cleared on shutdown");
+    });
   }
 );
