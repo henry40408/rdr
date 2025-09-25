@@ -5,4 +5,8 @@ export default defineNuxtConfig({
       title: "rdr",
     },
   },
+  runtimeConfig: {
+    logLevel: "",
+    opmlPath: "./data/feeds.opml",
+  },
 });
