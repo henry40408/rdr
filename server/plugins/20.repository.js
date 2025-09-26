@@ -72,6 +72,22 @@ export class Repository {
   }
 
   /**
+   * @param {import('../utils/entities').FeedImage} image
+   */
+  async upsertFeedImage(image) {
+    this.logger.debug({ msg: "Upserting feed image", feedId: image.feedId });
+    await this.knex("feed_image")
+      .insert({
+        feed_id: image.feedId,
+        blob: image.blob,
+        content_type: image.contentType,
+      })
+      .onConflict("feed_id")
+      .merge();
+    this.logger.info({ msg: "Upserted feed image", feedId: image.feedId });
+  }
+
+  /**
    * @param {import('../utils/entities').FeedMetadata} metadata
    */
   async upsertFeedMetadata(metadata) {

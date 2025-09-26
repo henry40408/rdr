@@ -11,7 +11,11 @@ export default defineEventHandler(async (event) => {
   const items = await app.feedService.fetchEntries(feed, metadata);
   if ("ok" === items.type) {
     await app.repository.upsertEntries(feed, items.items);
-    if (items.metadata) await app.repository.upsertFeedMetadata(items.metadata);
+    if (items.metadata) {
+      await app.repository.upsertFeedMetadata(items.metadata);
+      const image = await app.feedService.fetchImage(feed, items.metadata);
+      if (image) await app.repository.upsertFeedImage(image);
+    }
   }
 
   return { status: "ok" };

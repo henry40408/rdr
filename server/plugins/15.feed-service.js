@@ -3,7 +3,7 @@ import { Readable } from "node:stream";
 import FeedParser from "feedparser";
 import PQueue from "p-queue";
 import { MutexMap } from "../utils/mutex-map";
-import { FeedMetadata } from "../utils/entities";
+import { FeedImage, FeedMetadata } from "../utils/entities";
 
 export class FeedService {
   /**
@@ -22,6 +22,7 @@ export class FeedService {
    * @typedef {object} FetchResult
    * @property {'ok'|'not_modified'} type
    * @property {import('feedparser').Item[]} items
+   * @property {import('feedparser').Meta|null} [meta]
    * @property {FeedMetadata} [metadata]
    *
    * @param {import('../utils/entities').Feed} feed
@@ -70,8 +71,14 @@ export class FeedService {
       /** @type {import('feedparser').Item[]} */
       const items = [];
 
+      /** @type {import('feedparser').Meta|null} */
+      let meta = null;
+
       await new Promise((resolve, reject) => {
         parser.on("error", (/** @type {unknown} */ err) => reject(err));
+        parser.on("meta", (/** @type {import('feedparser').Meta} */ m) => {
+          meta = m;
+        });
         parser.on("readable", () => {
           /** @type {import('feedparser').Item} */
           let item;
@@ -88,13 +95,62 @@ export class FeedService {
       const etag = res.headers.get("etag");
       const lastModified = res.headers.get("last-modified");
       const newMetadata = new FeedMetadata({ feedId: feed.id, etag, lastModified });
-      return { type: "ok", items, metadata: newMetadata };
+      return { type: "ok", items, meta, metadata: newMetadata };
     } catch (err) {
       logger.error(err);
       throw err;
     } finally {
       release();
     }
+  }
+
+  /**
+   * @param {import('../utils/entities').Feed} feed
+   * @param {import('../utils/entities').FeedMetadata|null} metadata
+   * @returns {Promise<FeedImage|null>}
+   */
+  async fetchImage(feed, metadata) {
+    const { meta } = await this.fetchEntries(feed, metadata);
+    if (meta?.image?.url) {
+      const image = await this._downloadImage(meta.image.url);
+      if (image) {
+        const { blob, contentType } = image;
+        return new FeedImage({ feedId: feed.id, blob, contentType });
+      }
+    }
+
+    const url = new URL("/favicon.ico", feed.htmlUrl).toString();
+    const image = await this._downloadImage(url);
+    if (image) {
+      const { blob, contentType } = image;
+      return new FeedImage({ feedId: feed.id, blob, contentType });
+    }
+
+    return null;
+  }
+
+  /**
+   *
+   * @param {string} url
+   * @returns {Promise<{blob:Buffer,contentType:string}|null>}
+   */
+  async _downloadImage(url) {
+    const res = await this.queue.add(() => fetch(url, { headers: { "User-Agent": this.userAgent } }));
+    if (!res) {
+      this.logger.error("Response is null");
+      return null;
+    }
+    if (!res.ok) {
+      this.logger.error(`Failed to fetch image: ${res.status} ${res.statusText} - ${await res.text()}`);
+      return null;
+    }
+    if (!res.body) {
+      this.logger.error("Response body is null");
+      return null;
+    }
+    const contentType = res.headers.get("content-type") || "application/octet-stream";
+    const blob = await res.arrayBuffer();
+    return { blob: Buffer.from(blob), contentType };
   }
 }
 

@@ -28,6 +28,20 @@ export class Feed {
   }
 }
 
+export class FeedImage {
+  /**
+   * @param {object} opts
+   * @param {string} opts.feedId
+   * @param {Buffer} opts.blob
+   * @param {string} opts.contentType
+   */
+  constructor({ feedId, blob, contentType }) {
+    this.feedId = feedId;
+    this.blob = blob;
+    this.contentType = contentType;
+  }
+}
+
 export class FeedMetadata {
   /**
    * @param {object} opts

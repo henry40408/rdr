@@ -31,6 +31,16 @@ export function up(knex) {
 
       t.string("etag");
       t.string("last_modified");
+
+      t.timestamps(true, true);
+    })
+    .createTable("feed_image", (t) => {
+      t.string("feed_id").primary().notNullable();
+
+      t.binary("blob").notNullable();
+      t.string("content_type").notNullable();
+
+      t.timestamps(true, true);
     });
 }
 

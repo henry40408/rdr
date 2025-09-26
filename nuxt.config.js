@@ -7,7 +7,7 @@ export default defineNuxtConfig({
   },
   css: ["~/vendor/water.min.css"],
   runtimeConfig: {
-    cachePath: './data/cache.sqlite3',
+    cachePath: "./data/cache.sqlite3",
     logLevel: "",
     opmlPath: "./data/feeds.opml",
     userAgent: "Mozilla/5.0 (compatible; rdr/1.0; +https://github.com/henry40408/rdr)",
