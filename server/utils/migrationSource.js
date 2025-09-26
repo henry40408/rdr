@@ -1,4 +1,4 @@
-import migration1 from "./migrations/0001-initial.js";
+import migration1 from "./migrations/m0001-initial.js";
 
 export class MigrationSource {
   /**

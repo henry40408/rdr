@@ -2,7 +2,7 @@ import { Mutex } from "async-mutex";
 
 export class MutexMap {
   constructor() {
-    /** @type {Map<string, import('async-mutex').Mutex} */
+    /** @type {Map<string,import('async-mutex').Mutex>} */
     this.map = new Map();
   }
 
