@@ -35,6 +35,7 @@ export class Repository {
    * @param {import('feedparser').Item[]} entries
    */
   async upsertEntries(feed, entries) {
+    this.logger.debug({ msg: "Upserting entries", feedId: feed.id, count: entries.length });
     await this.knex("entries")
       .insert(
         entries.map((e) => ({
@@ -50,6 +51,7 @@ export class Repository {
       )
       .onConflict(["feed_id", "guid"])
       .merge();
+    this.logger.info({ msg: "Upserted entries", feedId: feed.id, count: entries.length });
   }
 
   /**
