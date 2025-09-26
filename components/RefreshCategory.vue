@@ -7,10 +7,10 @@
 
 <script setup>
 const props = defineProps({
-  feedId: { type: String, required: true },
+  categoryId: { type: String, required: true },
 });
 
-const { error, execute, status } = useFetch(`/api/feeds/${props.feedId}/refresh`, {
+const { error, execute, status } = useFetch(`/api/categories/${props.categoryId}/refresh`, {
   method: "POST",
   immediate: false,
 });

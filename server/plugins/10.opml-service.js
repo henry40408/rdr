@@ -51,6 +51,14 @@ export class OpmlService {
   }
 
   /**
+   * @param {string} categoryId
+   * @returns {Category | undefined}
+   */
+  findCategoryById(categoryId) {
+    return this.categories.find((c) => c.id === categoryId);
+  }
+
+  /**
    * @param {string} feedId
    * @returns {Feed | undefined}
    */

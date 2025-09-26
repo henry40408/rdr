@@ -3,6 +3,9 @@
   <Nav />
   <template v-for="category in data" :key="category.id">
     <h2>{{ category.name }}</h2>
+    <div>
+      <RefreshCategory :categoryId="category.id" />
+    </div>
     <table>
       <thead>
         <tr>
