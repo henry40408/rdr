@@ -2,6 +2,7 @@ import os from "node:os";
 import { Readable } from "node:stream";
 import FeedParser from "feedparser";
 import PQueue from "p-queue";
+import { MutexMap } from "../utils/mutex-map";
 
 export class FeedService {
   /**
@@ -11,6 +12,7 @@ export class FeedService {
    */
   constructor({ logger, userAgent }) {
     this.logger = logger.child({ context: "feed-service" });
+    this.mutexMap = new MutexMap();
     this.queue = new PQueue({ concurrency: os.cpus().length });
     this.userAgent = userAgent;
   }
@@ -21,6 +23,9 @@ export class FeedService {
    */
   async fetchEntries(feed) {
     const logger = this.logger.child({ feedId: feed.id });
+
+    const mutexKey = `feed-fetch-${feed.id}`;
+    const release = await this.mutexMap.acquire(mutexKey);
     try {
       logger.debug({ msg: "Fetching feed", xmlUrl: feed.xmlUrl });
       const res = await this.queue.add(() =>
@@ -69,6 +74,8 @@ export class FeedService {
     } catch (err) {
       logger.error(err);
       throw err;
+    } finally {
+      release();
     }
   }
 }
