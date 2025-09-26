@@ -1,5 +1,6 @@
 import knex from "knex";
 import { MigrationSource } from "../utils/migrationSource";
+import { FeedMetadata } from "../utils/entities";
 
 export class Repository {
   /**
@@ -31,6 +32,22 @@ export class Repository {
   }
 
   /**
+   *
+   * @param {string} feedId
+   * @returns {Promise<import('../utils/entities').FeedMetadata|null>}
+   */
+  async findFeedMetadataByFeedId(feedId) {
+    const row = await this.knex("feed_metadata").where({ feed_id: feedId }).first();
+    if (!row) return null;
+
+    return new FeedMetadata({
+      feedId: row.feed_id,
+      etag: row.etag || null,
+      lastModified: row.last_modified || null,
+    });
+  }
+
+  /**
    * @param {import('../utils/entities').Feed} feed
    * @param {import('feedparser').Item[]} entries
    */
@@ -52,6 +69,18 @@ export class Repository {
       .onConflict(["feed_id", "guid"])
       .merge();
     this.logger.info({ msg: "Upserted entries", feedId: feed.id, count: entries.length });
+  }
+
+  /**
+   * @param {import('../utils/entities').FeedMetadata} metadata
+   */
+  async upsertFeedMetadata(metadata) {
+    this.logger.debug({ msg: "Upserting feed metadata", metadata });
+    await this.knex("feed_metadata")
+      .insert({ feed_id: metadata.feedId, etag: metadata.etag, last_modified: metadata.lastModified })
+      .onConflict("feed_id")
+      .merge();
+    this.logger.info({ msg: "Upserted feed metadata", metadata });
   }
 
   /**

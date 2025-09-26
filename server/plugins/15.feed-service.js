@@ -3,6 +3,7 @@ import { Readable } from "node:stream";
 import FeedParser from "feedparser";
 import PQueue from "p-queue";
 import { MutexMap } from "../utils/mutex-map";
+import { FeedMetadata } from "../utils/entities";
 
 export class FeedService {
   /**
@@ -18,28 +19,41 @@ export class FeedService {
   }
 
   /**
+   * @typedef {object} FetchResult
+   * @property {'ok'|'not_modified'} type
+   * @property {import('feedparser').Item[]} items
+   * @property {FeedMetadata} [metadata]
+   *
    * @param {import('../utils/entities').Feed} feed
-   * @returns {Promise<import('feedparser').Item[]>}
+   * @param {import('../utils/entities').FeedMetadata|null} metadata
+   * @returns {Promise<FetchResult>}
    */
-  async fetchEntries(feed) {
+  async fetchEntries(feed, metadata) {
     const logger = this.logger.child({ feedId: feed.id });
 
     const mutexKey = `feed-fetch-${feed.id}`;
     const release = await this.mutexMap.acquire(mutexKey);
     try {
       logger.debug({ msg: "Fetching feed", xmlUrl: feed.xmlUrl });
-      const res = await this.queue.add(() =>
-        fetch(feed.xmlUrl, {
-          headers: {
-            "User-Agent": this.userAgent,
-          },
-        }),
-      );
+
+      /** @type {Record<string,string>} */
+      const headers = { "User-Agent": this.userAgent };
+      if (metadata) {
+        const { etag, lastModified } = metadata;
+        if (etag) headers["If-None-Match"] = etag;
+        if (lastModified) headers["If-Modified-Since"] = lastModified;
+      }
+
+      const res = await this.queue.add(() => fetch(feed.xmlUrl, { headers }));
       logger.info({ msg: "Fetched feed", xmlUrl: feed.xmlUrl });
 
       if (!res) {
         logger.error("Response is null");
         throw new Error("Response is null");
+      }
+      if (304 === res.status) {
+        logger.info({ msg: "Feed is not modified", metadata });
+        return { type: "not_modified", items: [] };
       }
       if (!res.ok) {
         logger.error(`Failed to fetch feed: ${res.status} ${res.statusText} - ${await res.text()}`);
@@ -70,7 +84,11 @@ export class FeedService {
       });
 
       logger.debug({ msg: "Items parsed", xmlUrl: feed.xmlUrl, count: items.length });
-      return items;
+
+      const etag = res.headers.get("etag");
+      const lastModified = res.headers.get("last-modified");
+      const newMetadata = new FeedMetadata({ feedId: feed.id, etag, lastModified });
+      return { type: "ok", items, metadata: newMetadata };
     } catch (err) {
       logger.error(err);
       throw err;

@@ -9,7 +9,15 @@ export default defineEventHandler(async (event) => {
 
   const tasks = [];
   for (const feed of category.feeds) {
-    tasks.push(app.feedService.fetchEntries(feed));
+    const task = async () => {
+      const metadata = await app.repository.findFeedMetadataByFeedId(feed.id);
+      const items = await app.feedService.fetchEntries(feed, metadata);
+      if ("ok" === items.type) {
+        await app.repository.upsertEntries(feed, items.items);
+        if (items.metadata) await app.repository.upsertFeedMetadata(items.metadata);
+      }
+    };
+    tasks.push(task());
   }
   await Promise.all(tasks);
 

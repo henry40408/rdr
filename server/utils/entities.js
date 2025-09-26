@@ -27,3 +27,17 @@ export class Feed {
     this.htmlUrl = htmlUrl;
   }
 }
+
+export class FeedMetadata {
+  /**
+   * @param {object} opts
+   * @param {string} opts.feedId
+   * @param {string|null} [opts.etag]
+   * @param {string|null} [opts.lastModified]
+   */
+  constructor({ feedId, etag = null, lastModified = null }) {
+    this.feedId = feedId;
+    this.etag = etag;
+    this.lastModified = lastModified;
+  }
+}
