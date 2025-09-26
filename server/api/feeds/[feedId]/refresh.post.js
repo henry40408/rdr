@@ -7,6 +7,8 @@ export default defineEventHandler(async (event) => {
   const feed = app.opmlService.findFeedById(feedId);
   if (!feed) throw createError({ statusCode: 404, statusMessage: "Feed not found" });
 
-  await app.feedService.fetchEntries(feed);
+  const items = await app.feedService.fetchEntries(feed);
+  app.repository.upsertEntries(feed, items);
+
   return { status: "ok" };
 });
