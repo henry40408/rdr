@@ -5,8 +5,10 @@ export default defineNuxtConfig({
       title: "rdr",
     },
   },
+  css: ["~/vendor/water.min.css"],
   runtimeConfig: {
     logLevel: "",
     opmlPath: "./data/feeds.opml",
+    userAgent: "Mozilla/5.0 (compatible; rdr/1.0; +https://github.com/henry40408/rdr)",
   },
 });

@@ -10,13 +10,6 @@
     "target": "es2020",
     "types": ["@types/node", "nuxt"]
   },
-  "include": [
-    ".nuxt/**/*.d.ts",
-    "**/*.js",
-    "**/*.ts",
-    "**/*.vue",
-    "nuxt.config.*",
-    "types/**/*.d.ts"
-  ],
+  "include": [".nuxt/**/*.d.ts", "**/*.js", "**/*.ts", "**/*.vue", "nuxt.config.*", "types/**/*.d.ts"],
   "exclude": ["node_modules", "dist", ".output"]
 }

@@ -12,5 +12,5 @@ export default defineNitroPlugin(
         level: (label) => ({ level: label }),
       },
     });
-  }
+  },
 );
