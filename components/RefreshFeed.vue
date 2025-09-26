@@ -10,8 +10,14 @@ const props = defineProps({
   feedId: { type: String, required: true },
 });
 
+const events = defineEmits(["refreshed"]);
+
 const { error, execute, status } = useFetch(`/api/feeds/${props.feedId}/refresh`, {
   method: "POST",
   immediate: false,
+});
+
+watch(status, (newStatus) => {
+  if (newStatus === "success") events("refreshed");
 });
 </script>

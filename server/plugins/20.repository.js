@@ -32,6 +32,29 @@ export class Repository {
   }
 
   /**
+   * @param {string} feedId
+   * @returns {Promise<import('../utils/entities').FeedImage|null>}
+   */
+  async findFeedImageByFeedId(feedId) {
+    const row = await this.knex("feed_image").where({ feed_id: feedId }).first();
+    if (!row) return null;
+
+    return new FeedImage({
+      feedId: row.feed_id,
+      blob: row.blob,
+      contentType: row.content_type,
+    });
+  }
+
+  /**
+   * @returns {Promise<string[]>}
+   */
+  async listFeedImagePKs() {
+    const rows = await this.knex("feed_image").select();
+    return rows.map((row) => row.feed_id);
+  }
+
+  /**
    *
    * @param {string} feedId
    * @returns {Promise<import('../utils/entities').FeedMetadata|null>}
