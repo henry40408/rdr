@@ -1,6 +1,8 @@
 export default defineEventHandler(async (event) => {
   const { container } = useNitroApp();
 
+  /** @type {import('pino').Logger} */
+  const logger = container.resolve("logger");
   /** @type {import("../../../utils/feed-service").FeedService} */
   const feedService = container.resolve("feedService");
   /** @type {import("../../../utils/opml-service").OpmlService} */
@@ -20,7 +22,17 @@ export default defineEventHandler(async (event) => {
     };
     tasks.push(task());
   }
-  await Promise.all(tasks);
+
+  const results = await Promise.allSettled(tasks);
+  for (let i = 0; i < results.length; i++) {
+    const result = results[i];
+    if (result.status === "rejected") {
+      const feed = category.feeds[i];
+      const childLogger = logger.child({ feedId: feed.id });
+      childLogger.error(result.reason);
+      childLogger.error("One of the feed refresh tasks failed");
+    }
+  }
 
   return { status: "ok" };
 });

@@ -74,6 +74,11 @@ export class Repository {
    * @param {import('feedparser').Item[]} entries
    */
   async upsertEntries(feed, entries) {
+    if (entries.length === 0) {
+      this.logger.info({ msg: "No entries to upsert", feedId: feed.id });
+      return;
+    }
+
     this.logger.debug({ msg: "Upserting entries", feedId: feed.id, count: entries.length });
     await this.knex("entries")
       .insert(

@@ -5,7 +5,6 @@ import FeedParser from "feedparser";
 import PQueue from "p-queue";
 import { FeedImage } from "../utils/entities";
 import got from "got";
-import { milliseconds } from "date-fns";
 
 export class FeedService {
   /**
