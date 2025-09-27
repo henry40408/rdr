@@ -4,6 +4,8 @@ import * as cheerio from "cheerio";
 import FeedParser from "feedparser";
 import PQueue from "p-queue";
 import { FeedImage } from "../utils/entities";
+import got from "got";
+import { milliseconds } from "date-fns";
 
 export class FeedService {
   /**
@@ -48,25 +50,23 @@ export class FeedService {
         if (lastModified) headers["If-Modified-Since"] = lastModified;
       }
 
-      const res = await this.queue.add(() => fetch(feed.xmlUrl, { headers }));
+      const res = await this.queue.add(() =>
+        got(feed.xmlUrl, {
+          dnsLookupIpVersion: 4,
+          headers,
+          responseType: "text",
+          timeout: { response: this.config.httpTimeoutMs },
+        }),
+      );
       logger.info("Fetched feed");
 
       if (!res) {
         logger.error("Response is null");
         throw new Error("Response is null");
       }
-      if (304 === res.status) {
+      if (304 === res.statusCode) {
         logger.info("Feed is not modified");
         return { type: "not_modified", items: [] };
-      }
-      if (!res.ok) {
-        const { status, statusText } = res;
-        logger.error({ msg: "Failed to fetch feed", status, statusText });
-        throw new Error(`Failed to fetch feed: ${status} ${statusText}`);
-      }
-      if (!res.body) {
-        logger.error("Response body is null");
-        throw new Error("Response body is null");
       }
 
       const body = res.body;
@@ -96,8 +96,8 @@ export class FeedService {
 
       logger.debug({ msg: "Items parsed", count: items.length });
 
-      const etag = res.headers.get("etag");
-      const lastModified = res.headers.get("last-modified");
+      const etag = res.headers["etag"] || null;
+      const lastModified = res.headers["last-modified"] || null;
       const newMetadata = new FeedMetadata({ feedId: feed.id, etag, lastModified });
       return { type: "ok", items, meta, metadata: newMetadata };
     } catch (err) {
@@ -185,29 +185,27 @@ export class FeedService {
         if (existing.lastModified) headers["If-Modified-Since"] = existing.lastModified;
       }
 
-      const res = await this.queue.add(() => fetch(url, { headers }));
+      const res = await this.queue.add(() =>
+        got(url, {
+          dnsLookupIpVersion: 4,
+          headers,
+          responseType: "buffer",
+          timeout: { response: this.config.httpTimeoutMs },
+        }),
+      );
       if (!res) {
         logger.error("Response is null");
         return null;
       }
-      if (304 === res.status) {
+      if (304 === res.statusCode) {
         logger.info("Image is not modified");
         return { type: "not_modified" };
       }
-      if (!res.ok) {
-        const { status, statusText } = res;
-        logger.error({ msg: "Failed to fetch image", status, statusText });
-        return null;
-      }
-      if (!res.body) {
-        logger.error("Response body is null");
-        return null;
-      }
 
-      const blob = await res.arrayBuffer();
-      const contentType = res.headers.get("content-type") || "application/octet-stream";
-      const etag = res.headers.get("etag") || null;
-      const lastModified = res.headers.get("last-modified") || null;
+      const blob = res.body;
+      const contentType = res.headers["content-type"] || "application/octet-stream";
+      const etag = res.headers["etag"] || null;
+      const lastModified = res.headers["last-modified"] || null;
       const image = new FeedImage({ feedId: feed.id, blob: Buffer.from(blob), contentType, etag, lastModified });
       return { type: "ok", image };
     } catch (err) {
@@ -223,9 +221,12 @@ export class FeedService {
    */
   async _findFavicon(htmlUrl) {
     try {
-      const content = await fetch(htmlUrl, {
+      const content = await got(htmlUrl, {
+        dnsLookupIpVersion: 4,
         headers: { "User-Agent": this.config.userAgent },
-      }).then((res) => res.text());
+        responseType: "text",
+        timeout: { response: this.config.httpTimeoutMs },
+      }).text();
       const $ = cheerio.load(content);
       const href =
         $('link[rel="icon"]').attr("href") ||
