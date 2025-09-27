@@ -1,7 +1,7 @@
 <template>
   <h1>Categories &amp; feeds</h1>
   <Nav />
-  <template v-for="category in data" :key="category.id">
+  <template v-for="category in categories" :key="category.id">
     <h2>{{ category.name }}</h2>
     <div>
       <RefreshCategory :categoryId="category.id" @refreshed="refreshAll()" />
@@ -38,18 +38,20 @@
   </template>
 </template>
 
-<script setup lang="ts">
-import { exec } from "child_process";
-
-const { data, execute: refreshCategories } = await useFetch("/api/categories");
-const { data: imagePks, execute: refreshImages } = await useFetch<string[]>("/api/feed-image-pks");
+<script setup>
+const { data: categories, execute: refreshCategories } = await useFetch("/api/categories");
+const { data: imagePks, execute: refreshImages } = await useFetch("/api/feed-image-pks");
 
 async function refreshAll() {
   await refreshCategories();
   await refreshImages();
 }
 
-function imageExists(feedId: string): boolean {
+/**
+ * @param {string} feedId
+ * @returns {boolean}
+ */
+function imageExists(feedId) {
   return (imagePks && imagePks.value?.includes(feedId)) || false;
 }
 </script>
