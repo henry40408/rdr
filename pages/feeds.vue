@@ -26,7 +26,10 @@
               <a :href="feed.htmlUrl" target="_blank" rel="noopener noreferrer">{{ feed.title }}</a>
             </div>
             <div>
-              <small>{{ feed.xmlUrl }}</small>
+              <div>
+                <small>{{ feed.xmlUrl }}</small>
+              </div>
+              <FeedMetadata :metadata="findMetadataByFeed(feed)" />
             </div>
           </td>
           <td>
@@ -41,10 +44,20 @@
 <script setup>
 const { data: categories, execute: refreshCategories } = await useFetch("/api/categories");
 const { data: imagePks, execute: refreshImages } = await useFetch("/api/feed-image-pks");
+const { data: feedMetadata, execute: refreshFeedMetadata } = await useFetch("/api/feed-metadata-list");
+
+/**
+ * @param {import('../server/utils/entities').Feed} feed
+ * @returns {import('../server/utils/entities').FeedMetadata|null}
+ */
+function findMetadataByFeed(feed) {
+  return feedMetadata.value?.find((m) => m.feedId === feed.id) || null;
+}
 
 async function refreshAll() {
   await refreshCategories();
   await refreshImages();
+  await refreshFeedMetadata();
 }
 
 /**

@@ -52,11 +52,13 @@ export class FeedMetadata {
   /**
    * @param {object} opts
    * @param {string} opts.feedId
+   * @param {string|null} [opts.fetchedAt]
    * @param {string|null} [opts.etag]
    * @param {string|null} [opts.lastModified]
    */
-  constructor({ feedId, etag = null, lastModified = null }) {
+  constructor({ feedId, fetchedAt = null, etag = null, lastModified = null }) {
     this.feedId = feedId;
+    this.fetchedAt = fetchedAt;
     this.etag = etag;
     this.lastModified = lastModified;
   }

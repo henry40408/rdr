@@ -54,6 +54,22 @@ export class Repository {
   }
 
   /**
+   * @returns {Promise<import('../utils/entities').FeedMetadata[]>}
+   */
+  async listFeedMetadata() {
+    const rows = await this.knex("feed_metadata").select();
+    return rows.map(
+      (row) =>
+        new FeedMetadata({
+          feedId: row.feed_id,
+          fetchedAt: row.fetched_at || null,
+          etag: row.etag || null,
+          lastModified: row.last_modified || null,
+        }),
+    );
+  }
+
+  /**
    *
    * @param {string} feedId
    * @returns {Promise<import('../utils/entities').FeedMetadata|null>}
@@ -80,21 +96,28 @@ export class Repository {
     }
 
     this.logger.debug({ msg: "Upserting entries", feedId: feed.id, count: entries.length });
-    await this.knex("entries")
-      .insert(
-        entries.map((e) => ({
-          feed_id: feed.id,
-          guid: e.guid,
-          title: e.title || "(no title)",
-          link: e.link,
-          date: this.itemDate(e),
-          summary: e.summary || "(no summary)",
-          description: e.description,
-          author: e.author,
-        })),
-      )
-      .onConflict(["feed_id", "guid"])
-      .merge();
+    const now = new Date();
+    await this.knex.transaction(async (tx) => {
+      await tx("feed_metadata")
+        .insert({ feed_id: feed.id, fetched_at: now.toISOString() })
+        .onConflict("feed_id")
+        .merge();
+      await tx("entries")
+        .insert(
+          entries.map((e) => ({
+            feed_id: feed.id,
+            guid: e.guid,
+            title: e.title || "(no title)",
+            link: e.link,
+            date: this.itemDate(e),
+            summary: e.summary || "(no summary)",
+            description: e.description,
+            author: e.author,
+          })),
+        )
+        .onConflict(["feed_id", "guid"])
+        .merge();
+    });
     this.logger.info({ msg: "Upserted entries", feedId: feed.id, count: entries.length });
   }
 

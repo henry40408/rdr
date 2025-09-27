@@ -29,6 +29,8 @@ export function up(knex) {
     .createTable("feed_metadata", (t) => {
       t.string("feed_id").primary().notNullable();
 
+      t.timestamp("fetched_at");
+
       t.string("etag");
       t.string("last_modified");
 
