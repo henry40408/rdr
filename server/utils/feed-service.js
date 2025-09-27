@@ -9,10 +9,12 @@ export class FeedService {
    * @param {object} opts
    * @param {import('nuxt/schema').RuntimeConfig} opts.config
    * @param {import('pino').Logger} opts.logger
+   * @param {import('../utils/repository').Repository} opts.repository
    */
-  constructor({ config, logger }) {
+  constructor({ config, logger, repository }) {
     this.config = config;
     this.logger = logger.child({ context: "feed-service" });
+    this.repository = repository;
 
     this.mutexMap = new MutexMap();
     this.queue = new PQueue({ concurrency: os.cpus().length });
@@ -139,6 +141,18 @@ export class FeedService {
       }
     }
     return null;
+  }
+
+  /**
+   * @param {import('../utils/entities').Feed} feed
+   */
+  async fetchAndSaveEntries(feed) {
+    const metadata = await this.repository.findFeedMetadataByFeedId(feed.id);
+    const result = await this.fetchEntries(feed, metadata);
+    if (result.type === "ok") {
+      await this.repository.upsertEntries(feed, result.items);
+      if (result.metadata) await this.repository.upsertFeedMetadata(result.metadata);
+    }
   }
 
   /**
