@@ -34,11 +34,17 @@ export class FeedImage {
    * @param {string} opts.feedId
    * @param {Buffer} opts.blob
    * @param {string} opts.contentType
+   * @param {string|null} [opts.etag]
+   * @param {string|null} [opts.lastModified]
    */
-  constructor({ feedId, blob, contentType }) {
+  constructor({ feedId, blob, contentType, etag = null, lastModified = null }) {
     this.feedId = feedId;
+
     this.blob = blob;
     this.contentType = contentType;
+
+    this.etag = etag;
+    this.lastModified = lastModified;
   }
 }
 

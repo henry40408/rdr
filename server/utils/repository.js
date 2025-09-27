@@ -40,6 +40,8 @@ export class Repository {
       feedId: row.feed_id,
       blob: row.blob,
       contentType: row.content_type,
+      etag: row.etag || null,
+      lastModified: row.last_modified || null,
     });
   }
 
@@ -101,6 +103,8 @@ export class Repository {
         feed_id: image.feedId,
         blob: image.blob,
         content_type: image.contentType,
+        etag: image.etag,
+        last_modified: image.lastModified,
       })
       .onConflict("feed_id")
       .merge();

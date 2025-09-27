@@ -13,6 +13,7 @@ export default defineEventHandler(async (event) => {
   if (!feed) throw createError({ statusCode: 404, statusMessage: "Feed not found" });
 
   await feedService.fetchAndSaveEntries(feed);
+  await feedService.fetchAndSaveImage(feed);
 
   return { status: "ok" };
 });

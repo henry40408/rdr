@@ -3,6 +3,7 @@ import { Readable } from "node:stream";
 import * as cheerio from "cheerio";
 import FeedParser from "feedparser";
 import PQueue from "p-queue";
+import { FeedImage } from "../utils/entities";
 
 export class FeedService {
   /**
@@ -21,7 +22,7 @@ export class FeedService {
   }
 
   /**
-   * @typedef {object} FetchResult
+   * @typedef {object} FetchEntriesResult
    * @property {'ok'|'not_modified'} type
    * @property {import('feedparser').Item[]} items
    * @property {import('feedparser').Meta|null} [meta]
@@ -29,15 +30,15 @@ export class FeedService {
    *
    * @param {import('../utils/entities').Feed} feed
    * @param {import('../utils/entities').FeedMetadata|null} metadata
-   * @returns {Promise<FetchResult>}
+   * @returns {Promise<FetchEntriesResult>}
    */
   async fetchEntries(feed, metadata) {
-    const logger = this.logger.child({ feedId: feed.id });
+    const logger = this.logger.child({ feedId: feed.id, xmlUrl: feed.xmlUrl });
 
     const mutexKey = `feed-fetch-${feed.id}`;
     const release = await this.mutexMap.acquire(mutexKey);
     try {
-      logger.debug({ msg: "Fetching feed", xmlUrl: feed.xmlUrl });
+      logger.debug("Fetching feed");
 
       /** @type {Record<string,string>} */
       const headers = { "User-Agent": this.config.userAgent };
@@ -48,19 +49,20 @@ export class FeedService {
       }
 
       const res = await this.queue.add(() => fetch(feed.xmlUrl, { headers }));
-      logger.info({ msg: "Fetched feed", xmlUrl: feed.xmlUrl });
+      logger.info("Fetched feed");
 
       if (!res) {
         logger.error("Response is null");
         throw new Error("Response is null");
       }
       if (304 === res.status) {
-        logger.info({ msg: "Feed is not modified", metadata });
+        logger.info("Feed is not modified");
         return { type: "not_modified", items: [] };
       }
       if (!res.ok) {
-        logger.error(`Failed to fetch feed: ${res.status} ${res.statusText} - ${await res.text()}`);
-        throw new Error(`Failed to fetch feed: ${res.status} ${res.statusText}`);
+        const { status, statusText } = res;
+        logger.error({ msg: "Failed to fetch feed", status, statusText });
+        throw new Error(`Failed to fetch feed: ${status} ${statusText}`);
       }
       if (!res.body) {
         logger.error("Response body is null");
@@ -92,7 +94,7 @@ export class FeedService {
         Readable.from(body).pipe(parser);
       });
 
-      logger.debug({ msg: "Items parsed", xmlUrl: feed.xmlUrl, count: items.length });
+      logger.debug({ msg: "Items parsed", count: items.length });
 
       const etag = res.headers.get("etag");
       const lastModified = res.headers.get("last-modified");
@@ -108,39 +110,35 @@ export class FeedService {
 
   /**
    * @param {import('../utils/entities').Feed} feed
-   * @param {import('../utils/entities').FeedMetadata|null} metadata
-   * @returns {Promise<FeedImage|null>}
+   * @param {import('../utils/entities').FeedImage|null} existing
+   * @returns {Promise<DownloadImageResult|null>}
    */
-  async fetchImage(feed, metadata) {
-    {
-      const { meta } = await this.fetchEntries(feed, metadata);
-      if (meta?.image?.url) {
-        const image = await this._downloadImage(meta.image.url);
-        if (image) {
-          const { blob, contentType } = image;
-          return new FeedImage({ feedId: feed.id, blob, contentType });
+  async fetchImage(feed, existing) {
+    const logger = this.logger.child({ feedId: feed.id });
+    const mutexKey = `feed-image-fetch-${feed.id}`;
+    const release = await this.mutexMap.acquire(mutexKey);
+    try {
+      {
+        logger.debug("Trying to fetch favicon from base URL");
+        const url = new URL("/favicon.ico", feed.htmlUrl).toString();
+        const result = await this._downloadImage(feed, url, existing);
+        if (result) return result;
+      }
+      {
+        logger.debug("Trying to find favicon from HTML");
+        const url = await this._findFavicon(feed.htmlUrl);
+        if (url) {
+          const result = await this._downloadImage(feed, url, existing);
+          if (result) return result;
         }
       }
+      return null;
+    } catch (err) {
+      this.logger.error(err);
+      throw err;
+    } finally {
+      release();
     }
-    {
-      const url = new URL("/favicon.ico", feed.htmlUrl).toString();
-      const image = await this._downloadImage(url);
-      if (image) {
-        const { blob, contentType } = image;
-        return new FeedImage({ feedId: feed.id, blob, contentType });
-      }
-    }
-    {
-      const url = await this._findFavicon(feed.htmlUrl);
-      if (url) {
-        const image = await this._downloadImage(url);
-        if (image) {
-          const { blob, contentType } = image;
-          return new FeedImage({ feedId: feed.id, blob, contentType });
-        }
-      }
-    }
-    return null;
   }
 
   /**
@@ -156,26 +154,67 @@ export class FeedService {
   }
 
   /**
-   * @param {string} url
-   * @returns {Promise<{blob:Buffer,contentType:string}|null>}
+   * @param {import('../utils/entities').Feed} feed
    */
-  async _downloadImage(url) {
-    const res = await this.queue.add(() => fetch(url, { headers: { "User-Agent": this.config.userAgent } }));
-    if (!res) {
-      this.logger.error("Response is null");
+  async fetchAndSaveImage(feed) {
+    const existing = await this.repository.findFeedImageByFeedId(feed.id);
+    const result = await this.fetchImage(feed, existing);
+    if (result?.type === "ok" && result.image) {
+      await this.repository.upsertFeedImage(result.image);
+    }
+  }
+
+  /**
+   * @typedef {object} DownloadImageResult
+   * @property {"ok"|"not_modified"} type
+   * @property {import('../utils/entities').FeedImage} [image]
+   *
+   * @param {import('../utils/entities').Feed} feed
+   * @param {string} url
+   * @param {import('../utils/entities').FeedImage|null} existing
+   * @returns {Promise<DownloadImageResult|null>}
+   */
+  async _downloadImage(feed, url, existing) {
+    const logger = this.logger.child({ feedId: feed.id, url });
+
+    try {
+      /** @type {Record<string, string>} */
+      const headers = { "User-Agent": this.config.userAgent };
+      if (existing) {
+        if (existing.etag) headers["If-None-Match"] = existing.etag;
+        if (existing.lastModified) headers["If-Modified-Since"] = existing.lastModified;
+      }
+
+      const res = await this.queue.add(() => fetch(url, { headers }));
+      if (!res) {
+        logger.error("Response is null");
+        return null;
+      }
+      if (304 === res.status) {
+        logger.info("Image is not modified");
+        return { type: "not_modified" };
+      }
+      if (!res.ok) {
+        const { status, statusText } = res;
+        logger.error({ msg: "Failed to fetch image", status, statusText });
+        return null;
+      }
+      if (!res.body) {
+        logger.error("Response body is null");
+        return null;
+      }
+
+      const blob = await res.arrayBuffer();
+      const contentType = res.headers.get("content-type") || "application/octet-stream";
+      const etag = res.headers.get("etag") || null;
+      const lastModified = res.headers.get("last-modified") || null;
+      const image = new FeedImage({ feedId: feed.id, blob: Buffer.from(blob), contentType, etag, lastModified });
+      return { type: "ok", image };
+    } catch (err) {
+      logger.error(err);
+      logger.error("Failed to download image");
       return null;
     }
-    if (!res.ok) {
-      this.logger.error(`Failed to fetch image: ${res.status} ${res.statusText} - ${await res.text()}`);
-      return null;
-    }
-    if (!res.body) {
-      this.logger.error("Response body is null");
-      return null;
-    }
-    const contentType = res.headers.get("content-type") || "application/octet-stream";
-    const blob = await res.arrayBuffer();
-    return { blob: Buffer.from(blob), contentType };
   }
 
   /**
@@ -183,15 +222,21 @@ export class FeedService {
    * @returns {Promise<string|null>}
    */
   async _findFavicon(htmlUrl) {
-    const content = await fetch(htmlUrl, {
-      headers: { "User-Agent": this.config.userAgent },
-    }).then((res) => res.text());
-    const $ = cheerio.load(content);
-    const href =
-      $('link[rel="icon"]').attr("href") ||
-      $('link[rel="shortcut icon"]').attr("href") ||
-      $('link[rel="apple-touch-icon"]').attr("href");
-    if (href) return new URL(href, htmlUrl).toString();
-    return null;
+    try {
+      const content = await fetch(htmlUrl, {
+        headers: { "User-Agent": this.config.userAgent },
+      }).then((res) => res.text());
+      const $ = cheerio.load(content);
+      const href =
+        $('link[rel="icon"]').attr("href") ||
+        $('link[rel="shortcut icon"]').attr("href") ||
+        $('link[rel="apple-touch-icon"]').attr("href");
+      if (href) return new URL(href, htmlUrl).toString();
+      return null;
+    } catch (err) {
+      this.logger.error(err);
+      this.logger.error({ msg: "Failed to find favicon", htmlUrl });
+      return null;
+    }
   }
 }

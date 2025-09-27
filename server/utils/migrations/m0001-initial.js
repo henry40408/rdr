@@ -40,6 +40,9 @@ export function up(knex) {
       t.binary("blob").notNullable();
       t.string("content_type").notNullable();
 
+      t.string("etag");
+      t.string("last_modified");
+
       t.timestamps(true, true);
     });
 }
