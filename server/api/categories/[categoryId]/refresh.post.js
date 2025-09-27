@@ -1,23 +1,30 @@
 export default defineEventHandler(async (event) => {
-  const app = useNitroApp();
+  const { container } = useNitroApp();
+
+  /** @type {import("../../../utils/feed-service").FeedService} */
+  const feedService = container.resolve("feedService");
+  /** @type {import("../../../utils/opml-service").OpmlService} */
+  const opmlService = container.resolve("opmlService");
+  /** @type {import("../../../utils/repository").Repository} */
+  const repository = container.resolve("repository");
 
   const categoryId = getRouterParam(event, "categoryId");
   if (!categoryId) throw createError({ statusCode: 400, statusMessage: "categoryId is required" });
 
-  const category = app.opmlService.findCategoryById(categoryId);
+  const category = opmlService.findCategoryById(categoryId);
   if (!category) throw createError({ statusCode: 404, statusMessage: "Category not found" });
 
   const tasks = [];
   for (const feed of category.feeds) {
     const task = async () => {
-      const metadata = await app.repository.findFeedMetadataByFeedId(feed.id);
-      const items = await app.feedService.fetchEntries(feed, metadata);
+      const metadata = await repository.findFeedMetadataByFeedId(feed.id);
+      const items = await feedService.fetchEntries(feed, metadata);
       if ("ok" === items.type) {
-        await app.repository.upsertEntries(feed, items.items);
+        await repository.upsertEntries(feed, items.items);
         if (items.metadata) {
-          await app.repository.upsertFeedMetadata(items.metadata);
-          const image = await app.feedService.fetchImage(feed, items.metadata);
-          if (image) await app.repository.upsertFeedImage(image);
+          await repository.upsertFeedMetadata(items.metadata);
+          const image = await feedService.fetchImage(feed, items.metadata);
+          if (image) await repository.upsertFeedImage(image);
         }
       }
     };

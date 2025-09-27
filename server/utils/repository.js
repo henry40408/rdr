@@ -1,20 +1,17 @@
 import knex from "knex";
-import { MigrationSource } from "../utils/migrationSource";
-import { FeedMetadata } from "../utils/entities";
 
 export class Repository {
   /**
    * @param {object} opts
-   * @param {string} opts.cachePath
+   * @param {import('nuxt/schema').RuntimeConfig} opts.config
    * @param {import('pino').Logger} opts.logger
    */
-  constructor({ cachePath, logger }) {
-    this.cachePath = cachePath;
+  constructor({ config, logger }) {
     this.logger = logger.child({ context: "repository" });
 
     this.knex = knex({
       client: "sqlite3",
-      connection: { filename: cachePath },
+      connection: { filename: config.cachePath },
       migrations: { migrationSource: new MigrationSource() },
       useNullAsDefault: true,
     });
@@ -132,21 +129,3 @@ export class Repository {
     throw new Error("Item has no pubdate or date");
   }
 }
-
-export default defineNitroPlugin(
-  /** @param {import('nitropack/types').NitroApp} nitroApp */
-  async (nitroApp) => {
-    const config = useRuntimeConfig();
-    const cachePath = config.cachePath;
-
-    nitroApp.repository = new Repository({
-      cachePath,
-      logger: nitroApp.logger,
-    });
-    await nitroApp.repository.init();
-
-    nitroApp.hooks.hook("close", async () => {
-      await nitroApp.repository.dispose();
-    });
-  },
-);

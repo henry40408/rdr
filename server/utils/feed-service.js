@@ -2,20 +2,19 @@ import os from "node:os";
 import { Readable } from "node:stream";
 import FeedParser from "feedparser";
 import PQueue from "p-queue";
-import { MutexMap } from "../utils/mutex-map";
-import { FeedImage, FeedMetadata } from "../utils/entities";
 
 export class FeedService {
   /**
    * @param {object} opts
+   * @param {import('nuxt/schema').RuntimeConfig} opts.config
    * @param {import('pino').Logger} opts.logger
-   * @param {string} opts.userAgent
    */
-  constructor({ logger, userAgent }) {
+  constructor({ config, logger }) {
+    this.config = config;
     this.logger = logger.child({ context: "feed-service" });
+
     this.mutexMap = new MutexMap();
     this.queue = new PQueue({ concurrency: os.cpus().length });
-    this.userAgent = userAgent;
   }
 
   /**
@@ -38,7 +37,7 @@ export class FeedService {
       logger.debug({ msg: "Fetching feed", xmlUrl: feed.xmlUrl });
 
       /** @type {Record<string,string>} */
-      const headers = { "User-Agent": this.userAgent };
+      const headers = { "User-Agent": this.config.userAgent };
       if (metadata) {
         const { etag, lastModified } = metadata;
         if (etag) headers["If-None-Match"] = etag;
@@ -135,7 +134,7 @@ export class FeedService {
    * @returns {Promise<{blob:Buffer,contentType:string}|null>}
    */
   async _downloadImage(url) {
-    const res = await this.queue.add(() => fetch(url, { headers: { "User-Agent": this.userAgent } }));
+    const res = await this.queue.add(() => fetch(url, { headers: { "User-Agent": this.config.userAgent } }));
     if (!res) {
       this.logger.error("Response is null");
       return null;
@@ -153,11 +152,3 @@ export class FeedService {
     return { blob: Buffer.from(blob), contentType };
   }
 }
-
-export default defineNitroPlugin((nitroApp) => {
-  const config = useRuntimeConfig();
-
-  const logger = nitroApp.logger;
-  const userAgent = config.userAgent;
-  nitroApp.feedService = new FeedService({ logger, userAgent });
-});

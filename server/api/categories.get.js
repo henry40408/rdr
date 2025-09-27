@@ -1,4 +1,8 @@
 export default defineEventHandler(() => {
-  const app = useNitroApp();
-  return app.opmlService.categories;
+  const { container } = useNitroApp();
+
+  /** @type {import("../utils/opml-service").OpmlService} */
+  const opmlService = container.resolve("opmlService");
+
+  return opmlService.categories;
 });
