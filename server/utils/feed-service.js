@@ -1,5 +1,6 @@
 import os from "node:os";
 import { Readable } from "node:stream";
+import * as cheerio from "cheerio";
 import FeedParser from "feedparser";
 import PQueue from "p-queue";
 
@@ -109,27 +110,38 @@ export class FeedService {
    * @returns {Promise<FeedImage|null>}
    */
   async fetchImage(feed, metadata) {
-    const { meta } = await this.fetchEntries(feed, metadata);
-    if (meta?.image?.url) {
-      const image = await this._downloadImage(meta.image.url);
+    {
+      const { meta } = await this.fetchEntries(feed, metadata);
+      if (meta?.image?.url) {
+        const image = await this._downloadImage(meta.image.url);
+        if (image) {
+          const { blob, contentType } = image;
+          return new FeedImage({ feedId: feed.id, blob, contentType });
+        }
+      }
+    }
+    {
+      const url = new URL("/favicon.ico", feed.htmlUrl).toString();
+      const image = await this._downloadImage(url);
       if (image) {
         const { blob, contentType } = image;
         return new FeedImage({ feedId: feed.id, blob, contentType });
       }
     }
-
-    const url = new URL("/favicon.ico", feed.htmlUrl).toString();
-    const image = await this._downloadImage(url);
-    if (image) {
-      const { blob, contentType } = image;
-      return new FeedImage({ feedId: feed.id, blob, contentType });
+    {
+      const url = await this._findFavicon(feed.htmlUrl);
+      if (url) {
+        const image = await this._downloadImage(url);
+        if (image) {
+          const { blob, contentType } = image;
+          return new FeedImage({ feedId: feed.id, blob, contentType });
+        }
+      }
     }
-
     return null;
   }
 
   /**
-   *
    * @param {string} url
    * @returns {Promise<{blob:Buffer,contentType:string}|null>}
    */
@@ -150,5 +162,22 @@ export class FeedService {
     const contentType = res.headers.get("content-type") || "application/octet-stream";
     const blob = await res.arrayBuffer();
     return { blob: Buffer.from(blob), contentType };
+  }
+
+  /**
+   * @param {string} htmlUrl
+   * @returns {Promise<string|null>}
+   */
+  async _findFavicon(htmlUrl) {
+    const content = await fetch(htmlUrl, {
+      headers: { "User-Agent": this.config.userAgent },
+    }).then((res) => res.text());
+    const $ = cheerio.load(content);
+    const href =
+      $('link[rel="icon"]').attr("href") ||
+      $('link[rel="shortcut icon"]').attr("href") ||
+      $('link[rel="apple-touch-icon"]').attr("href");
+    if (href) return new URL(href, htmlUrl).toString();
+    return null;
   }
 }
