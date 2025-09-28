@@ -51,7 +51,6 @@ export class FeedService {
 
       const res = await this.queue.add(() =>
         got(feed.xmlUrl, {
-          dnsLookupIpVersion: 4,
           headers,
           responseType: "text",
           timeout: { response: this.config.httpTimeoutMs },
@@ -186,7 +185,6 @@ export class FeedService {
 
       const res = await this.queue.add(() =>
         got(url, {
-          dnsLookupIpVersion: 4,
           headers,
           responseType: "buffer",
           timeout: { response: this.config.httpTimeoutMs },
@@ -221,7 +219,6 @@ export class FeedService {
   async _findFavicon(htmlUrl) {
     try {
       const content = await got(htmlUrl, {
-        dnsLookupIpVersion: 4,
         headers: { "User-Agent": this.config.userAgent },
         responseType: "text",
         timeout: { response: this.config.httpTimeoutMs },
