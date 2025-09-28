@@ -43,7 +43,7 @@
 
 <script setup>
 const { data: categories, execute: refreshCategories } = await useFetch("/api/categories");
-const { data: imagePks, execute: refreshImages } = await useFetch("/api/feed-image-pks");
+const { data: imagePks, execute: refreshImages } = await useFetch("/api/feeds/image-pks");
 const { data: feedMetadata, execute: refreshFeedMetadata } = await useFetch("/api/feed-metadata-list");
 
 /**

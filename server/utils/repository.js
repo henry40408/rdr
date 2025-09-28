@@ -156,8 +156,8 @@ export class Repository {
    * @returns {Date}
    */
   itemDate(item) {
-    if (item.pubdate) return new Date(item.pubdate);
-    if (item.date) return new Date(item.date);
+    if (item.pubdate) return item.pubdate;
+    if (item.date) return item.date;
     throw new Error("Item has no pubdate or date");
   }
 }
