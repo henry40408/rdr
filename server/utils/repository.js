@@ -1,6 +1,6 @@
 import knex from "knex";
-import chunk from "lodash/chunk";
-import get from "lodash/get";
+import chunk from "lodash/chunk.js";
+import get from "lodash/get.js";
 
 export class Repository {
   /**
