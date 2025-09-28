@@ -25,6 +25,12 @@ export function up(knex) {
       t.timestamps(true, true);
 
       t.unique(["feed_id", "guid"]);
+
+      t.index("feed_id");
+      t.index("guid");
+      t.index("date");
+      t.index("read_at");
+      t.index("starred_at");
     })
     .createTable("feed_metadata", (t) => {
       t.string("feed_id").primary().notNullable();
@@ -35,6 +41,8 @@ export function up(knex) {
       t.string("last_modified");
 
       t.timestamps(true, true);
+
+      t.index("fetched_at");
     })
     .createTable("feed_image", (t) => {
       t.string("feed_id").primary().notNullable();

@@ -21,6 +21,7 @@
     "feedparser": "^2.2.10",
     "got": "^14.4.9",
     "knex": "^3.1.0",
+    "lodash": "^4.17.21",
     "nuxt": "^4.1.2",
     "p-queue": "^8.1.1",
     "pino": "^9.11.0",
@@ -30,6 +31,7 @@
   "devDependencies": {
     "@types/feedparser": "^2.2.8",
     "@types/knex": "^0.15.2",
+    "@types/lodash": "^4.17.20",
     "@types/node": "^24.5.2",
     "@types/xml2js": "^0.4.14",
     "prettier": "^3.6.2",

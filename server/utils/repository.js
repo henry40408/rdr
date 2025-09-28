@@ -1,4 +1,6 @@
 import knex from "knex";
+import chunk from "lodash/chunk";
+import get from "lodash/get";
 
 export class Repository {
   /**
@@ -95,21 +97,19 @@ export class Repository {
       return;
     }
 
-    this.logger.debug({ msg: "Upserting entries", feedId: feed.id, count: entries.length });
     const now = new Date();
-    await this.knex.transaction(async (tx) => {
-      await tx("feed_metadata")
-        .insert({ feed_id: feed.id, fetched_at: now.toISOString() })
-        .onConflict("feed_id")
-        .merge();
-      await tx("entries")
+    this.logger.debug({ msg: "Upserting entries", feedId: feed.id, count: entries.length });
+
+    const chunks = chunk(entries, 10);
+    for (const chunk of chunks) {
+      await this.knex("entries")
         .insert(
-          entries.map((e) => ({
+          chunk.map((e) => ({
             feed_id: feed.id,
             guid: e.guid,
             title: e.title || "(no title)",
             link: e.link,
-            date: this.itemDate(e),
+            date: this.itemDate(e).toISOString(),
             summary: e.summary || "(no summary)",
             description: e.description,
             author: e.author,
@@ -117,8 +117,15 @@ export class Repository {
         )
         .onConflict(["feed_id", "guid"])
         .merge();
-    });
+      this.logger.debug({ msg: "Upserted chunk of entries", feedId: feed.id, count: chunk.length });
+    }
     this.logger.info({ msg: "Upserted entries", feedId: feed.id, count: entries.length });
+
+    await this.knex("feed_metadata")
+      .insert({ feed_id: feed.id, fetched_at: now.toISOString() })
+      .onConflict("feed_id")
+      .merge();
+    this.logger.info({ msg: "Updated feed metadata", feedId: feed.id, fetchedAt: now });
   }
 
   /**
@@ -156,8 +163,24 @@ export class Repository {
    * @returns {Date}
    */
   itemDate(item) {
-    if (item.pubdate) return item.pubdate;
-    if (item.date) return item.date;
+    if (item.pubdate && !isNaN(item.pubdate.valueOf())) {
+      this.logger.debug({ msg: "Using pubdate", date: item.pubdate });
+      return item.pubdate;
+    }
+    if (item.date && !isNaN(item.date.valueOf())) {
+      this.logger.debug({ msg: "Using date", date: item.date });
+      return item.date;
+    }
+
+    /** @type {string} */
+    const raw = get(item, ["rss:pubdate", "#"], "");
+
+    const normalized = normalizeDatetime(raw);
+    if (normalized) {
+      this.logger.debug({ msg: "Using normalized date", date: normalized });
+      return normalized;
+    }
+
     throw new Error("Item has no pubdate or date");
   }
 }
