@@ -1,5 +1,5 @@
 <template>
-  <h1>rdr</h1>
+  <h1>Entries ({{ countData?.count || "..." }})</h1>
   <Nav />
   <div v-for="item in allItems" :key="item.entry.guid">
     <h4>
@@ -25,6 +25,8 @@ const allItems = ref([]);
 
 const offset = ref(0);
 const hasMore = ref(true);
+
+const { data: countData } = await useFetch("/api/count");
 
 /** @param {import('../server/api/entries.get').PartialEntryWithFeed[]} newItems */
 function appendItems(newItems) {

@@ -32,6 +32,14 @@ export class Repository {
   }
 
   /**
+   * @returns {Promise<number>}
+   */
+  async countEntries() {
+    const result = await this.knex("entries").count({ count: "*" }).first();
+    return result ? Number(result.count) : 0;
+  }
+
+  /**
    * @param {string} feedId
    * @returns {Promise<import('../utils/entities').FeedImage|null>}
    */
