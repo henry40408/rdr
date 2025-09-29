@@ -5,7 +5,7 @@
 </template>
 
 <script setup>
-const props = defineProps({
+defineProps({
   metadata: { type: [Object, null] },
 });
 </script>

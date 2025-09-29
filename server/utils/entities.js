@@ -63,3 +63,30 @@ export class FeedMetadata {
     this.lastModified = lastModified;
   }
 }
+
+export class PartialEntry {
+  /**
+   * @param {object} opts
+   * @param {string} opts.feedId
+   * @param {string} opts.guid
+   * @param {string} opts.title
+   * @param {string} opts.link
+   * @param {string} opts.date
+   * @param {string|null} [opts.author]
+   * @param {string|null} [opts.readAt]
+   * @param {string|null} [opts.starredAt]
+   */
+  constructor({ feedId, guid, title, link, date, author = null, readAt = null, starredAt = null }) {
+    this.feedId = feedId;
+    this.guid = guid;
+
+    this.title = title;
+    this.link = link;
+    this.date = date;
+
+    this.author = author;
+
+    this.readAt = readAt;
+    this.starredAt = starredAt;
+  }
+}

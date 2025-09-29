@@ -1,6 +1,7 @@
 import knex from "knex";
 import chunk from "lodash/chunk.js";
 import get from "lodash/get.js";
+import { PartialEntry } from "../utils/entities";
 
 export class Repository {
   /**
@@ -48,6 +49,49 @@ export class Repository {
   }
 
   /**
+   *
+   * @param {string} feedId
+   * @returns {Promise<import('../utils/entities').FeedMetadata|null>}
+   */
+  async findFeedMetadataByFeedId(feedId) {
+    const row = await this.knex("feed_metadata").where({ feed_id: feedId }).first();
+    if (!row) return null;
+
+    return new FeedMetadata({
+      feedId: row.feed_id,
+      etag: row.etag || null,
+      lastModified: row.last_modified || null,
+    });
+  }
+
+  /**
+   * @param {object} opts
+   * @param {number} [opts.offset=0]
+   * @param {number} [opts.limit=100]
+   * @returns {Promise<import('../utils/entities').PartialEntry[]>}
+   */
+  async listEntries({ offset = 0, limit = 100 }) {
+    const rows = await this.knex("entries")
+      .select(["feed_id", "guid", "title", "link", "date", "author", "read_at", "starred_at"])
+      .orderBy("date", "desc")
+      .limit(limit)
+      .offset(offset);
+    return rows.map(
+      (row) =>
+        new PartialEntry({
+          feedId: row.feed_id,
+          guid: row.guid,
+          title: row.title,
+          link: row.link,
+          date: row.date,
+          author: row.author,
+          readAt: row.read_at,
+          starredAt: row.starred_at,
+        }),
+    );
+  }
+
+  /**
    * @returns {Promise<string[]>}
    */
   async listFeedImagePKs() {
@@ -72,35 +116,19 @@ export class Repository {
   }
 
   /**
-   *
-   * @param {string} feedId
-   * @returns {Promise<import('../utils/entities').FeedMetadata|null>}
-   */
-  async findFeedMetadataByFeedId(feedId) {
-    const row = await this.knex("feed_metadata").where({ feed_id: feedId }).first();
-    if (!row) return null;
-
-    return new FeedMetadata({
-      feedId: row.feed_id,
-      etag: row.etag || null,
-      lastModified: row.last_modified || null,
-    });
-  }
-
-  /**
    * @param {import('../utils/entities').Feed} feed
-   * @param {import('feedparser').Item[]} entries
+   * @param {import('feedparser').Item[]} items
    */
-  async upsertEntries(feed, entries) {
-    if (entries.length === 0) {
+  async upsertEntries(feed, items) {
+    if (items.length === 0) {
       this.logger.info({ msg: "No entries to upsert", feedId: feed.id });
       return;
     }
 
     const now = new Date();
-    this.logger.debug({ msg: "Upserting entries", feedId: feed.id, count: entries.length });
+    this.logger.debug({ msg: "Upserting entries", feedId: feed.id, count: items.length });
 
-    const chunks = chunk(entries, 10);
+    const chunks = chunk(items, 10);
     for (const chunk of chunks) {
       await this.knex("entries")
         .insert(
@@ -109,7 +137,7 @@ export class Repository {
             guid: e.guid,
             title: e.title || "(no title)",
             link: e.link,
-            date: this.itemDate(e).toISOString(),
+            date: this._itemDate(e).toISOString(),
             summary: e.summary || "(no summary)",
             description: e.description,
             author: e.author,
@@ -119,7 +147,7 @@ export class Repository {
         .merge();
       this.logger.debug({ msg: "Upserted chunk of entries", feedId: feed.id, count: chunk.length });
     }
-    this.logger.info({ msg: "Upserted entries", feedId: feed.id, count: entries.length });
+    this.logger.info({ msg: "Upserted entries", feedId: feed.id, count: items.length });
 
     await this.knex("feed_metadata")
       .insert({ feed_id: feed.id, fetched_at: now.toISOString() })
@@ -162,7 +190,7 @@ export class Repository {
    * @param {import('feedparser').Item} item
    * @returns {Date}
    */
-  itemDate(item) {
+  _itemDate(item) {
     if (item.pubdate && !isNaN(item.pubdate.valueOf())) {
       this.logger.debug({ msg: "Using pubdate", date: item.pubdate });
       return item.pubdate;
