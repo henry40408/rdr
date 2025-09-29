@@ -16,7 +16,6 @@
 
 <script setup>
 import { useScroll } from "@vueuse/core";
-import ky from "ky";
 
 const limit = 100;
 
@@ -45,8 +44,8 @@ if (items.value) appendItems(items.value);
 async function loadMore() {
   if (!hasMore.value) return;
 
-  const searchParams = { offset: offset.value, limit };
-  const data = await ky.get("/api/entries", { searchParams }).json();
+  const query = { offset: offset.value, limit };
+  const data = await $fetch("/api/entries", { query, responseType: "json" });
   if (data.length > 0) appendItems(data);
 }
 const { arrivedState } = useScroll(document, { throttle: 100 });
