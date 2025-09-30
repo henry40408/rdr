@@ -15,9 +15,9 @@
       />
       <small>
         <span title="Feed">{{ item.feed.title }}</span>
-        /
+        &#x1F4C2;
         <span title="Category">{{ item.feed.category.name }}</span>
-        /
+        &#x1F5D3;
         <ClientSideDateTime :datetime="item.entry.date" />
       </small>
     </div>
@@ -37,7 +37,7 @@ const allItems = ref([]);
 const offset = ref(0);
 const hasMore = ref(true);
 
-const { data: imagePks, execute: refreshImages } = await useFetch("/api/feeds/image-pks");
+const { data: imagePks } = await useFetch("/api/feeds/image-pks");
 
 /** @param {import('../server/api/entries.get').PartialEntryWithFeed[]} newItems */
 function appendItems(newItems) {
