@@ -1,6 +1,6 @@
 <template>
   <div v-if="metadata">
-    <small>Last fetched: {{ new Date(metadata.fetchedAt).toLocaleString() }}</small>
+    <small>Last fetched: <ClientSideDateTime :datetime="metadata.fetchedAt" /></small>
   </div>
 </template>
 

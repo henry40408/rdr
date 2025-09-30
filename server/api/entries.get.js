@@ -6,6 +6,9 @@ import { z } from "zod";
  * @property {object} feed
  * @property {string} feed.id
  * @property {string} feed.title
+ * @property {object} feed.category
+ * @property {string} feed.category.id
+ * @property {string} feed.category.name
  */
 
 const schema = z.object({
@@ -32,13 +35,18 @@ export default defineEventHandler(
     });
     return entries
       .map((entry) => {
+        const category = categories.find((c) => c.feeds.some((f) => f.id === entry.feedId));
         const feed = categories.flatMap((c) => c.feeds).find((f) => f.id === entry.feedId);
-        if (!feed) return null;
+        if (!category || !feed) return null;
         return {
           entry,
           feed: {
             id: feed.id,
             title: feed.title,
+            category: {
+              id: category.id,
+              name: category.name,
+            },
           },
         };
       })

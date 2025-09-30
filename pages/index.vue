@@ -1,13 +1,25 @@
 <template>
-  <h1>Entries ({{ countData?.count || "..." }})</h1>
+  <h1>Entries (<Count />)</h1>
   <Nav />
   <div v-for="item in allItems" :key="item.entry.guid">
     <h4>
       {{ item.entry.title }}
-      <NuxtLink :to="item.entry.link" target="_blank" rel="noopener noreferrer">&#x1F5D7;</NuxtLink>
+      <NuxtLink :to="item.entry.link" target="_blank" rel="noopener noreferrer">&#x2197;</NuxtLink>
     </h4>
     <div>
-      <small>{{ item.feed.title }}, <ClientSideDateTime :datetime="item.entry.date" /></small>
+      <img
+        v-if="imageExists(item.feed.id)"
+        :src="`/api/feeds/${item.feed.id}/image`"
+        alt="Feed Image"
+        class="feed-image"
+      />
+      <small>
+        <span title="Feed">{{ item.feed.title }}</span>
+        /
+        <span title="Category">{{ item.feed.category.name }}</span>
+        /
+        <ClientSideDateTime :datetime="item.entry.date" />
+      </small>
     </div>
   </div>
   <p v-if="hasMore">Loading more...</p>
@@ -25,13 +37,21 @@ const allItems = ref([]);
 const offset = ref(0);
 const hasMore = ref(true);
 
-const { data: countData } = await useFetch("/api/count");
+const { data: imagePks, execute: refreshImages } = await useFetch("/api/feeds/image-pks");
 
 /** @param {import('../server/api/entries.get').PartialEntryWithFeed[]} newItems */
 function appendItems(newItems) {
   allItems.value.push(...newItems);
   if (newItems.length < limit) hasMore.value = false;
   offset.value += newItems.length;
+}
+
+/**
+ * @param {string} feedId
+ * @returns {boolean}
+ */
+function imageExists(feedId) {
+  return (imagePks && imagePks.value?.includes(feedId)) || false;
 }
 
 // render the first page on the server side
@@ -53,3 +73,12 @@ watch(arrivedState, (v) => {
   if (v.bottom) loadMore();
 });
 </script>
+
+<style scoped>
+.feed-image {
+  width: 1rem;
+  height: 1rem;
+  vertical-align: middle;
+  margin-right: 0.25rem;
+}
+</style>
