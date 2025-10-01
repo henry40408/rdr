@@ -1,5 +1,4 @@
 import pino from "pino";
-import { isDevelopment } from "std-env";
 import { createContainer, asClass, asValue } from "awilix";
 import { OpmlService } from "../utils/opml-service";
 import { Repository } from "../utils/repository";
@@ -7,6 +6,7 @@ import { AwilixManager } from "awilix-manager";
 import { FeedService } from "../utils/feed-service";
 import { getLoggerOptions } from "../utils/logger-options";
 import { ImageService } from "../utils/image-service";
+import knex from "knex";
 
 export default defineNitroPlugin(
   /** @param {import('nitropack/types').NitroApp} nitroApp */
@@ -16,14 +16,27 @@ export default defineNitroPlugin(
     const logger = pino(getLoggerOptions(config));
     logger.debug("Dependency injection container initializing");
 
+    if (!globalThis.__knex__) {
+      globalThis.__knex__ = knex({
+        client: "sqlite3",
+        connection: { filename: config.cachePath },
+        migrations: { migrationSource: new MigrationSource() },
+        useNullAsDefault: true,
+      });
+      logger.debug("Created new Knex instance");
+    } else {
+      logger.debug("Reusing existing Knex instance");
+    }
+
     const diContainer = createContainer();
     diContainer.register({
       config: asValue(config),
       feedService: asClass(FeedService).singleton(),
       imageService: asClass(ImageService).singleton(),
+      knex: asValue(globalThis.__knex__),
       logger: asValue(logger),
       opmlService: asClass(OpmlService, { asyncInit: "init", asyncDispose: "dispose" }).singleton(),
-      repository: asClass(Repository, { asyncInit: "init", asyncDispose: "dispose" }).singleton(),
+      repository: asClass(Repository, { asyncInit: "init" }).singleton(),
     });
 
     const manager = new AwilixManager({
@@ -36,9 +49,10 @@ export default defineNitroPlugin(
 
     nitroApp.container = diContainer;
 
-    nitroApp.hooks.hook("close", async () => {
+    nitroApp.hooks.hookOnce("close", async () => {
       logger.debug("Dependency injection container disposing");
       await manager.executeDispose();
+      await globalThis.__knex__?.destroy();
       logger.info("Dependency injection container disposed");
     });
   },

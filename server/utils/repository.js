@@ -6,29 +6,17 @@ import { ImageEntity, PartialEntryEntity } from "../utils/entities";
 export class Repository {
   /**
    * @param {object} opts
-   * @param {import('nuxt/schema').RuntimeConfig} opts.config
+   * @param {import('knex').Knex} opts.knex
    * @param {import('pino').Logger} opts.logger
    */
-  constructor({ config, logger }) {
+  constructor({ knex, logger }) {
     this.logger = logger.child({ context: "repository" });
-
-    this.knex = knex({
-      client: "sqlite3",
-      connection: { filename: config.cachePath },
-      migrations: { migrationSource: new MigrationSource() },
-      useNullAsDefault: true,
-    });
-    this.logger.info("Database connected");
+    this.knex = knex;
   }
 
   async init() {
     await this.knex.migrate.latest();
     this.logger.info("Database migrated");
-  }
-
-  async dispose() {
-    this.knex.destroy();
-    this.logger.info("Database disconnected");
   }
 
   /**
