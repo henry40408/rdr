@@ -3,18 +3,20 @@ import { Readable } from "node:stream";
 import * as cheerio from "cheerio";
 import FeedParser from "feedparser";
 import PQueue from "p-queue";
-import { FeedImage } from "../utils/entities";
+import { ImageEntity } from "../utils/entities";
 import got from "got";
 
 export class FeedService {
   /**
    * @param {object} opts
    * @param {import('nuxt/schema').RuntimeConfig} opts.config
+   * @param {import('./image-service').ImageService} opts.imageService
    * @param {import('pino').Logger} opts.logger
    * @param {import('../utils/repository').Repository} opts.repository
    */
-  constructor({ config, logger, repository }) {
+  constructor({ config, imageService, logger, repository }) {
     this.config = config;
+    this.imageService = imageService;
     this.logger = logger.child({ context: "feed-service" });
     this.repository = repository;
 
@@ -36,8 +38,9 @@ export class FeedService {
   async fetchEntries(feed, metadata) {
     const logger = this.logger.child({ feedId: feed.id, xmlUrl: feed.xmlUrl });
 
-    const mutexKey = `feed-fetch-${feed.id}`;
+    const mutexKey = `feed-entries-fetch-${feed.id}`;
     const release = await this.mutexMap.acquire(mutexKey);
+
     try {
       logger.debug("Fetching feed");
 
@@ -108,25 +111,26 @@ export class FeedService {
 
   /**
    * @param {import('../utils/entities').Feed} feed
-   * @param {import('../utils/entities').FeedImage|null} existing
-   * @returns {Promise<DownloadImageResult|null>}
+   * @returns {Promise<ImageEntity|null>}
    */
-  async fetchImage(feed, existing) {
+  async fetchImage(feed) {
     const logger = this.logger.child({ feedId: feed.id });
+    const externalId = buildFeedImageExternalId(feed.id);
+
     const mutexKey = `feed-image-fetch-${feed.id}`;
     const release = await this.mutexMap.acquire(mutexKey);
     try {
       {
         logger.debug("Trying to fetch favicon from base URL");
         const url = new URL("/favicon.ico", feed.htmlUrl).toString();
-        const result = await this._downloadImage(feed, url, existing);
+        const result = await this.imageService.download(externalId, url);
         if (result) return result;
       }
       {
         logger.debug("Trying to find favicon from HTML");
         const url = await this._findFavicon(feed.htmlUrl);
         if (url) {
-          const result = await this._downloadImage(feed, url, existing);
+          const result = await this.imageService.download(externalId, url);
           if (result) return result;
         }
       }
@@ -148,67 +152,6 @@ export class FeedService {
     if (result.type === "ok") {
       await this.repository.upsertEntries(feed, result.items);
       if (result.metadata) await this.repository.upsertFeedMetadata(result.metadata);
-    }
-  }
-
-  /**
-   * @param {import('../utils/entities').Feed} feed
-   */
-  async fetchAndSaveImage(feed) {
-    const existing = await this.repository.findFeedImageByFeedId(feed.id);
-    const result = await this.fetchImage(feed, existing);
-    if (result?.type === "ok" && result.image) {
-      await this.repository.upsertFeedImage(result.image);
-    }
-  }
-
-  /**
-   * @typedef {object} DownloadImageResult
-   * @property {"ok"|"not_modified"} type
-   * @property {import('../utils/entities').FeedImage} [image]
-   *
-   * @param {import('../utils/entities').Feed} feed
-   * @param {string} url
-   * @param {import('../utils/entities').FeedImage|null} existing
-   * @returns {Promise<DownloadImageResult|null>}
-   */
-  async _downloadImage(feed, url, existing) {
-    const logger = this.logger.child({ feedId: feed.id, url });
-
-    try {
-      /** @type {Record<string, string>} */
-      const headers = { "User-Agent": this.config.userAgent };
-      if (existing) {
-        if (existing.etag) headers["If-None-Match"] = existing.etag;
-        if (existing.lastModified) headers["If-Modified-Since"] = existing.lastModified;
-      }
-
-      const res = await this.queue.add(() =>
-        got(url, {
-          headers,
-          responseType: "buffer",
-          timeout: { response: this.config.httpTimeoutMs },
-        }),
-      );
-      if (!res) {
-        logger.error("Response is null");
-        return null;
-      }
-      if (304 === res.statusCode) {
-        logger.info("Image is not modified");
-        return { type: "not_modified" };
-      }
-
-      const blob = res.body;
-      const contentType = res.headers["content-type"] || "application/octet-stream";
-      const etag = res.headers["etag"] || null;
-      const lastModified = res.headers["last-modified"] || null;
-      const image = new FeedImage({ feedId: feed.id, blob: Buffer.from(blob), contentType, etag, lastModified });
-      return { type: "ok", image };
-    } catch (err) {
-      logger.error(err);
-      logger.error("Failed to download image");
-      return null;
     }
   }
 

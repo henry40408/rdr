@@ -6,6 +6,7 @@ import { Repository } from "../utils/repository";
 import { AwilixManager } from "awilix-manager";
 import { FeedService } from "../utils/feed-service";
 import { getLoggerOptions } from "../utils/logger-options";
+import { ImageService } from "../utils/image-service";
 
 export default defineNitroPlugin(
   /** @param {import('nitropack/types').NitroApp} nitroApp */
@@ -19,6 +20,7 @@ export default defineNitroPlugin(
     diContainer.register({
       config: asValue(config),
       feedService: asClass(FeedService).singleton(),
+      imageService: asClass(ImageService).singleton(),
       logger: asValue(logger),
       opmlService: asClass(OpmlService, { asyncInit: "init", asyncDispose: "dispose" }).singleton(),
       repository: asClass(Repository, { asyncInit: "init", asyncDispose: "dispose" }).singleton(),

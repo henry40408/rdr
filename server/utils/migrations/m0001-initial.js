@@ -44,9 +44,10 @@ export function up(knex) {
 
       t.index("fetched_at");
     })
-    .createTable("feed_image", (t) => {
-      t.string("feed_id").primary().notNullable();
+    .createTable("image", (t) => {
+      t.string("external_id").primary().notNullable();
 
+      t.string("url").notNullable();
       t.binary("blob").notNullable();
       t.string("content_type").notNullable();
 
@@ -61,7 +62,7 @@ export function up(knex) {
  * @param {import('knex').Knex} knex
  */
 export function down(knex) {
-  return knex.schema.dropTable("feed_metadata").dropTable("entries");
+  return knex.schema.dropTable("image").dropTable("feed_metadata").dropTable("entries");
 }
 
 export default {

@@ -4,5 +4,5 @@ export default defineEventHandler(() => {
   /** @type {import("../../utils/repository").Repository} */
   const repository = container.resolve("repository");
 
-  return repository.listFeedImagePKs();
+  return repository.imagePks();
 });

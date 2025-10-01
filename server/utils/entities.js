@@ -28,26 +28,6 @@ export class Feed {
   }
 }
 
-export class FeedImage {
-  /**
-   * @param {object} opts
-   * @param {string} opts.feedId
-   * @param {Buffer} opts.blob
-   * @param {string} opts.contentType
-   * @param {string|null} [opts.etag]
-   * @param {string|null} [opts.lastModified]
-   */
-  constructor({ feedId, blob, contentType, etag = null, lastModified = null }) {
-    this.feedId = feedId;
-
-    this.blob = blob;
-    this.contentType = contentType;
-
-    this.etag = etag;
-    this.lastModified = lastModified;
-  }
-}
-
 export class FeedMetadata {
   /**
    * @param {object} opts
@@ -59,6 +39,28 @@ export class FeedMetadata {
   constructor({ feedId, fetchedAt = null, etag = null, lastModified = null }) {
     this.feedId = feedId;
     this.fetchedAt = fetchedAt;
+    this.etag = etag;
+    this.lastModified = lastModified;
+  }
+}
+
+export class ImageEntity {
+  /**
+   * @param {object} opts
+   * @param {string} opts.externalId
+   * @param {string} opts.url
+   * @param {Buffer} opts.blob
+   * @param {string} opts.contentType
+   * @param {string|null} [opts.etag]
+   * @param {string|null} [opts.lastModified]
+   */
+  constructor({ externalId, url, blob, contentType, etag = null, lastModified = null }) {
+    this.externalId = externalId;
+
+    this.url = url;
+    this.blob = blob;
+    this.contentType = contentType;
+
     this.etag = etag;
     this.lastModified = lastModified;
   }

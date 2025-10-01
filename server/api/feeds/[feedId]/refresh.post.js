@@ -12,8 +12,7 @@ export default defineEventHandler(async (event) => {
   const feed = opmlService.findFeedById(feedId);
   if (!feed) throw createError({ statusCode: 404, statusMessage: "Feed not found" });
 
-  await feedService.fetchAndSaveEntries(feed);
-  await feedService.fetchAndSaveImage(feed);
+  await Promise.all([feedService.fetchAndSaveEntries(feed), feedService.fetchImage(feed)]);
 
   return { status: "ok" };
 });

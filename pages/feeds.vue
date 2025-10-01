@@ -65,7 +65,8 @@ async function refreshAll() {
  * @returns {boolean}
  */
 function imageExists(feedId) {
-  return (imagePks && imagePks.value?.includes(feedId)) || false;
+  const externalId = buildFeedImageExternalId(feedId);
+  return (imagePks && imagePks.value?.includes(externalId)) || false;
 }
 </script>
 

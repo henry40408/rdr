@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
   const feedId = getRouterParam(event, "feedId");
   if (!feedId) throw createError({ statusCode: 400, statusMessage: "feedId is required" });
 
-  const image = await repository.findFeedImageByFeedId(feedId);
+  const image = await repository.findImageByExternalId(buildFeedImageExternalId(feedId));
   if (!image) throw createError({ statusCode: 404, statusMessage: "Feed image not found" });
 
   event.node.res.setHeader("Content-Type", image.contentType);

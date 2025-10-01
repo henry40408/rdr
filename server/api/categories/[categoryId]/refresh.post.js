@@ -17,8 +17,7 @@ export default defineEventHandler(async (event) => {
   const tasks = [];
   for (const feed of category.feeds) {
     const task = async () => {
-      await feedService.fetchAndSaveEntries(feed);
-      await feedService.fetchAndSaveImage(feed);
+      await Promise.all([feedService.fetchAndSaveEntries(feed), feedService.fetchImage(feed)]);
     };
     tasks.push(task());
   }

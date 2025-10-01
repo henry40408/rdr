@@ -51,7 +51,8 @@ function appendItems(newItems) {
  * @returns {boolean}
  */
 function imageExists(feedId) {
-  return (imagePks && imagePks.value?.includes(feedId)) || false;
+  const externalId = buildFeedImageExternalId(feedId);
+  return (imagePks && imagePks.value?.includes(externalId)) || false;
 }
 
 // render the first page on the server side

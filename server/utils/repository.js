@@ -1,7 +1,7 @@
 import knex from "knex";
 import chunk from "lodash/chunk.js";
 import get from "lodash/get.js";
-import { PartialEntry } from "../utils/entities";
+import { ImageEntity, PartialEntry } from "../utils/entities";
 
 export class Repository {
   /**
@@ -40,23 +40,6 @@ export class Repository {
   }
 
   /**
-   * @param {string} feedId
-   * @returns {Promise<import('../utils/entities').FeedImage|null>}
-   */
-  async findFeedImageByFeedId(feedId) {
-    const row = await this.knex("feed_image").where({ feed_id: feedId }).first();
-    if (!row) return null;
-
-    return new FeedImage({
-      feedId: row.feed_id,
-      blob: row.blob,
-      contentType: row.content_type,
-      etag: row.etag || null,
-      lastModified: row.last_modified || null,
-    });
-  }
-
-  /**
    *
    * @param {string} feedId
    * @returns {Promise<import('../utils/entities').FeedMetadata|null>}
@@ -67,6 +50,40 @@ export class Repository {
 
     return new FeedMetadata({
       feedId: row.feed_id,
+      etag: row.etag || null,
+      lastModified: row.last_modified || null,
+    });
+  }
+
+  /**
+   * @param {string} externalId
+   * @returns {Promise<ImageEntity|null>}
+   */
+  async findImageByExternalId(externalId) {
+    const row = await this.knex("image").where({ external_id: externalId }).first();
+    if (!row) return null;
+    return new ImageEntity({
+      externalId: row.external_id,
+      url: row.url,
+      blob: row.blob,
+      contentType: row.content_type,
+      etag: row.etag || null,
+      lastModified: row.last_modified || null,
+    });
+  }
+
+  /**
+   * @param {string} url
+   * @returns {Promise<ImageEntity|null>}
+   */
+  async findImageByUrl(url) {
+    const row = await this.knex("image").where({ url }).first();
+    if (!row) return null;
+    return new ImageEntity({
+      externalId: row.external_id,
+      url: row.url,
+      blob: row.blob,
+      contentType: row.content_type,
       etag: row.etag || null,
       lastModified: row.last_modified || null,
     });
@@ -102,9 +119,9 @@ export class Repository {
   /**
    * @returns {Promise<string[]>}
    */
-  async listFeedImagePKs() {
-    const rows = await this.knex("feed_image").select();
-    return rows.map((row) => row.feed_id);
+  async imagePks() {
+    const rows = await this.knex("image").select();
+    return rows.map((row) => row.external_id);
   }
 
   /**
@@ -165,21 +182,22 @@ export class Repository {
   }
 
   /**
-   * @param {import('../utils/entities').FeedImage} image
+   * @param {import('../utils/entities').ImageEntity} image
    */
-  async upsertFeedImage(image) {
-    this.logger.debug({ msg: "Upserting feed image", feedId: image.feedId });
-    await this.knex("feed_image")
+  async upsertImage(image) {
+    this.logger.debug({ msg: "Upserting image", externalId: image.externalId });
+    await this.knex("image")
       .insert({
-        feed_id: image.feedId,
+        external_id: image.externalId,
+        url: image.url,
         blob: image.blob,
         content_type: image.contentType,
         etag: image.etag,
         last_modified: image.lastModified,
       })
-      .onConflict("feed_id")
+      .onConflict("external_id")
       .merge();
-    this.logger.info({ msg: "Upserted feed image", feedId: image.feedId });
+    this.logger.info({ msg: "Upserted image", externalId: image.externalId });
   }
 
   /**
