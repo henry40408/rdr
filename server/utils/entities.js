@@ -1,5 +1,3 @@
-import { generateId } from "./helper";
-
 export class CategoryEntity {
   /**
    * @param {object} opts

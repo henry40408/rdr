@@ -1,5 +1,4 @@
 import got from "got";
-import { ImageEntity } from "./entities";
 
 export class ImageService {
   /**

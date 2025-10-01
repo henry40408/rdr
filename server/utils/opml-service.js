@@ -51,7 +51,7 @@ export class OpmlService {
 
   /**
    * @param {string} categoryId
-   * @returns {Category | undefined}
+   * @returns {CategoryEntity | undefined}
    */
   findCategoryById(categoryId) {
     return this.categories.find((c) => c.id === categoryId);
@@ -59,7 +59,7 @@ export class OpmlService {
 
   /**
    * @param {string} feedId
-   * @returns {Feed | undefined}
+   * @returns {FeedEntity | undefined}
    */
   findFeedById(feedId) {
     return this.categories.flatMap((c) => c.feeds).find((f) => f.id === feedId);
