@@ -1,11 +1,6 @@
 import pino from "pino";
 import { createContainer, asClass, asValue } from "awilix";
-import { OpmlService } from "../utils/opml-service";
-import { Repository } from "../utils/repository";
 import { AwilixManager } from "awilix-manager";
-import { FeedService } from "../utils/feed-service";
-import { getLoggerOptions } from "../utils/logger-options";
-import { ImageService } from "../utils/image-service";
 import knex from "knex";
 
 export default defineNitroPlugin(

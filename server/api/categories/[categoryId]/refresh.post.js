@@ -22,16 +22,7 @@ export default defineEventHandler(async (event) => {
     tasks.push(task());
   }
 
-  const results = await Promise.allSettled(tasks);
-  for (let i = 0; i < results.length; i++) {
-    const result = results[i];
-    if (result.status === "rejected") {
-      const feed = category.feeds[i];
-      const childLogger = logger.child({ feedId: feed.id });
-      childLogger.error(result.reason);
-      childLogger.error("One of the feed refresh tasks failed");
-    }
-  }
+  await Promise.allSettled(tasks);
 
   return { status: "ok" };
 });
