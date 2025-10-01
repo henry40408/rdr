@@ -11,7 +11,7 @@ export class OpmlService {
   constructor({ config, logger }) {
     this.config = config;
     this.logger = logger.child({ context: "opml-service" });
-    /** @type {import('../utils/entities').Category[]} */
+    /** @type {import('../utils/entities').CategoryEntity[]} */
     this.categories = [];
   }
 
@@ -22,11 +22,11 @@ export class OpmlService {
     const parsed = await xml2js.parseStringPromise(content);
     for (const outline of parsed.opml.body[0].outline) {
       const categoryName = outline.$.text;
-      const category = new Category({ name: categoryName });
+      const category = new CategoryEntity({ name: categoryName });
 
       if (outline.outline) {
         for (const feedOutline of outline.outline) {
-          const feed = new Feed({
+          const feed = new FeedEntity({
             title: feedOutline.$.title || feedOutline.$.text,
             xmlUrl: feedOutline.$.xmlUrl,
             htmlUrl: feedOutline.$.htmlUrl,

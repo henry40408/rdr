@@ -1,6 +1,6 @@
 import { generateId } from "./helper";
 
-export class Category {
+export class CategoryEntity {
   /**
    * @param {object} opts
    * @param {string} opts.name
@@ -8,12 +8,12 @@ export class Category {
   constructor({ name }) {
     this.id = generateId(name);
     this.name = name;
-    /** @type {Feed[]} */
+    /** @type {FeedEntity[]} */
     this.feeds = [];
   }
 }
 
-export class Feed {
+export class FeedEntity {
   /**
    * @param {object} opts
    * @param {string} opts.title
@@ -28,7 +28,7 @@ export class Feed {
   }
 }
 
-export class FeedMetadata {
+export class FeedMetadataEntity {
   /**
    * @param {object} opts
    * @param {string} opts.feedId
@@ -66,7 +66,7 @@ export class ImageEntity {
   }
 }
 
-export class PartialEntry {
+export class PartialEntryEntity {
   /**
    * @param {object} opts
    * @param {string} opts.feedId

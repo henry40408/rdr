@@ -1,7 +1,7 @@
 import knex from "knex";
 import chunk from "lodash/chunk.js";
 import get from "lodash/get.js";
-import { ImageEntity, PartialEntry } from "../utils/entities";
+import { ImageEntity, PartialEntryEntity } from "../utils/entities";
 
 export class Repository {
   /**
@@ -42,13 +42,13 @@ export class Repository {
   /**
    *
    * @param {string} feedId
-   * @returns {Promise<import('../utils/entities').FeedMetadata|null>}
+   * @returns {Promise<import('../utils/entities').FeedMetadataEntity|null>}
    */
   async findFeedMetadataByFeedId(feedId) {
     const row = await this.knex("feed_metadata").where({ feed_id: feedId }).first();
     if (!row) return null;
 
-    return new FeedMetadata({
+    return new FeedMetadataEntity({
       feedId: row.feed_id,
       etag: row.etag || null,
       lastModified: row.last_modified || null,
@@ -93,7 +93,7 @@ export class Repository {
    * @param {object} opts
    * @param {number} [opts.offset=0]
    * @param {number} [opts.limit=100]
-   * @returns {Promise<import('../utils/entities').PartialEntry[]>}
+   * @returns {Promise<import('../utils/entities').PartialEntryEntity[]>}
    */
   async listEntries({ offset = 0, limit = 100 }) {
     const rows = await this.knex("entries")
@@ -103,7 +103,7 @@ export class Repository {
       .offset(offset);
     return rows.map(
       (row) =>
-        new PartialEntry({
+        new PartialEntryEntity({
           feedId: row.feed_id,
           guid: row.guid,
           title: row.title,
@@ -125,13 +125,13 @@ export class Repository {
   }
 
   /**
-   * @returns {Promise<import('../utils/entities').FeedMetadata[]>}
+   * @returns {Promise<import('../utils/entities').FeedMetadataEntity[]>}
    */
   async listFeedMetadata() {
     const rows = await this.knex("feed_metadata").select();
     return rows.map(
       (row) =>
-        new FeedMetadata({
+        new FeedMetadataEntity({
           feedId: row.feed_id,
           fetchedAt: row.fetched_at || null,
           etag: row.etag || null,
@@ -141,7 +141,7 @@ export class Repository {
   }
 
   /**
-   * @param {import('../utils/entities').Feed} feed
+   * @param {import('../utils/entities').FeedEntity} feed
    * @param {import('feedparser').Item[]} items
    */
   async upsertEntries(feed, items) {
@@ -201,7 +201,7 @@ export class Repository {
   }
 
   /**
-   * @param {import('../utils/entities').FeedMetadata} metadata
+   * @param {import('../utils/entities').FeedMetadataEntity} metadata
    */
   async upsertFeedMetadata(metadata) {
     this.logger.debug({ msg: "Upserting feed metadata", metadata });

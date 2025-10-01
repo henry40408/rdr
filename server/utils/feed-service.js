@@ -31,8 +31,8 @@ export class FeedService {
    * @property {import('feedparser').Meta|null} [meta]
    * @property {FeedMetadata} [metadata]
    *
-   * @param {import('../utils/entities').Feed} feed
-   * @param {import('../utils/entities').FeedMetadata|null} metadata
+   * @param {import('../utils/entities').FeedEntity} feed
+   * @param {import('../utils/entities').FeedMetadataEntity|null} metadata
    * @returns {Promise<FetchEntriesResult>}
    */
   async fetchEntries(feed, metadata) {
@@ -99,7 +99,7 @@ export class FeedService {
 
       const etag = res.headers["etag"] || null;
       const lastModified = res.headers["last-modified"] || null;
-      const newMetadata = new FeedMetadata({ feedId: feed.id, etag, lastModified });
+      const newMetadata = new FeedMetadataEntity({ feedId: feed.id, etag, lastModified });
       return { type: "ok", items, meta, metadata: newMetadata };
     } catch (err) {
       logger.error(err);
@@ -110,7 +110,7 @@ export class FeedService {
   }
 
   /**
-   * @param {import('../utils/entities').Feed} feed
+   * @param {import('../utils/entities').FeedEntity} feed
    * @returns {Promise<ImageEntity|null>}
    */
   async fetchImage(feed) {
@@ -144,7 +144,7 @@ export class FeedService {
   }
 
   /**
-   * @param {import('../utils/entities').Feed} feed
+   * @param {import('../utils/entities').FeedEntity} feed
    */
   async fetchAndSaveEntries(feed) {
     const metadata = await this.repository.findFeedMetadataByFeedId(feed.id);
