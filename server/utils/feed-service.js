@@ -3,7 +3,6 @@ import { Readable } from "node:stream";
 import * as cheerio from "cheerio";
 import FeedParser from "feedparser";
 import PQueue from "p-queue";
-import { ImageEntity } from "../utils/entities";
 import got from "got";
 
 export class FeedService {
@@ -29,7 +28,7 @@ export class FeedService {
    * @property {'ok'|'not_modified'} type
    * @property {import('feedparser').Item[]} items
    * @property {import('feedparser').Meta|null} [meta]
-   * @property {FeedMetadata} [metadata]
+   * @property {FeedMetadataEntity} [metadata]
    *
    * @param {import('../utils/entities').FeedEntity} feed
    * @param {import('../utils/entities').FeedMetadataEntity|null} metadata

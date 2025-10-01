@@ -1,7 +1,5 @@
-import knex from "knex";
 import chunk from "lodash/chunk.js";
 import get from "lodash/get.js";
-import { ImageEntity, PartialEntryEntity } from "../utils/entities";
 
 export class Repository {
   /**
