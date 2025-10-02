@@ -1,6 +1,6 @@
 <template>
   <header>
-    <h1>Entries (<Count />)</h1>
+    <h1>Entries ({{ countData ? countData.count : "..." }})</h1>
     <Nav />
   </header>
   <main>
@@ -41,6 +41,7 @@ const allItems = ref([]);
 const offset = ref(0);
 const hasMore = ref(true);
 
+const { data: countData } = await useFetch("/api/count");
 const { data: imagePks } = await useFetch("/api/feeds/image-pks");
 
 /** @param {import('../server/api/entries.get').PartialEntryWithFeed[]} newItems */
