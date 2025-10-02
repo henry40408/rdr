@@ -1,29 +1,33 @@
 <template>
-  <h1>Entries (<Count />)</h1>
-  <Nav />
-  <div v-for="item in allItems" :key="item.entry.guid">
-    <h4>
-      {{ item.entry.title }}
-      <NuxtLink :to="item.entry.link" target="_blank" rel="noopener noreferrer">&#x2197;</NuxtLink>
-    </h4>
-    <div>
-      <img
-        v-if="imageExists(item.feed.id)"
-        :src="`/api/feeds/${item.feed.id}/image`"
-        alt="Feed Image"
-        class="feed-image"
-      />
-      <small>
-        <span title="Feed">{{ item.feed.title }}</span>
-        &#x1F4C2;
-        <span title="Category">{{ item.feed.category.name }}</span>
-        &#x1F5D3;
-        <ClientSideDateTime :datetime="item.entry.date" />
-      </small>
+  <header>
+    <h1>Entries (<Count />)</h1>
+    <Nav />
+  </header>
+  <main>
+    <div v-for="item in allItems" :key="item.entry.guid">
+      <h4>
+        {{ item.entry.title }}
+        <NuxtLink :to="item.entry.link" target="_blank" rel="noopener noreferrer">&#x2197;</NuxtLink>
+      </h4>
+      <div>
+        <img
+          v-if="imageExists(item.feed.id)"
+          :src="`/api/feeds/${item.feed.id}/image`"
+          alt="Feed Image"
+          class="feed-image"
+        />
+        <small>
+          <span title="Feed">{{ item.feed.title }}</span>
+          &#x1F4C2;
+          <span title="Category">{{ item.feed.category.name }}</span>
+          &#x1F5D3;
+          <ClientSideDateTime :datetime="item.entry.date" />
+        </small>
+      </div>
     </div>
-  </div>
-  <p v-if="hasMore">Loading more...</p>
-  <p v-else>No more items.</p>
+    <p v-if="hasMore">Loading more...</p>
+    <p v-else>No more items.</p>
+  </main>
 </template>
 
 <script setup>

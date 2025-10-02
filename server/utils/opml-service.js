@@ -64,4 +64,33 @@ export class OpmlService {
   findFeedById(feedId) {
     return this.categories.flatMap((c) => c.feeds).find((f) => f.id === feedId);
   }
+
+  /**
+   * @returns {string} OPML XML string
+   */
+  exportOpml() {
+    const now = new Date();
+    const builder = new xml2js.Builder({ headless: true, rootName: "opml" });
+    const opmlObj = {
+      $: { version: "2.0" },
+      head: [{ title: `Exported OPML (${now.toISOString()})` }],
+      body: [
+        {
+          outline: this.categories.map((category) => ({
+            $: { text: category.name },
+            outline: category.feeds.map((feed) => ({
+              $: {
+                text: feed.title,
+                title: feed.title,
+                type: "rss",
+                xmlUrl: feed.xmlUrl,
+                htmlUrl: feed.htmlUrl || "",
+              },
+            })),
+          })),
+        },
+      ],
+    };
+    return builder.buildObject(opmlObj);
+  }
 }

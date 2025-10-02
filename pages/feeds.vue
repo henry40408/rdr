@@ -1,44 +1,48 @@
 <template>
-  <h1>Categories &amp; feeds</h1>
-  <Nav />
-  <template v-for="category in categories" :key="category.id">
-    <h2>{{ category.name }}</h2>
-    <div>
-      <RefreshCategory :categoryId="category.id" @refreshed="refreshAll()" />
-    </div>
-    <table>
-      <thead>
-        <tr>
-          <th>Feed</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="feed in category.feeds" :key="feed.id">
-          <td>
-            <div>
-              <img
-                v-if="imageExists(feed.id)"
-                :src="`/api/feeds/${feed.id}/image`"
-                alt="Feed Image"
-                class="feed-image"
-              />
-              <a :href="feed.htmlUrl" target="_blank" rel="noopener noreferrer">{{ feed.title }}</a>
-            </div>
-            <div>
+  <header>
+    <h1>Categories &amp; feeds</h1>
+    <Nav />
+  </header>
+  <main>
+    <template v-for="category in categories" :key="category.id">
+      <h2>{{ category.name }} ({{ category.feeds.length }})</h2>
+      <div>
+        <RefreshCategory :categoryId="category.id" @refreshed="refreshAll()" />
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Feed</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="feed in category.feeds" :key="feed.id">
+            <td>
               <div>
-                <small>{{ feed.xmlUrl }}</small>
+                <img
+                  v-if="imageExists(feed.id)"
+                  :src="`/api/feeds/${feed.id}/image`"
+                  alt="Feed Image"
+                  class="feed-image"
+                />
+                <a :href="feed.htmlUrl" target="_blank" rel="noopener noreferrer">{{ feed.title }}</a>
               </div>
-              <FeedMetadata :metadata="findMetadataByFeed(feed)" />
-            </div>
-          </td>
-          <td>
-            <RefreshFeed :feedId="feed.id" @refreshed="refreshAll()" />
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </template>
+              <div>
+                <div>
+                  <small>{{ feed.xmlUrl }}</small>
+                </div>
+                <FeedMetadata :metadata="findMetadataByFeed(feed)" />
+              </div>
+            </td>
+            <td>
+              <RefreshFeed :feedId="feed.id" @refreshed="refreshAll()" />
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </template>
+  </main>
 </template>
 
 <script setup>
