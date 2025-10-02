@@ -11,7 +11,7 @@ export class OpmlService {
   constructor({ config, logger }) {
     this.config = config;
     this.logger = logger.child({ context: "opml-service" });
-    /** @type {import('../utils/entities').CategoryEntity[]} */
+    /** @type {CategoryEntity[]} */
     this.categories = [];
   }
 

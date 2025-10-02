@@ -9,9 +9,9 @@ export class FeedService {
   /**
    * @param {object} opts
    * @param {import('nuxt/schema').RuntimeConfig} opts.config
-   * @param {import('./image-service').ImageService} opts.imageService
+   * @param {ImageService} opts.imageService
    * @param {import('pino').Logger} opts.logger
-   * @param {import('../utils/repository').Repository} opts.repository
+   * @param {Repository} opts.repository
    */
   constructor({ config, imageService, logger, repository }) {
     this.config = config;
@@ -30,8 +30,8 @@ export class FeedService {
    * @property {import('feedparser').Meta|null} [meta]
    * @property {FeedMetadataEntity} [metadata]
    *
-   * @param {import('../utils/entities').FeedEntity} feed
-   * @param {import('../utils/entities').FeedMetadataEntity|null} metadata
+   * @param {FeedEntity} feed
+   * @param {FeedMetadataEntity|null} metadata
    * @returns {Promise<FetchEntriesResult>}
    */
   async fetchEntries(feed, metadata) {
@@ -109,7 +109,7 @@ export class FeedService {
   }
 
   /**
-   * @param {import('../utils/entities').FeedEntity} feed
+   * @param {FeedEntity} feed
    * @returns {Promise<ImageEntity|null>}
    */
   async fetchImage(feed) {
@@ -143,7 +143,7 @@ export class FeedService {
   }
 
   /**
-   * @param {import('../utils/entities').FeedEntity} feed
+   * @param {FeedEntity} feed
    */
   async fetchAndSaveEntries(feed) {
     const metadata = await this.repository.findFeedMetadataByFeedId(feed.id);

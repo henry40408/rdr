@@ -127,7 +127,7 @@ export class Repository {
   }
 
   /**
-   * @param {import('../utils/entities').FeedEntity} feed
+   * @param {FeedEntity} feed
    * @param {import('feedparser').Item[]} items
    */
   async upsertEntries(feed, items) {
@@ -168,7 +168,7 @@ export class Repository {
   }
 
   /**
-   * @param {import('../utils/entities').ImageEntity} image
+   * @param {ImageEntity} image
    */
   async upsertImage(image) {
     this.logger.debug({ msg: "Upserting image", externalId: image.externalId });
@@ -187,7 +187,7 @@ export class Repository {
   }
 
   /**
-   * @param {import('../utils/entities').FeedMetadataEntity} metadata
+   * @param {FeedMetadataEntity} metadata
    */
   async upsertFeedMetadata(metadata) {
     this.logger.debug({ msg: "Upserting feed metadata", metadata });

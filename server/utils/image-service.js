@@ -4,7 +4,7 @@ export class ImageService {
   /**
    * @param {object} opts
    * @param {import('pino').BaseLogger} opts.logger
-   * @param {import('./repository').Repository} opts.repository
+   * @param {Repository} opts.repository
    */
   constructor({ logger, repository }) {
     this.logger = logger;

@@ -2,7 +2,7 @@ import { z } from "zod";
 
 /**
  * @typedef PartialEntryWithFeed
- * @property {import("../utils/entities").PartialEntryEntity} entry
+ * @property {PartialEntryEntity} entry
  * @property {object} feed
  * @property {string} feed.id
  * @property {string} feed.title
@@ -23,9 +23,9 @@ export default defineEventHandler(
 
     const query = await getValidatedQuery(event, (query) => schema.parse(query));
 
-    /** @type {import("../utils/opml-service").OpmlService} */
+    /** @type {OpmlService} */
     const opmlService = container.resolve("opmlService");
-    /** @type {import("../utils/repository").Repository} */
+    /** @type {Repository} */
     const repository = container.resolve("repository");
 
     const categories = opmlService.categories;

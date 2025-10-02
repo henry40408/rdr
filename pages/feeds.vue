@@ -47,8 +47,8 @@ const { data: imagePks, execute: refreshImages } = await useFetch("/api/feeds/im
 const { data: feedMetadata, execute: refreshFeedMetadata } = await useFetch("/api/feed-metadata-list");
 
 /**
- * @param {import('../server/utils/entities').FeedEntity} feed
- * @returns {import('../server/utils/entities').FeedMetadataEntity|null}
+ * @param {FeedEntity} feed
+ * @returns {FeedMetadataEntity|null}
  */
 function findMetadataByFeed(feed) {
   return feedMetadata.value?.find((m) => m.feedId === feed.id) || null;

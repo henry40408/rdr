@@ -3,9 +3,9 @@ export default defineEventHandler(async (event) => {
 
   /** @type {import('pino').Logger} */
   const logger = container.resolve("logger");
-  /** @type {import("../../../utils/feed-service").FeedService} */
+  /** @type {FeedService} */
   const feedService = container.resolve("feedService");
-  /** @type {import("../../../utils/opml-service").OpmlService} */
+  /** @type {OpmlService} */
   const opmlService = container.resolve("opmlService");
 
   const categoryId = getRouterParam(event, "categoryId");

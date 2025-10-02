@@ -1,7 +1,7 @@
 export default defineEventHandler(() => {
   const { container } = useNitroApp();
 
-  /** @type {import("../../utils/repository").Repository} */
+  /** @type {Repository} */
   const repository = container.resolve("repository");
 
   return repository.imagePks();

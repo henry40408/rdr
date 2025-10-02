@@ -1,9 +1,9 @@
 export default defineEventHandler(async (event) => {
   const { container } = useNitroApp();
 
-  /** @type {import("../../../utils/feed-service").FeedService} */
+  /** @type {FeedService} */
   const feedService = container.resolve("feedService");
-  /** @type {import("../../../utils/opml-service").OpmlService} */
+  /** @type {OpmlService} */
   const opmlService = container.resolve("opmlService");
 
   const feedId = getRouterParam(event, "feedId");
