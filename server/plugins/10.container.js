@@ -28,6 +28,7 @@ export default defineNitroPlugin(
       config: asValue(config),
       feedService: asClass(FeedService).singleton(),
       imageService: asClass(ImageService).singleton(),
+      jobService: asClass(JobService, { asyncInit: "init", asyncDispose: "dispose" }).singleton(),
       knex: asValue(globalThis.__knex__),
       logger: asValue(logger),
       opmlService: asClass(OpmlService, { asyncInit: "init", asyncDispose: "dispose" }).singleton(),

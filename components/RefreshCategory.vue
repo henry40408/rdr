@@ -1,6 +1,6 @@
 <template>
   <button :disabled="'pending' === status" @click="execute()">
-    {{ "pending" === status ? "Refreshing..." : "Refresh" }}
+    {{ "pending" === status ? "Refreshing..." : "Refresh category" }}
   </button>
   <span v-if="error">{{ error }}</span>
 </template>

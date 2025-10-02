@@ -4,10 +4,14 @@
     <Nav />
   </header>
   <main>
+    <div>
+      <h3>Actions</h3>
+      <RefreshAll @refreshed="afterRefresh()" />
+    </div>
     <template v-for="category in categories" :key="category.id">
       <h2>{{ category.name }} ({{ category.feeds.length }})</h2>
       <div>
-        <RefreshCategory :categoryId="category.id" @refreshed="refreshAll()" />
+        <RefreshCategory :categoryId="category.id" @refreshed="afterRefresh()" />
       </div>
       <table>
         <thead>
@@ -36,7 +40,7 @@
               </div>
             </td>
             <td>
-              <RefreshFeed :feedId="feed.id" @refreshed="refreshAll()" />
+              <RefreshFeed :feedId="feed.id" @refreshed="afterRefresh()" />
             </td>
           </tr>
         </tbody>
@@ -58,10 +62,9 @@ function findMetadataByFeed(feed) {
   return feedMetadata.value?.find((m) => m.feedId === feed.id) || null;
 }
 
-async function refreshAll() {
+async function afterRefresh() {
   await refreshCategories();
-  await refreshImages();
-  await refreshFeedMetadata();
+  await Promise.all([refreshImages(), refreshFeedMetadata()]);
 }
 
 /**

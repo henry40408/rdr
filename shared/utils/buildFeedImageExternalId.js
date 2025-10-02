@@ -3,5 +3,5 @@
  * @returns {string}
  */
 export default function buildFeedImageExternalId(feedId) {
-  return `feed-favicon-${feedId}`;
+  return `feed-favicon:${feedId}`;
 }
