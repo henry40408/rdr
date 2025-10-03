@@ -6,12 +6,16 @@
   <main>
     <div>
       <h3>Actions</h3>
-      <RefreshAll @refreshed="afterRefresh()" />
+      <button @click="refreshAll" :disabled="refreshingCategoryIds.size > 0">
+        {{ refreshingCategoryIds.size > 0 ? "Refreshing..." : "Refresh all" }}
+      </button>
     </div>
     <template v-for="category in categories" :key="category.id">
       <h2>{{ category.name }} ({{ category.feeds.length }})</h2>
       <div>
-        <RefreshCategory :categoryId="category.id" @refreshed="afterRefresh()" @refreshing="refreshFetchingFeedIds()" />
+        <button @click="refreshCategory(category)" :disabled="refreshingCategoryIds.has(category.id)">
+          {{ refreshingCategoryIds.has(category.id) ? "Refreshing..." : "Refresh category" }}
+        </button>
       </div>
       <table>
         <thead>
@@ -40,12 +44,9 @@
               </div>
             </td>
             <td>
-              <RefreshFeed
-                :disabled="isFeedFetching(feed.id)"
-                :feedId="feed.id"
-                @refreshed="afterRefresh()"
-                @refreshing="refreshFetchingFeedIds()"
-              />
+              <button @click="refreshFeed(feed)" :disabled="refreshingFeedIds.has(feed.id)">
+                {{ refreshingFeedIds.has(feed.id) ? "Refreshing..." : "Refresh feed" }}
+              </button>
             </td>
           </tr>
         </tbody>
@@ -58,10 +59,60 @@
 const { data: categories, execute: refreshCategories } = await useFetch("/api/categories");
 const { data: imagePks, execute: refreshImages } = await useFetch("/api/feeds/image-pks");
 const { data: feedMetadata, execute: refreshFeedMetadata } = await useFetch("/api/feed-metadata-list");
-const { data: fetchingFeedIds, execute: refreshFetchingFeedIds } = await useFetch("/api/fetching-feed-ids");
+
+/** @type {Ref<Set<string>>} */
+const refreshingCategoryIds = ref(new Set());
+/** @type {Ref<Set<string>>} */
+const refreshingFeedIds = ref(new Set());
+
+async function refreshAll() {
+  if (!categories.value) return;
+
+  const tasks = [];
+  for (const category of categories.value) tasks.push(refreshCategory(category));
+  await Promise.allSettled(tasks);
+}
+
+/**
+ * @param {CategoryEntity} category
+ */
+async function refreshCategory(category) {
+  const feedIds = category.feeds.map((feed) => feed.id);
+
+  refreshingCategoryIds.value.add(category.id);
+  for (const feedId of feedIds) refreshingFeedIds.value.add(feedId);
+
+  try {
+    const tasks = [];
+    for (const feedId of feedIds) tasks.push($fetch(`/api/feeds/${feedId}/refresh`, { method: "POST" }));
+    await Promise.allSettled(tasks);
+    await afterRefresh();
+  } catch (err) {
+    console.error("Error refreshing category:", err);
+  } finally {
+    for (const feedId of feedIds) refreshingFeedIds.value.delete(feedId);
+    refreshingCategoryIds.value.delete(category.id);
+  }
+}
+
+/**
+ * @param {FeedEntity} feed
+ */
+async function refreshFeed(feed) {
+  if (refreshingFeedIds.value.has(feed.id)) return;
+  refreshingFeedIds.value.add(feed.id);
+  try {
+    await $fetch(`/api/feeds/${feed.id}/refresh`, { method: "POST" });
+    await afterRefresh();
+  } catch (err) {
+    console.error("Error refreshing feed:", err);
+  } finally {
+    refreshingFeedIds.value.delete(feed.id);
+  }
+}
 
 async function afterRefresh() {
-  await Promise.all([refreshCategories(), refreshFeedMetadata(), refreshImages(), refreshFetchingFeedIds()]);
+  await Promise.all([refreshCategories(), refreshFeedMetadata(), refreshImages()]);
 }
 
 /**
@@ -79,14 +130,6 @@ function findMetadataByFeed(feed) {
 function imageExists(feedId) {
   const externalId = buildFeedImageExternalId(feedId);
   return (imagePks && imagePks.value?.includes(externalId)) || false;
-}
-
-/**
- * @param {string} feedId
- * @returns {boolean}
- */
-function isFeedFetching(feedId) {
-  return fetchingFeedIds.value?.includes(feedId) || false;
 }
 </script>
 
