@@ -1,5 +1,5 @@
 <template>
-  <button :disabled="'pending' === status" @click="execute()">
+  <button :disabled="disabled || 'pending' === status" @click="execute()">
     {{ "pending" === status ? "Refreshing..." : "Refresh feed" }}
   </button>
   <span v-if="error">{{ error }}</span>
@@ -7,10 +7,11 @@
 
 <script setup>
 const props = defineProps({
+  disabled: { type: Boolean, default: false },
   feedId: { type: String, required: true },
 });
 
-const events = defineEmits(["refreshed"]);
+const events = defineEmits(["refreshed", "refreshing"]);
 
 const { error, execute, status } = useFetch(`/api/feeds/${props.feedId}/refresh`, {
   method: "POST",
@@ -18,6 +19,7 @@ const { error, execute, status } = useFetch(`/api/feeds/${props.feedId}/refresh`
 });
 
 watch(status, (newStatus) => {
+  if (newStatus === "pending") events("refreshing");
   if (newStatus === "success") events("refreshed");
 });
 </script>

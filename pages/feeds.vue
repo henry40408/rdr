@@ -11,7 +11,7 @@
     <template v-for="category in categories" :key="category.id">
       <h2>{{ category.name }} ({{ category.feeds.length }})</h2>
       <div>
-        <RefreshCategory :categoryId="category.id" @refreshed="afterRefresh()" />
+        <RefreshCategory :categoryId="category.id" @refreshed="afterRefresh()" @refreshing="refreshFetchingFeedIds()" />
       </div>
       <table>
         <thead>
@@ -40,7 +40,12 @@
               </div>
             </td>
             <td>
-              <RefreshFeed :feedId="feed.id" @refreshed="afterRefresh()" />
+              <RefreshFeed
+                :disabled="isFeedFetching(feed.id)"
+                :feedId="feed.id"
+                @refreshed="afterRefresh()"
+                @refreshing="refreshFetchingFeedIds()"
+              />
             </td>
           </tr>
         </tbody>
@@ -53,18 +58,18 @@
 const { data: categories, execute: refreshCategories } = await useFetch("/api/categories");
 const { data: imagePks, execute: refreshImages } = await useFetch("/api/feeds/image-pks");
 const { data: feedMetadata, execute: refreshFeedMetadata } = await useFetch("/api/feed-metadata-list");
+const { data: fetchingFeedIds, execute: refreshFetchingFeedIds } = await useFetch("/api/fetching-feed-ids");
+
+async function afterRefresh() {
+  await Promise.all([refreshCategories(), refreshFeedMetadata(), refreshImages(), refreshFetchingFeedIds()]);
+}
 
 /**
  * @param {FeedEntity} feed
- * @returns {FeedMetadataEntity|null}
+ * @returns {FeedMetadataEntity|undefined}
  */
 function findMetadataByFeed(feed) {
-  return feedMetadata.value?.find((m) => m.feedId === feed.id) || null;
-}
-
-async function afterRefresh() {
-  await refreshCategories();
-  await Promise.all([refreshImages(), refreshFeedMetadata()]);
+  return feedMetadata.value?.find((m) => m.feedId === feed.id);
 }
 
 /**
@@ -74,6 +79,14 @@ async function afterRefresh() {
 function imageExists(feedId) {
   const externalId = buildFeedImageExternalId(feedId);
   return (imagePks && imagePks.value?.includes(externalId)) || false;
+}
+
+/**
+ * @param {string} feedId
+ * @returns {boolean}
+ */
+function isFeedFetching(feedId) {
+  return fetchingFeedIds.value?.includes(feedId) || false;
 }
 </script>
 

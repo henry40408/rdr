@@ -37,8 +37,7 @@ export class FeedService {
   async fetchEntries(feed, metadata) {
     const logger = this.logger.child({ feedId: feed.id, xmlUrl: feed.xmlUrl });
 
-    const mutexKey = `feed-entries-fetch-${feed.id}`;
-    const release = await this.mutexMap.acquire(mutexKey);
+    const release = await this.mutexMap.acquire(feed.id);
 
     try {
       logger.debug("Fetching feed");
@@ -116,8 +115,7 @@ export class FeedService {
     const logger = this.logger.child({ feedId: feed.id });
     const externalId = buildFeedImageExternalId(feed.id);
 
-    const mutexKey = `feed-image-fetch-${feed.id}`;
-    const release = await this.mutexMap.acquire(mutexKey);
+    const release = await this.mutexMap.acquire(feed.id);
     try {
       {
         logger.debug("Trying to fetch favicon from base URL");
@@ -152,6 +150,11 @@ export class FeedService {
       await this.repository.upsertEntries(feed, result.items);
       if (result.metadata) await this.repository.upsertFeedMetadata(result.metadata);
     }
+  }
+
+  /** @returns {string[]} */
+  fetchingFeedIds() {
+    return this.mutexMap.lockedKeys();
   }
 
   /**

@@ -18,4 +18,13 @@ export class MutexMap {
 
     return await mutex.acquire();
   }
+
+  /** @returns {string[]} */
+  lockedKeys() {
+    const keys = [];
+    for (const [key, mutex] of this.map.entries()) {
+      if (mutex.isLocked()) keys.push(key);
+    }
+    return keys;
+  }
 }

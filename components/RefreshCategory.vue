@@ -10,7 +10,7 @@ const props = defineProps({
   categoryId: { type: String, required: true },
 });
 
-const events = defineEmits(["refreshed"]);
+const events = defineEmits(["refreshed", "refreshing"]);
 
 const { error, execute, status } = useFetch(`/api/categories/${props.categoryId}/refresh`, {
   method: "POST",
@@ -18,6 +18,7 @@ const { error, execute, status } = useFetch(`/api/categories/${props.categoryId}
 });
 
 watch(status, (newStatus) => {
+  if (newStatus === "pending") events("refreshing");
   if (newStatus === "success") events("refreshed");
 });
 </script>
