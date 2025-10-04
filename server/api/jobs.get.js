@@ -4,7 +4,7 @@ export default defineEventHandler(async (event) => {
   /** @type {JobService} */
   const jobService = container.resolve("jobService");
 
-  return Array.from(jobService.jobs.entries()).map(([, job]) => ({
+  return jobService.jobs.map((job) => ({
     name: job.name,
     description: job.description,
     lastDate: job.inner.lastDate(),

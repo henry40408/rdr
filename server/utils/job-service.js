@@ -5,19 +5,24 @@ export const FETCH_ENTRIES_JOB = "job:fetch-entries";
 export class JobWithMetadata {
   /**
    * @param {object} opts
-   * @param {string} opts.name
-   * @param {string} opts.description
    * @param {string} opts.cronTime
    * @param {() => Promise<void>} opts.onTick
+   * @param {string} opts.name
+   * @param {string} opts.description
    */
   constructor({ cronTime, onTick, name, description }) {
     this.name = name;
     this.description = description;
+    this.onTick = onTick;
     this.inner = CronJob.from({
       cronTime,
       onTick,
       waitForCompletion: true,
     });
+  }
+
+  async run() {
+    return await this.onTick();
   }
 
   start() {
@@ -41,35 +46,35 @@ export class JobService {
     this.logger = logger;
     this.opmlService = opmlService;
 
-    /** @type {Map<string,JobWithMetadata>} */
-    this.jobs = new Map();
+    /** @type {JobWithMetadata[]} */
+    this.jobs = [];
   }
 
   init() {
     this._initJobs();
-    for (const [name, job] of this.jobs) {
+    for (const job of this.jobs) {
       job.start();
-      this.logger.info(`Started job: ${name}`);
+      this.logger.info(`Started job: ${job.name}`);
     }
   }
 
   dispose() {
-    for (const [name, job] of this.jobs) {
+    for (const job of this.jobs) {
       job.stop();
-      this.logger.info(`Stopped job: ${name}`);
+      this.logger.info(`Stopped job: ${job.name}`);
     }
   }
 
   /**
    * @param {string} name
    */
-  async runJob(name) {
-    switch (name) {
-      case FETCH_ENTRIES_JOB:
-        return await this._fetchEntries();
-      default:
-        this.logger.warn(`Unknown job requested: ${name}`);
-    }
+  async run(name) {
+    const job = this.jobs.find((j) => j.name === name);
+    if (!job) throw new Error(`Job not found: ${name}`);
+
+    this.logger.info(`Manually triggering job: ${name}`);
+    await job.run();
+    this.logger.info(`Completed manual trigger of job: ${name}`);
   }
 
   _initJobs() {
@@ -80,7 +85,7 @@ export class JobService {
         name: FETCH_ENTRIES_JOB,
         description: "Fetch entries from all feeds",
       });
-      this.jobs.set(FETCH_ENTRIES_JOB, job);
+      this.jobs.push(job);
       this.logger.info("Initialized feed refresh job");
     }
   }

@@ -14,6 +14,7 @@
             <th>Job</th>
             <th>Last Run</th>
             <th>Next Run</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -32,6 +33,11 @@
               <ClientSideDateTime v-if="job.nextDate" :datetime="job.nextDate" />
               <span v-else>never</span>
             </td>
+            <td>
+              <button @click="triggerJob(job.name)" :disabled="triggeringJobs.has(job.name)">
+                {{ triggeringJobs.has(job.name) ? "Triggering..." : "Trigger" }}
+              </button>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -41,4 +47,21 @@
 
 <script setup>
 const { data: jobsData } = await useFetch("/api/jobs");
+
+const triggeringJobs = ref(new Set());
+
+/**
+ * @param {string} name
+ */
+async function triggerJob(name) {
+  if (triggeringJobs.value.has(name)) return;
+  triggeringJobs.value.add(name);
+  try {
+    await $fetch(`/api/jobs/${name}/run`, { method: "POST" });
+  } catch (err) {
+    console.error("Failed to run job", err);
+  } finally {
+    triggeringJobs.value.delete(name);
+  }
+}
 </script>
