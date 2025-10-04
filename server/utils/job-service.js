@@ -2,6 +2,33 @@ import { CronJob } from "cron";
 
 export const FETCH_ENTRIES_JOB = "job:fetch-entries";
 
+export class JobWithMetadata {
+  /**
+   * @param {object} opts
+   * @param {string} opts.name
+   * @param {string} opts.description
+   * @param {string} opts.cronTime
+   * @param {() => Promise<void>} opts.onTick
+   */
+  constructor({ cronTime, onTick, name, description }) {
+    this.name = name;
+    this.description = description;
+    this.inner = CronJob.from({
+      cronTime,
+      onTick,
+      waitForCompletion: true,
+    });
+  }
+
+  start() {
+    this.inner.start();
+  }
+
+  async stop() {
+    await this.inner.stop();
+  }
+}
+
 export class JobService {
   /**
    * @param {object} opts
@@ -14,10 +41,8 @@ export class JobService {
     this.logger = logger;
     this.opmlService = opmlService;
 
-    /** @type {Map<string,CronJob>} */
+    /** @type {Map<string,JobWithMetadata>} */
     this.jobs = new Map();
-    /** @type {Map<string,Function>} */
-    this.funcs = new Map();
   }
 
   init() {
@@ -49,10 +74,11 @@ export class JobService {
 
   _initJobs() {
     {
-      const job = CronJob.from({
+      const job = new JobWithMetadata({
         cronTime: "0 0 * * * *", // every hour
-        onTick: this._fetchEntries,
-        waitForCompletion: true,
+        onTick: () => this._fetchEntries(),
+        name: FETCH_ENTRIES_JOB,
+        description: "Fetch entries from all feeds",
       });
       this.jobs.set(FETCH_ENTRIES_JOB, job);
       this.logger.info("Initialized feed refresh job");
@@ -65,7 +91,7 @@ export class JobService {
     logger.info("Starting feed refresh job");
     const feeds = this.opmlService.categories.flatMap((c) => c.feeds);
     const tasks = feeds.map((feed) =>
-      Promise.all([this.feedService.fetchAndSaveEntries(feed), this.feedService.fetchImage(feed)]),
+      Promise.allSettled([this.feedService.fetchAndSaveEntries(feed), this.feedService.fetchImage(feed)]),
     );
     await Promise.allSettled(tasks);
     logger.info("Completed feed refresh job");
