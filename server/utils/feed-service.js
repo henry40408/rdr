@@ -93,8 +93,6 @@ export class FeedService {
         Readable.from(body).pipe(parser);
       });
 
-      logger.debug({ msg: "Items parsed", count: items.length });
-
       const etag = res.headers["etag"] || null;
       const lastModified = res.headers["last-modified"] || null;
       const newMetadata = new FeedMetadataEntity({ feedId: feed.id, etag, lastModified });

@@ -3,7 +3,7 @@ import got from "got";
 export class ImageService {
   /**
    * @param {object} opts
-   * @param {import('pino').BaseLogger} opts.logger
+   * @param {import('pino').Logger} opts.logger
    * @param {Repository} opts.repository
    */
   constructor({ logger, repository }) {
@@ -17,6 +17,7 @@ export class ImageService {
    * @returns {Promise<ImageEntity|null>}
    */
   async download(externalId, url) {
+    const logger = this.logger.child({ externalId });
     try {
       const existing = await this.repository.findImageByUrl(url);
 
@@ -28,7 +29,7 @@ export class ImageService {
       }
       const res = await got(url, { responseType: "buffer", headers });
       if (res.statusCode === 304) {
-        this.logger.debug("Image not modified");
+        logger.debug("Image not modified");
         return existing;
       }
 

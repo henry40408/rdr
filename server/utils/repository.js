@@ -13,6 +13,9 @@ export class Repository {
   }
 
   async init() {
+    await this._setPragmas();
+    this.logger.info("Database pragmas set");
+
     await this.knex.migrate.latest();
     this.logger.info("Database migrated");
   }
@@ -132,7 +135,7 @@ export class Repository {
    */
   async upsertEntries(feed, items) {
     if (items.length === 0) {
-      this.logger.info({ msg: "No entries to upsert", feedId: feed.id });
+      this.logger.warn({ msg: "No entries to upsert", feedId: feed.id });
       return;
     }
 
@@ -198,19 +201,20 @@ export class Repository {
     this.logger.info({ msg: "Upserted feed metadata", metadata });
   }
 
+  async _setPragmas() {
+    await this.knex.raw("PRAGMA busy_timeout = 5000");
+    await this.knex.raw("PRAGMA journal_mode = WAL");
+    await this.knex.raw("PRAGMA foreign_keys = OFF");
+    await this.knex.raw("PRAGMA synchronous = NORMAL");
+  }
+
   /**
    * @param {import('feedparser').Item} item
    * @returns {Date}
    */
   _itemDate(item) {
-    if (item.pubdate && !isNaN(item.pubdate.valueOf())) {
-      this.logger.debug({ msg: "Using pubdate", date: item.pubdate });
-      return item.pubdate;
-    }
-    if (item.date && !isNaN(item.date.valueOf())) {
-      this.logger.debug({ msg: "Using date", date: item.date });
-      return item.date;
-    }
+    if (item.pubdate && !isNaN(item.pubdate.valueOf())) return item.pubdate;
+    if (item.date && !isNaN(item.date.valueOf())) return item.date;
 
     /** @type {string} */
     const raw = get(item, ["rss:pubdate", "#"], "");
