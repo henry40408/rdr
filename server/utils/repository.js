@@ -82,7 +82,7 @@ export class Repository {
    * @param {object} opts
    * @param {number} [opts.offset=0]
    * @param {number} [opts.limit=100]
-   * @returns {Promise<import('../utils/entities').PartialEntryEntity[]>}
+   * @returns {Promise<import('../utils/entities').EntryEntity[]>}
    */
   async listEntries({ offset = 0, limit = 100 }) {
     const rows = await this.knex("entries")
@@ -92,7 +92,7 @@ export class Repository {
       .offset(offset);
     return rows.map(
       (row) =>
-        new PartialEntryEntity({
+        new EntryEntity({
           feedId: row.feed_id,
           guid: row.guid,
           title: row.title,
@@ -147,6 +147,7 @@ export class Repository {
       await this.knex("entries")
         .insert(
           chunk.map((e) => ({
+            id: generateEntryId(feed.id, e.guid),
             feed_id: feed.id,
             guid: e.guid,
             title: e.title || "(no title)",

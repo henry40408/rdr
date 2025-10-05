@@ -19,7 +19,7 @@ export class FeedEntity {
    * @param {string} opts.htmlUrl
    */
   constructor({ title, xmlUrl, htmlUrl }) {
-    this.id = generateId(title);
+    this.id = generateId(xmlUrl);
     this.title = title;
     this.xmlUrl = xmlUrl;
     this.htmlUrl = htmlUrl;
@@ -64,7 +64,16 @@ export class ImageEntity {
   }
 }
 
-export class PartialEntryEntity {
+/**
+ * @param {string} feedId
+ * @param {string} guid
+ * @returns {string}
+ */
+export function generateEntryId(feedId, guid) {
+  return generateId(`${feedId}|${guid}`);
+}
+
+export class EntryEntity {
   /**
    * @param {object} opts
    * @param {string} opts.feedId
@@ -77,6 +86,7 @@ export class PartialEntryEntity {
    * @param {string|null} [opts.starredAt]
    */
   constructor({ feedId, guid, title, link, date, author = null, readAt = null, starredAt = null }) {
+    this.id = generateEntryId(feedId, guid);
     this.feedId = feedId;
     this.guid = guid;
 

@@ -2,7 +2,7 @@ import { z } from "zod";
 
 /**
  * @typedef PartialEntryWithFeed
- * @property {PartialEntryEntity} entry
+ * @property {EntryEntity} entry
  * @property {object} feed
  * @property {string} feed.id
  * @property {string} feed.title

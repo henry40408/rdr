@@ -6,7 +6,7 @@ export const name = "0001-initial";
 export function up(knex) {
   return knex.schema
     .createTable("entries", (t) => {
-      t.increments("id").primary();
+      t.string("id").primary(); // hash of feed_id + guid
 
       t.string("feed_id").notNullable();
       t.string("guid").notNullable();
