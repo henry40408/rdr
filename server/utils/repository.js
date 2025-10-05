@@ -140,17 +140,42 @@ export class Repository {
   }
 
   /**
+   * @param {string} id
+   * @returns {Promise<Date|null>}
+   */
+  async toggleEntry(id) {
+    const logger = this.logger.child({ entryId: id });
+
+    const row = await this.knex("entries").where({ id }).first();
+    if (!row) throw new Error(`Entry with id ${id} not found`);
+
+    const now = new Date();
+    const isoNow = now.toISOString();
+    if (row.read_at) {
+      await this.knex("entries").where({ id }).update({ read_at: null, updated_at: isoNow });
+      logger.info({ msg: "Marked entry as unread" });
+      return null;
+    } else {
+      await this.knex("entries").where({ id }).update({ read_at: isoNow, updated_at: isoNow });
+      logger.info({ msg: "Marked entry as read" });
+      return now;
+    }
+  }
+
+  /**
    * @param {FeedEntity} feed
    * @param {import('feedparser').Item[]} items
    */
   async upsertEntries(feed, items) {
+    const logger = this.logger.child({ feedId: feed.id });
+
     if (items.length === 0) {
-      this.logger.warn({ msg: "No entries to upsert", feedId: feed.id });
+      logger.warn({ msg: "No entries to upsert" });
       return;
     }
 
     const now = new Date();
-    this.logger.debug({ msg: "Upserting entries", feedId: feed.id, count: items.length });
+    logger.debug({ msg: "Upserting entries", count: items.length });
 
     const chunks = chunk(items, 10);
     for (const chunk of chunks) {
@@ -170,22 +195,24 @@ export class Repository {
         )
         .onConflict(["feed_id", "guid"])
         .merge();
-      this.logger.debug({ msg: "Upserted chunk of entries", feedId: feed.id, count: chunk.length });
+      logger.debug({ msg: "Upserted chunk of entries", count: chunk.length });
     }
-    this.logger.info({ msg: "Upserted entries", feedId: feed.id, count: items.length });
+    logger.info({ msg: "Upserted entries", count: items.length });
 
     await this.knex("feed_metadata")
       .insert({ feed_id: feed.id, fetched_at: now.toISOString() })
       .onConflict("feed_id")
       .merge();
-    this.logger.info({ msg: "Updated feed metadata", feedId: feed.id, fetchedAt: now });
+    logger.info({ msg: "Updated feed metadata", feedId: feed.id, fetchedAt: now });
   }
 
   /**
    * @param {ImageEntity} image
    */
   async upsertImage(image) {
-    this.logger.debug({ msg: "Upserting image", externalId: image.externalId });
+    const logger = this.logger.child({ externalId: image.externalId });
+
+    logger.debug("Upserting image");
     await this.knex("image")
       .insert({
         external_id: image.externalId,
@@ -197,19 +224,21 @@ export class Repository {
       })
       .onConflict("external_id")
       .merge();
-    this.logger.info({ msg: "Upserted image", externalId: image.externalId });
+    logger.info("Upserted image");
   }
 
   /**
    * @param {FeedMetadataEntity} metadata
    */
   async upsertFeedMetadata(metadata) {
-    this.logger.debug({ msg: "Upserting feed metadata", metadata });
+    const logger = this.logger.child({ feedId: metadata.feedId });
+
+    logger.debug({ msg: "Upserting feed metadata", metadata });
     await this.knex("feed_metadata")
       .insert({ feed_id: metadata.feedId, etag: metadata.etag, last_modified: metadata.lastModified })
       .onConflict("feed_id")
       .merge();
-    this.logger.info({ msg: "Upserted feed metadata", metadata });
+    logger.info({ msg: "Upserted feed metadata", metadata });
   }
 
   async _setPragmas() {

@@ -6,7 +6,10 @@
   <main>
     <div v-for="item in allItems" :key="item.entry.guid">
       <h4>
-        {{ item.entry.title }}
+        <EntryCheckbox :entryId="item.entry.id" :initial="!!item.entry.readAt" @toggled="onEntryToggled" />
+        <span v-if="item.entry.readAt" class="read-title">{{ item.entry.title }}</span>
+        <span v-else>{{ item.entry.title }}</span>
+        &nbsp;
         <NuxtLink :to="item.entry.link" target="_blank" rel="noopener noreferrer">&#x2197;</NuxtLink>
       </h4>
       <div>
@@ -81,6 +84,12 @@ const { arrivedState } = useScroll(document, { throttle: 100 });
 watch(arrivedState, (v) => {
   if (v.bottom) loadMore();
 });
+
+/** @param {string} entryId */
+function onEntryToggled(entryId) {
+  const entry = allItems.value.find((e) => e.entry.id === entryId);
+  if (entry) entry.entry.readAt = entry.entry.readAt ? null : new Date().toISOString();
+}
 </script>
 
 <style scoped>
@@ -89,5 +98,10 @@ watch(arrivedState, (v) => {
   height: 1rem;
   vertical-align: middle;
   margin-right: 0.25rem;
+}
+
+.read-title {
+  opacity: 0.5;
+  text-decoration: line-through;
 }
 </style>

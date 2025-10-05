@@ -42,10 +42,10 @@ export default defineEventHandler(
           entry,
           feed: {
             id: feed.id,
-            title: feed.title,
+            title: feed.title.trim(),
             category: {
               id: category.id,
-              name: category.name,
+              name: category.name.trim(),
             },
           },
         };
