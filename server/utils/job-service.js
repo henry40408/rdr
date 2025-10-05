@@ -14,6 +14,10 @@ export class JobWithMetadata {
     this.name = name;
     this.description = description;
     this.onTick = onTick;
+
+    /** @type {Date | undefined} */
+    this._lastDate = undefined;
+
     this.inner = CronJob.from({
       cronTime,
       onTick,
@@ -21,8 +25,17 @@ export class JobWithMetadata {
     });
   }
 
+  /** @returns {Date | undefined} */
+  get lastDate() {
+    const lastDate = this.inner.lastDate();
+    if (lastDate && this._lastDate && lastDate > this._lastDate) return lastDate;
+    return this._lastDate;
+  }
+
   async run() {
-    return await this.onTick();
+    const res = await this.onTick();
+    this._lastDate = new Date();
+    return res;
   }
 
   start() {

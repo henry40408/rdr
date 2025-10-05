@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
   return jobService.jobs.map((job) => ({
     name: job.name,
     description: job.description,
-    lastDate: job.inner.lastDate(),
+    lastDate: job.lastDate?.toISOString(),
     nextDate: job.inner.nextDate(),
   }));
 });
