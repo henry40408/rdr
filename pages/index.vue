@@ -24,6 +24,9 @@
           <ClientSideDateTime :datetime="item.entry.date" />
         </small>
       </div>
+      <div>
+        <EntryContent :entryId="item.entry.id" />
+      </div>
     </div>
     <p v-if="hasMore">Loading more...</p>
     <p v-else>No more items.</p>

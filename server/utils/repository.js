@@ -29,6 +29,16 @@ export class Repository {
   }
 
   /**
+   * @param {string} id
+   * @returns {Promise<string|null>}
+   */
+  async findEntryContentById(id) {
+    const row = await this.knex("entries").where({ id }).first();
+    if (!row) return null;
+    return row.description;
+  }
+
+  /**
    *
    * @param {string} feedId
    * @returns {Promise<import('../utils/entities').FeedMetadataEntity|null>}
