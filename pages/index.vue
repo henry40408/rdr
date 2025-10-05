@@ -110,7 +110,11 @@ const feedIdsForCount = computed(() => {
 });
 
 const { data: categories } = await useFetch("/api/categories");
-const { data: countData, status: countStatus } = await useFetch("/api/count", {
+const {
+  data: countData,
+  status: countStatus,
+  execute: refreshCount,
+} = await useFetch("/api/count", {
   method: "POST",
   body: {
     feedIds: feedIdsForCount,
@@ -180,6 +184,7 @@ function imageExists(feedId) {
 function onEntryToggled(entryId) {
   const entry = allItems.value.find((e) => e.entry.id === entryId);
   if (entry) entry.entry.readAt = entry.entry.readAt ? null : new Date().toISOString();
+  refreshCount();
 }
 </script>
 
