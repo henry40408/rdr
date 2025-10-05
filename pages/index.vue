@@ -1,9 +1,30 @@
 <template>
   <header>
-    <h1>Entries ({{ countData ? countData.count : "..." }})</h1>
+    <h1>
+      <span v-if="listStatus === 'unread'">Unread entries</span>
+      <span v-else-if="listStatus === 'read'">Read entries</span>
+      <span v-else>All entries</span>
+      ({{ countStatus == "success" && countData ? countData.count : "?" }})
+    </h1>
     <Nav />
   </header>
   <main>
+    <div>
+      <nav class="list-status-nav">
+        <ul>
+          <li>Status</li>
+          <li>
+            <a href="#" :class="{ active: listStatus === 'unread' }" @click.prevent="listStatus = 'unread'">Unread</a>
+          </li>
+          <li>
+            <a href="#" :class="{ active: listStatus === 'all' }" @click.prevent="listStatus = 'all'">All</a>
+          </li>
+          <li>
+            <a href="#" :class="{ active: listStatus === 'read' }" @click.prevent="listStatus = 'read'">Read</a>
+          </li>
+        </ul>
+      </nav>
+    </div>
     <div v-for="item in allItems" :key="item.entry.guid">
       <h4>
         <EntryCheckbox :entryId="item.entry.id" :initial="!!item.entry.readAt" @toggled="onEntryToggled" />
@@ -37,25 +58,49 @@
 </template>
 
 <script setup>
-import { useScroll } from "@vueuse/core";
-
 const limit = 100;
 
 /** @type {Ref<import('../server/api/entries.get').PartialEntryWithFeed[]>} */
 const allItems = ref([]);
 
-const offset = ref(0);
 const hasMore = ref(true);
+const offset = ref(0);
 
-const { data: countData } = await useFetch("/api/count");
+/** @type {Ref<"all"|"read"|"unread">} */
+const listStatus = ref("unread");
+
+const { data: countData, status: countStatus } = await useFetch("/api/count", {
+  query: { status: listStatus },
+});
 const { data: imagePks } = await useFetch("/api/feeds/image-pks");
 
-/** @param {import('../server/api/entries.get').PartialEntryWithFeed[]} newItems */
-function appendItems(newItems) {
-  allItems.value.push(...newItems);
-  if (newItems.length < limit) hasMore.value = false;
-  offset.value += newItems.length;
-}
+const el = ref(document);
+const { reset } = useInfiniteScroll(
+  el,
+  async () => {
+    const entries = await $fetch("/api/entries", {
+      params: {
+        limit,
+        offset: offset.value,
+        status: listStatus.value,
+      },
+      responseType: "json",
+    });
+    if (entries.length < limit) hasMore.value = false;
+    for (const entry of entries) allItems.value.push(entry);
+    offset.value += entries.length;
+  },
+  {
+    distance: 10,
+    canLoadMore: () => hasMore.value,
+  },
+);
+watch(listStatus, () => {
+  allItems.value = [];
+  offset.value = 0;
+  hasMore.value = true;
+  reset();
+});
 
 /**
  * @param {string} feedId
@@ -65,25 +110,6 @@ function imageExists(feedId) {
   const externalId = buildFeedImageExternalId(feedId);
   return (imagePks && imagePks.value?.includes(externalId)) || false;
 }
-
-// render the first page on the server side
-const { data: items } = await useFetch("/api/entries", {
-  params: { offset: offset.value, limit },
-});
-if (items.value) appendItems(items.value);
-
-// load more pages on the client side
-async function loadMore() {
-  if (!hasMore.value) return;
-
-  const query = { offset: offset.value, limit };
-  const data = await $fetch("/api/entries", { query, responseType: "json" });
-  if (data.length > 0) appendItems(data);
-}
-const { arrivedState } = useScroll(document, { throttle: 100 });
-watch(arrivedState, (v) => {
-  if (v.bottom) loadMore();
-});
 
 /** @param {string} entryId */
 function onEntryToggled(entryId) {
@@ -97,6 +123,19 @@ function onEntryToggled(entryId) {
   width: 1rem;
   height: 1rem;
   vertical-align: middle;
+  margin-right: 0.25rem;
+}
+
+.list-status-nav ul {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  list-style: none;
+  padding: 0;
+}
+
+.list-status-nav .active::before {
+  content: "\2705";
   margin-right: 0.25rem;
 }
 

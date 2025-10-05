@@ -1,8 +1,13 @@
+import { z } from "zod";
+
+const schema = z.object({
+  jobName: z.string(),
+});
+
 export default defineEventHandler(async (event) => {
   const { container } = useNitroApp();
 
-  const jobName = getRouterParam(event, "name");
-  if (!jobName) throw createError({ statusCode: 400, message: "Job name is required" });
+  const { jobName } = await getValidatedRouterParams(event, (query) => schema.parse(query));
 
   /** @type {JobService} */
   const jobService = container.resolve("jobService");

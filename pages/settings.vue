@@ -4,8 +4,6 @@
     <Nav />
   </header>
   <main>
-    <h2>Export OPML</h2>
-    <p><a href="/api/opml">Download</a></p>
     <h2>Background jobs</h2>
     <div v-if="jobsData">
       <table>

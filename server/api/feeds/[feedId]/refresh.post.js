@@ -1,3 +1,9 @@
+import { z } from "zod";
+
+const schema = z.object({
+  feedId: z.string(),
+});
+
 export default defineEventHandler(async (event) => {
   const { container } = useNitroApp();
 
@@ -6,8 +12,7 @@ export default defineEventHandler(async (event) => {
   /** @type {OpmlService} */
   const opmlService = container.resolve("opmlService");
 
-  const feedId = getRouterParam(event, "feedId");
-  if (!feedId) throw createError({ statusCode: 400, statusMessage: "feedId is required" });
+  const { feedId } = await getValidatedRouterParams(event, (query) => schema.parse(query));
 
   const feed = opmlService.findFeedById(feedId);
   if (!feed) throw createError({ statusCode: 404, statusMessage: "Feed not found" });

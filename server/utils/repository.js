@@ -21,10 +21,15 @@ export class Repository {
   }
 
   /**
+   * @param {object} opts
+   * @param {"all"|"read"|"unread"} [opts.status="all"]
    * @returns {Promise<number>}
    */
-  async countEntries() {
-    const result = await this.knex("entries").count({ count: "*" }).first();
+  async countEntries({ status = "all" }) {
+    const query = this.knex("entries");
+    if (status === "read") query.whereNotNull("read_at");
+    if (status === "unread") query.whereNull("read_at");
+    const result = await query.count({ count: "*" }).first();
     return result ? Number(result.count) : 0;
   }
 
@@ -90,16 +95,25 @@ export class Repository {
 
   /**
    * @param {object} opts
-   * @param {number} [opts.offset=0]
    * @param {number} [opts.limit=100]
+   * @param {number} [opts.offset=0]
+   * @param {"all"|"read"|"unread"} [opts.status="all"]
    * @returns {Promise<import('../utils/entities').EntryEntity[]>}
    */
-  async listEntries({ offset = 0, limit = 100 }) {
-    const rows = await this.knex("entries")
-      .select(["feed_id", "guid", "title", "link", "date", "author", "read_at", "starred_at"])
-      .orderBy("date", "desc")
-      .limit(limit)
-      .offset(offset);
+  async listEntries({ limit = 100, offset = 0, status = "all" }) {
+    let query = this.knex("entries").select([
+      "feed_id",
+      "guid",
+      "title",
+      "link",
+      "date",
+      "author",
+      "read_at",
+      "starred_at",
+    ]);
+    if (status === "read") query.whereNotNull("read_at");
+    if (status === "unread") query.whereNull("read_at");
+    const rows = await query.orderBy("date", "desc").limit(limit).offset(offset);
     return rows.map(
       (row) =>
         new EntryEntity({

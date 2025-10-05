@@ -6,6 +6,7 @@ export default defineNuxtConfig({
     },
   },
   css: ["~/vendor/water.min.css"],
+  modules: ["@vueuse/nuxt"],
   runtimeConfig: {
     cachePath: "./data/cache.sqlite3",
     httpTimeoutMs: 90000,

@@ -14,6 +14,7 @@ import { z } from "zod";
 const schema = z.object({
   offset: z.coerce.number().min(0).default(0),
   limit: z.coerce.number().min(1).max(100).default(100),
+  status: z.enum(["all", "read", "unread"]).default("all"),
 });
 
 export default defineEventHandler(
@@ -32,6 +33,7 @@ export default defineEventHandler(
     const entries = await repository.listEntries({
       offset: query.offset,
       limit: query.limit,
+      status: query.status,
     });
     return entries
       .map((entry) => {

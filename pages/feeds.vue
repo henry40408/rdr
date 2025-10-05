@@ -5,10 +5,18 @@
   </header>
   <main>
     <div>
-      <h3>Actions</h3>
-      <button @click="refreshAll" :disabled="refreshingCategoryIds.size > 0">
-        {{ refreshingCategoryIds.size > 0 ? "Refreshing..." : "Refresh all" }}
-      </button>
+      <nav class="top-nav">
+        <ul>
+          <li>Actions</li>
+          <li>
+            <a href="#" @click="refreshAll()">
+              &#x267B;
+              {{ refreshingCategoryIds.size > 0 ? "Refreshing..." : "Refresh all" }}
+            </a>
+          </li>
+          <li><a href="/api/opml">&#x1F4E6; Export OPML</a></li>
+        </ul>
+      </nav>
     </div>
     <template v-for="category in categories" :key="category.id">
       <h2>{{ category.name }} ({{ category.feeds.length }})</h2>
@@ -66,6 +74,7 @@ const refreshingCategoryIds = ref(new Set());
 const refreshingFeedIds = ref(new Set());
 
 async function refreshAll() {
+  if (refreshingCategoryIds.value.size > 0) return;
   if (!categories.value) return;
 
   const tasks = [];
@@ -139,5 +148,13 @@ function imageExists(feedId) {
   height: 1rem;
   vertical-align: middle;
   margin-right: 0.25rem;
+}
+
+.top-nav ul {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  list-style: none;
+  padding: 0;
 }
 </style>

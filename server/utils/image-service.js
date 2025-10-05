@@ -34,6 +34,8 @@ export class ImageService {
       }
 
       const contentType = res.headers["content-type"] || "application/octet-stream";
+      if (!contentType.toLowerCase().startsWith("image/")) return null;
+
       const etag = res.headers["etag"] || null;
       const lastModified = res.headers["last-modified"] || null;
       const data = res.body;

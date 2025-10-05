@@ -1,11 +1,16 @@
+import { z } from "zod";
+
+const schema = z.object({
+  feedId: z.string(),
+});
+
 export default defineEventHandler(async (event) => {
   const { container } = useNitroApp();
 
   /** @type {Repository} */
   const repository = container.resolve("repository");
 
-  const feedId = getRouterParam(event, "feedId");
-  if (!feedId) throw createError({ statusCode: 400, statusMessage: "feedId is required" });
+  const { feedId } = await getValidatedRouterParams(event, (query) => schema.parse(query));
 
   const image = await repository.findImageByExternalId(buildFeedImageExternalId(feedId));
   if (!image) throw createError({ statusCode: 404, statusMessage: "Feed image not found" });
