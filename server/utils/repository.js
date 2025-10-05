@@ -22,13 +22,15 @@ export class Repository {
 
   /**
    * @param {object} opts
+   * @param {string[]} [opts.feedIds=[]]
    * @param {"all"|"read"|"unread"} [opts.status="all"]
    * @returns {Promise<number>}
    */
-  async countEntries({ status = "all" }) {
+  async countEntries({ feedIds = [], status = "all" }) {
     const query = this.knex("entries");
     if (status === "read") query.whereNotNull("read_at");
     if (status === "unread") query.whereNull("read_at");
+    if (feedIds.length > 0) query.whereIn("feed_id", feedIds);
     const result = await query.count({ count: "*" }).first();
     return result ? Number(result.count) : 0;
   }
@@ -46,7 +48,7 @@ export class Repository {
   /**
    *
    * @param {string} feedId
-   * @returns {Promise<import('../utils/entities').FeedMetadataEntity|null>}
+   * @returns {Promise<FeedMetadataEntity|null>}
    */
   async findFeedMetadataByFeedId(feedId) {
     const row = await this.knex("feed_metadata").where({ feed_id: feedId }).first();
@@ -95,12 +97,13 @@ export class Repository {
 
   /**
    * @param {object} opts
+   * @param {string[]} [opts.feedIds]
    * @param {number} [opts.limit=100]
    * @param {number} [opts.offset=0]
    * @param {"all"|"read"|"unread"} [opts.status="all"]
-   * @returns {Promise<import('../utils/entities').EntryEntity[]>}
+   * @returns {Promise<EntryEntity[]>}
    */
-  async listEntries({ limit = 100, offset = 0, status = "all" }) {
+  async listEntries({ feedIds = [], limit = 100, offset = 0, status = "all" }) {
     let query = this.knex("entries").select([
       "feed_id",
       "guid",
@@ -113,6 +116,7 @@ export class Repository {
     ]);
     if (status === "read") query.whereNotNull("read_at");
     if (status === "unread") query.whereNull("read_at");
+    if (feedIds.length > 0) query.whereIn("feed_id", feedIds);
     const rows = await query.orderBy("date", "desc").limit(limit).offset(offset);
     return rows.map(
       (row) =>
@@ -138,7 +142,7 @@ export class Repository {
   }
 
   /**
-   * @returns {Promise<import('../utils/entities').FeedMetadataEntity[]>}
+   * @returns {Promise<FeedMetadataEntity[]>}
    */
   async listFeedMetadata() {
     const rows = await this.knex("feed_metadata").select();

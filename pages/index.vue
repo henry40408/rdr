@@ -10,27 +10,42 @@
   </header>
   <main>
     <div>
-      <nav class="list-status-nav">
-        <ul>
-          <li>Status</li>
-          <li>
-            <a href="#" :class="{ active: listStatus === 'unread' }" @click.prevent="listStatus = 'unread'">Unread</a>
-          </li>
-          <li>
-            <a href="#" :class="{ active: listStatus === 'all' }" @click.prevent="listStatus = 'all'">All</a>
-          </li>
-          <li>
-            <a href="#" :class="{ active: listStatus === 'read' }" @click.prevent="listStatus = 'read'">Read</a>
-          </li>
-        </ul>
-      </nav>
+      <ul class="list-status-nav">
+        <li>Status</li>
+        <li>
+          <a href="#" :class="{ active: listStatus === 'unread' }" @click.prevent="listStatus = 'unread'">Unread</a>
+        </li>
+        <li>
+          <a href="#" :class="{ active: listStatus === 'all' }" @click.prevent="listStatus = 'all'">All</a>
+        </li>
+        <li>
+          <a href="#" :class="{ active: listStatus === 'read' }" @click.prevent="listStatus = 'read'">Read</a>
+        </li>
+      </ul>
+      <ul class="list-status-nav">
+        <li>Filtered</li>
+        <li>
+          <span v-if="selectedFeedId">
+            {{ getFilteredFeedTitle() }}
+            <a href="#" @click.prevent="selectedFeedId = null">(unfilter)</a>
+          </span>
+          <span v-else>None</span>
+        </li>
+        <li>
+          <span v-if="selectedCategoryId">
+            {{ getFilteredCategoryName() }}
+            <a href="#" @click.prevent="selectedCategoryId = null">(unfilter)</a>
+          </span>
+          <span v-else>None</span>
+        </li>
+      </ul>
     </div>
     <div v-for="item in allItems" :key="item.entry.guid">
       <h4>
         <EntryCheckbox :entryId="item.entry.id" :initial="!!item.entry.readAt" @toggled="onEntryToggled" />
         <span v-if="item.entry.readAt" class="read-title">{{ item.entry.title }}</span>
         <span v-else>{{ item.entry.title }}</span>
-        &nbsp;
+        {{ " " }}
         <NuxtLink :to="item.entry.link" target="_blank" rel="noopener noreferrer">&#x2197;</NuxtLink>
       </h4>
       <div>
@@ -42,8 +57,15 @@
         />
         <small>
           <span title="Feed">{{ item.feed.title }}</span>
+          {{ " " }}
+          <a href="#" v-if="!selectedFeedId" @click.prevent="selectedFeedId = item.feed.id">(filter)</a>
           &#x1F4C2;
           <span title="Category">{{ item.feed.category.name }}</span>
+          {{ " " }}
+          <a href="#" v-if="!selectedCategoryId" @click.prevent="selectedCategoryId = item.feed.category.id"
+            >(filter)</a
+          >
+          {{ " " }}
           &#x1F5D3;
           <ClientSideDateTime :datetime="item.entry.date" />
         </small>
@@ -58,9 +80,11 @@
 </template>
 
 <script setup>
+import { useRouteQuery } from "@vueuse/router";
+
 const limit = 100;
 
-/** @type {Ref<import('../server/api/entries.get').PartialEntryWithFeed[]>} */
+/** @type {Ref<import('../server/api/entries.post').EntryEntityWithFeed[]>} */
 const allItems = ref([]);
 
 const hasMore = ref(true);
@@ -69,8 +93,29 @@ const offset = ref(0);
 /** @type {Ref<"all"|"read"|"unread">} */
 const listStatus = ref("unread");
 
+/** @type {Ref<string|null>} */
+const selectedCategoryId = useRouteQuery("categoryId", null);
+/** @type {Ref<string|null>} */
+const selectedFeedId = useRouteQuery("feedId", null);
+
+const feedIdsForCount = computed(() => {
+  if (selectedFeedId.value) return [selectedFeedId.value];
+  if (selectedCategoryId.value && categories.value) {
+    const feedIds = categories.value.flatMap((c) =>
+      c.id === selectedCategoryId.value ? c.feeds.map((f) => f.id) : [],
+    );
+    if (feedIds.length > 0) return feedIds;
+  }
+  return undefined;
+});
+
+const { data: categories } = await useFetch("/api/categories");
 const { data: countData, status: countStatus } = await useFetch("/api/count", {
-  query: { status: listStatus },
+  method: "POST",
+  body: {
+    feedIds: feedIdsForCount,
+    status: listStatus,
+  },
 });
 const { data: imagePks } = await useFetch("/api/feeds/image-pks");
 
@@ -78,14 +123,20 @@ const el = ref(document);
 const { reset } = useInfiniteScroll(
   el,
   async () => {
-    const entries = await $fetch("/api/entries", {
-      params: {
-        limit,
-        offset: offset.value,
-        status: listStatus.value,
-      },
-      responseType: "json",
-    });
+    const body = {};
+    if (selectedFeedId.value) {
+      body.feedIds = [selectedFeedId.value];
+    } else if (selectedCategoryId.value) {
+      const feedIds = categories.value?.flatMap((c) =>
+        c.id === selectedCategoryId.value ? c.feeds.map((f) => f.id) : [],
+      );
+      if (feedIds) body.feedIds = feedIds;
+    }
+    body.limit = limit;
+    body.offset = offset.value;
+    body.status = listStatus.value;
+
+    const entries = await $fetch("/api/entries", { method: "POST", body });
     if (entries.length < limit) hasMore.value = false;
     for (const entry of entries) allItems.value.push(entry);
     offset.value += entries.length;
@@ -95,12 +146,26 @@ const { reset } = useInfiniteScroll(
     canLoadMore: () => hasMore.value,
   },
 );
-watch(listStatus, () => {
+watch([selectedCategoryId, selectedFeedId, listStatus], () => {
   allItems.value = [];
   offset.value = 0;
   hasMore.value = true;
   reset();
 });
+
+function getFilteredCategoryName() {
+  if (!selectedCategoryId.value) return "None";
+  if (!categories.value) return "Unknown";
+  const entry = categories.value.find((c) => c.id === selectedCategoryId.value);
+  return entry ? entry.name : "Unknown";
+}
+
+function getFilteredFeedTitle() {
+  if (!selectedFeedId.value) return "None";
+  if (!categories.value) return "Unknown";
+  const entry = categories.value.flatMap((c) => c.feeds).find((f) => f.id === selectedFeedId.value);
+  return entry ? entry.title : "Unknown";
+}
 
 /**
  * @param {string} feedId
@@ -126,7 +191,7 @@ function onEntryToggled(entryId) {
   margin-right: 0.25rem;
 }
 
-.list-status-nav ul {
+.list-status-nav {
   display: flex;
   gap: 1rem;
   justify-content: center;

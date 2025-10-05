@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /**
- * @typedef PartialEntryWithFeed
+ * @typedef EntryEntityWithFeed
  * @property {EntryEntity} entry
  * @property {object} feed
  * @property {string} feed.id
@@ -12,17 +12,18 @@ import { z } from "zod";
  */
 
 const schema = z.object({
-  offset: z.coerce.number().min(0).default(0),
+  feedIds: z.array(z.string()).optional(),
   limit: z.coerce.number().min(1).max(100).default(100),
+  offset: z.coerce.number().min(0).default(0),
   status: z.enum(["all", "read", "unread"]).default("all"),
 });
 
 export default defineEventHandler(
-  /** @returns {Promise<PartialEntryWithFeed[]>} */
+  /** @returns {Promise<EntryEntityWithFeed[]>} */
   async (event) => {
     const { container } = useNitroApp();
 
-    const query = await getValidatedQuery(event, (query) => schema.parse(query));
+    const query = await readValidatedBody(event, (query) => schema.parse(query));
 
     /** @type {OpmlService} */
     const opmlService = container.resolve("opmlService");
@@ -31,8 +32,9 @@ export default defineEventHandler(
 
     const categories = opmlService.categories;
     const entries = await repository.listEntries({
-      offset: query.offset,
+      feedIds: query.feedIds,
       limit: query.limit,
+      offset: query.offset,
       status: query.status,
     });
     return entries
