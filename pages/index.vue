@@ -40,13 +40,20 @@
         </li>
       </ul>
     </div>
-    <div v-for="item in allItems" :key="item.entry.guid">
+    <div v-for="(item, index) in allItems" :key="item.entry.guid">
       <h4>
-        <EntryCheckbox :entryId="item.entry.id" :initial="!!item.entry.readAt" @toggled="onEntryToggled" />
+        <EntryCheckbox
+          :ref="(el) => setCheckboxRef(index, el)"
+          :entryId="item.entry.id"
+          :initial="!!item.entry.readAt"
+          @toggled="onEntryToggled"
+        />
         <span v-if="item.entry.readAt" class="read-title">{{ item.entry.title }}</span>
         <span v-else>{{ item.entry.title }}</span>
         {{ " " }}
-        <NuxtLink :to="item.entry.link" target="_blank" rel="noopener noreferrer">&#x2197;</NuxtLink>
+        <NuxtLink target="_blank" rel="noopener noreferrer" :to="item.entry.link" @click="clickCheckbox(index)"
+          >&#x2197;</NuxtLink
+        >
       </h4>
       <div>
         <img
@@ -86,6 +93,9 @@ const limit = 100;
 
 /** @type {Ref<import('../server/api/entries.post').EntryEntityWithFeed[]>} */
 const allItems = ref([]);
+
+/** @type {Ref<(ComponentPublicInstance|Element)[]>} */
+const checkboxRefs = ref([]);
 
 const hasMore = ref(true);
 const offset = ref(0);
@@ -157,6 +167,16 @@ watch([selectedCategoryId, selectedFeedId, listStatus], () => {
   reset();
 });
 
+/**
+ * @param {number} index
+ */
+function clickCheckbox(index) {
+  if (allItems.value[index].entry.readAt) return; // already read
+
+  const checkbox = checkboxRefs.value[index];
+  if (checkbox && "$el" in checkbox) checkbox.$el.click();
+}
+
 function getFilteredCategoryName() {
   if (!selectedCategoryId.value) return "None";
   if (!categories.value) return "Unknown";
@@ -185,6 +205,14 @@ function onEntryToggled(entryId) {
   const entry = allItems.value.find((e) => e.entry.id === entryId);
   if (entry) entry.entry.readAt = entry.entry.readAt ? null : new Date().toISOString();
   refreshCount();
+}
+
+/**
+ * @param {number} index
+ * @param {ComponentPublicInstance|Element|null} el
+ */
+function setCheckboxRef(index, el) {
+  if (el) checkboxRefs.value[index] = el;
 }
 </script>
 
