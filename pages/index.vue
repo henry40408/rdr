@@ -23,20 +23,26 @@
         </li>
       </ul>
       <ul class="list-status-nav">
-        <li>Filtered</li>
+        <li>Filter</li>
         <li>
           <span v-if="selectedFeedId">
             {{ getFilteredFeedTitle() }}
             <a href="#" @click.prevent="selectedFeedId = null">(unfilter)</a>
           </span>
-          <span v-else>None</span>
+          <span v-else>All feeds</span>
         </li>
         <li>
           <span v-if="selectedCategoryId">
             {{ getFilteredCategoryName() }}
             <a href="#" @click.prevent="selectedCategoryId = null">(unfilter)</a>
           </span>
-          <span v-else>None</span>
+          <span v-else>All categories</span>
+        </li>
+      </ul>
+      <ul class="list-status-nav">
+        <li>Actions</li>
+        <li>
+          <a href="#" @click.prevent="markAllAsRead()">&#x2705; Mark all as read</a>
         </li>
       </ul>
     </div>
@@ -51,7 +57,7 @@
         <span v-if="item.entry.readAt" class="read-title">{{ item.entry.title }}</span>
         <span v-else>{{ item.entry.title }}</span>
         {{ " " }}
-        <NuxtLink target="_blank" rel="noopener noreferrer" :to="item.entry.link" @click="clickCheckbox(index)"
+        <NuxtLink target="_blank" rel="noopener noreferrer" :to="item.entry.link" @click="markAsRead(index)"
           >&#x2197;</NuxtLink
         >
       </h4>
@@ -169,7 +175,7 @@ watch([selectedCategoryId, selectedFeedId, listStatus], () => {
 /**
  * @param {number} index
  */
-function clickCheckbox(index) {
+function markAsRead(index) {
   if (allItems.value[index].entry.readAt) return; // already read
 
   const checkbox = checkboxRefs.value[index];
@@ -197,6 +203,10 @@ function getFilteredFeedTitle() {
 function imageExists(feedId) {
   const externalId = buildFeedImageExternalId(feedId);
   return (imagePks && imagePks.value?.includes(externalId)) || false;
+}
+
+function markAllAsRead() {
+  for (let i = 0; i < allItems.value.length; i += 1) markAsRead(i);
 }
 
 /** @param {string} entryId */
