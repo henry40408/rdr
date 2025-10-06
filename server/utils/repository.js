@@ -59,44 +59,44 @@ export class Repository {
 
   /**
    * @param {string} id
-   * @returns {Promise<string|null>}
+   * @returns {Promise<string|undefined>}
    */
   async findEntryContentById(id) {
     const row = await this.knex("entries").where({ id }).first();
-    if (!row) return null;
+    if (!row) return undefined;
     return row.description;
   }
 
   /**
    *
    * @param {string} feedId
-   * @returns {Promise<FeedMetadataEntity|null>}
+   * @returns {Promise<FeedMetadataEntity|undefined>}
    */
   async findFeedMetadataByFeedId(feedId) {
     const row = await this.knex("feed_metadata").where({ feed_id: feedId }).first();
-    if (!row) return null;
+    if (!row) return undefined;
 
     return new FeedMetadataEntity({
       feedId: row.feed_id,
-      etag: row.etag || null,
-      lastModified: row.last_modified || null,
+      etag: row.etag,
+      lastModified: row.last_modified,
     });
   }
 
   /**
    * @param {string} externalId
-   * @returns {Promise<ImageEntity|null>}
+   * @returns {Promise<ImageEntity|undefined>}
    */
   async findImageByExternalId(externalId) {
     const row = await this.knex("image").where({ external_id: externalId }).first();
-    if (!row) return null;
+    if (!row) return undefined;
     return new ImageEntity({
       externalId: row.external_id,
       url: row.url,
       blob: row.blob,
       contentType: row.content_type,
-      etag: row.etag || null,
-      lastModified: row.last_modified || null,
+      etag: row.etag,
+      lastModified: row.last_modified,
     });
   }
 
@@ -155,16 +155,16 @@ export class Repository {
       (row) =>
         new FeedMetadataEntity({
           feedId: row.feed_id,
-          fetchedAt: row.fetched_at || null,
-          etag: row.etag || null,
-          lastModified: row.last_modified || null,
+          fetchedAt: row.fetched_at,
+          etag: row.etag,
+          lastModified: row.last_modified,
         }),
     );
   }
 
   /**
    * @param {string} id
-   * @returns {Promise<Date|null>}
+   * @returns {Promise<Date|undefined>}
    */
   async toggleEntry(id) {
     const logger = this.logger.child({ entryId: id });
@@ -177,7 +177,7 @@ export class Repository {
     if (row.read_at) {
       await this.knex("entries").where({ id }).update({ read_at: null, updated_at: isoNow });
       logger.info({ msg: "Marked entry as unread" });
-      return null;
+      return undefined;
     } else {
       await this.knex("entries").where({ id }).update({ read_at: isoNow, updated_at: isoNow });
       logger.info({ msg: "Marked entry as read" });

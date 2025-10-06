@@ -17,7 +17,6 @@ export default defineEventHandler(async (event) => {
   /** @type {Record<string,{count:number,imageExists:boolean,metadata:FeedMetadataEntity}>} */
   const feeds = {};
   for (const feedId of feedIds) {
-    const imagePk = buildFeedImageExternalId(feedId);
     if (typeof counts[feedId] === "undefined") continue;
 
     const metadata = allMetadata.find((m) => m.feedId === feedId);
@@ -25,7 +24,7 @@ export default defineEventHandler(async (event) => {
 
     feeds[feedId] = {
       count: counts[feedId],
-      imageExists: imagePks.includes(imagePk),
+      imageExists: imagePks.includes(feedId),
       metadata: metadata,
     };
   }

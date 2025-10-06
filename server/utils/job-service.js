@@ -57,7 +57,7 @@ export class JobService {
    */
   constructor({ feedService, logger, opmlService }) {
     this.feedService = feedService;
-    this.logger = logger;
+    this.logger = logger.child({ context: "job-service" });
     this.opmlService = opmlService;
 
     /** @type {JobWithMetadata[]} */

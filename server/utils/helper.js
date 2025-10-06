@@ -32,7 +32,7 @@ const replacements = {
 
 /**
  * @param {string} dt
- * @returns {Date|null}
+ * @returns {Date|undefined}
  */
 export function normalizeDatetime(dt) {
   let normalized = dt;
@@ -40,5 +40,5 @@ export function normalizeDatetime(dt) {
     normalized = normalized.replace(key, value);
   }
   const date = new Date(normalized);
-  return isNaN(date.valueOf()) ? null : date;
+  return isNaN(date.valueOf()) ? undefined : date;
 }

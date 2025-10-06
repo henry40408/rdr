@@ -16,5 +16,5 @@ export default defineEventHandler(async (event) => {
   const content = await repository.findEntryContentById(entryId);
   if (!content) throw createError({ statusCode: 404, message: "Entry not found" });
 
-  return { content: sanitizeHtml(content) };
+  return { content: sanitizeHtml(content, { allowedTags: sanitizeHtml.defaults.allowedTags.concat(["img"]) }) };
 });

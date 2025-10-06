@@ -2,6 +2,7 @@ import pino from "pino";
 import { createContainer, asClass, asValue } from "awilix";
 import { AwilixManager } from "awilix-manager";
 import knex from "knex";
+import { DownloadService } from "../utils/download-service";
 
 export default defineNitroPlugin(
   /** @param {import('nitropack/types').NitroApp} nitroApp */
@@ -26,6 +27,7 @@ export default defineNitroPlugin(
     const diContainer = createContainer();
     diContainer.register({
       config: asValue(config),
+      downloadService: asClass(DownloadService).singleton(),
       feedService: asClass(FeedService).singleton(),
       imageService: asClass(ImageService).singleton(),
       jobService: asClass(JobService, { asyncInit: "init", asyncDispose: "dispose" }).singleton(),

@@ -14,6 +14,6 @@
 <script setup>
 const props = defineProps({
   count: { type: Number, required: true },
-  fetchedAt: { type: [String, null], required: true },
+  fetchedAt: { type: String },
 });
 </script>

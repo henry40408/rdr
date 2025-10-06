@@ -27,14 +27,14 @@
         <li>
           <span v-if="selectedFeedId">
             {{ getFilteredFeedTitle() }}
-            <a href="#" @click.prevent="selectedFeedId = null">(unfilter)</a>
+            <a href="#" @click.prevent="selectedFeedId = undefined">(unfilter)</a>
           </span>
           <span v-else>All feeds</span>
         </li>
         <li>
           <span v-if="selectedCategoryId">
             {{ getFilteredCategoryName() }}
-            <a href="#" @click.prevent="selectedCategoryId = null">(unfilter)</a>
+            <a href="#" @click.prevent="selectedCategoryId = undefined">(unfilter)</a>
           </span>
           <span v-else>All categories</span>
         </li>
@@ -108,10 +108,10 @@ const offset = ref(0);
 
 /** @type {Ref<"all"|"read"|"unread">} */
 const listStatus = useRouteQuery("status", "unread");
-/** @type {Ref<string|null>} */
-const selectedCategoryId = useRouteQuery("categoryId", null);
-/** @type {Ref<string|null>} */
-const selectedFeedId = useRouteQuery("feedId", null);
+/** @type {Ref<string|undefined>} */
+const selectedCategoryId = useRouteQuery("categoryId", undefined);
+/** @type {Ref<string|undefined>} */
+const selectedFeedId = useRouteQuery("feedId", undefined);
 
 const feedIdsForCount = computed(() => {
   if (selectedFeedId.value) return [selectedFeedId.value];
@@ -201,8 +201,7 @@ function getFilteredFeedTitle() {
  * @returns {boolean}
  */
 function imageExists(feedId) {
-  const externalId = buildFeedImageExternalId(feedId);
-  return (imagePks && imagePks.value?.includes(externalId)) || false;
+  return (imagePks && imagePks.value?.includes(feedId)) || false;
 }
 
 function markAllAsRead() {
@@ -212,7 +211,7 @@ function markAllAsRead() {
 /** @param {string} entryId */
 function onEntryToggled(entryId) {
   const entry = allItems.value.find((e) => e.entry.id === entryId);
-  if (entry) entry.entry.readAt = entry.entry.readAt ? null : new Date().toISOString();
+  if (entry) entry.entry.readAt = entry.entry.readAt ? undefined : new Date().toISOString();
   refreshCount();
 }
 

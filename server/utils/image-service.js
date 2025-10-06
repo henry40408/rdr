@@ -1,20 +1,20 @@
-import got from "got";
-
 export class ImageService {
   /**
    * @param {object} opts
+   * @param {DownloadService} opts.downloadService
    * @param {import('pino').Logger} opts.logger
    * @param {Repository} opts.repository
    */
-  constructor({ logger, repository }) {
-    this.logger = logger;
+  constructor({ downloadService, logger, repository }) {
+    this.downloadService = downloadService;
+    this.logger = logger.child({ context: "image-service" });
     this.repository = repository;
   }
 
   /**
    * @param {string} externalId
    * @param {string} url
-   * @returns {Promise<ImageEntity|null>}
+   * @returns {Promise<ImageEntity|undefined>}
    */
   async download(externalId, url) {
     const logger = this.logger.child({ externalId });
@@ -27,7 +27,15 @@ export class ImageService {
         if (existing.etag) headers["If-None-Match"] = existing.etag;
         if (existing.lastModified) headers["If-Modified-Since"] = existing.lastModified;
       }
-      const res = await got(url, { responseType: "buffer", headers });
+      const res = await this.downloadService.downloadBinary({
+        url,
+        etag: existing?.etag,
+        lastModified: existing?.lastModified,
+      });
+      if (!res) {
+        logger.warn({ msg: "Response is undefined", url });
+        return existing;
+      }
       if (res.statusCode === 304) {
         logger.debug({ msg: "Image not modified", url });
         return existing;
@@ -36,12 +44,12 @@ export class ImageService {
       const data = res.body;
       if (data.length === 0) {
         logger.warn({ msg: "Image response is empty", url });
-        return existing || null;
+        return existing;
       }
 
       const contentType = res.headers["content-type"] || "application/octet-stream";
-      const etag = res.headers["etag"] || null;
-      const lastModified = res.headers["last-modified"] || null;
+      const etag = res.headers["etag"];
+      const lastModified = res.headers["last-modified"];
 
       const newImage = new ImageEntity({
         externalId,
@@ -55,7 +63,7 @@ export class ImageService {
       return newImage;
     } catch (err) {
       this.logger.error(err);
-      return null;
+      return undefined;
     }
   }
 }

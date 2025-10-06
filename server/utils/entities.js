@@ -30,11 +30,11 @@ export class FeedMetadataEntity {
   /**
    * @param {object} opts
    * @param {string} opts.feedId
-   * @param {string|null} [opts.fetchedAt]
-   * @param {string|null} [opts.etag]
-   * @param {string|null} [opts.lastModified]
+   * @param {string} [opts.fetchedAt]
+   * @param {string} [opts.etag]
+   * @param {string} [opts.lastModified]
    */
-  constructor({ feedId, fetchedAt = null, etag = null, lastModified = null }) {
+  constructor({ feedId, fetchedAt, etag, lastModified }) {
     this.feedId = feedId;
     this.fetchedAt = fetchedAt;
     this.etag = etag;
@@ -49,10 +49,10 @@ export class ImageEntity {
    * @param {string} opts.url
    * @param {Buffer} opts.blob
    * @param {string} opts.contentType
-   * @param {string|null} [opts.etag]
-   * @param {string|null} [opts.lastModified]
+   * @param {string} [opts.etag]
+   * @param {string} [opts.lastModified]
    */
-  constructor({ externalId, url, blob, contentType, etag = null, lastModified = null }) {
+  constructor({ externalId, url, blob, contentType, etag, lastModified }) {
     this.externalId = externalId;
 
     this.url = url;
@@ -81,11 +81,11 @@ export class EntryEntity {
    * @param {string} opts.title
    * @param {string} opts.link
    * @param {string} opts.date
-   * @param {string|null} [opts.author]
-   * @param {string|null} [opts.readAt]
-   * @param {string|null} [opts.starredAt]
+   * @param {string} [opts.author]
+   * @param {string} [opts.readAt]
+   * @param {string} [opts.starredAt]
    */
-  constructor({ feedId, guid, title, link, date, author = null, readAt = null, starredAt = null }) {
+  constructor({ feedId, guid, title, link, date, author, readAt, starredAt }) {
     this.id = generateEntryId(feedId, guid);
     this.feedId = feedId;
     this.guid = guid;

@@ -13,7 +13,7 @@ export default defineCachedEventHandler(
 
     const { feedId } = await getValidatedRouterParams(event, (query) => schema.parse(query));
 
-    const image = await repository.findImageByExternalId(buildFeedImageExternalId(feedId));
+    const image = await repository.findImageByExternalId(feedId);
     if (!image) throw createError({ statusCode: 404, statusMessage: "Feed image not found" });
 
     event.node.res.setHeader("Content-Type", image.contentType);

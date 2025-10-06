@@ -41,7 +41,7 @@ export default defineEventHandler(
       .map((entry) => {
         const category = categories.find((c) => c.feeds.some((f) => f.id === entry.feedId));
         const feed = categories.flatMap((c) => c.feeds).find((f) => f.id === entry.feedId);
-        if (!category || !feed) return null;
+        if (!category || !feed) return undefined;
         return {
           entry,
           feed: {
