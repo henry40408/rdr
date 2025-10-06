@@ -136,7 +136,7 @@ const {
     status: listStatus,
   },
 });
-const { data: imagePks } = await useFetch("/api/feeds/image-pks");
+const { data: imagePks } = await useFetch("/api/image-pks");
 
 const el = ref(document);
 const { reset } = useInfiniteScroll(
