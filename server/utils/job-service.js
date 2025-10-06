@@ -1,6 +1,7 @@
 import { CronJob } from "cron";
 
 export const FETCH_ENTRIES_JOB = "job:fetch-entries";
+export const FETCH_FEED_IMAGES_JOB = "job:fetch-feed-images";
 
 export class JobWithMetadata {
   /**
@@ -101,17 +102,59 @@ export class JobService {
       this.jobs.push(job);
       this.logger.info("Initialized feed refresh job");
     }
+    {
+      const job = new JobWithMetadata({
+        cronTime: "0 0 0 * * *", // every day
+        onTick: () => this._fetchFeedImages(),
+        name: FETCH_FEED_IMAGES_JOB,
+        description: "Fetch images for all feeds",
+      });
+      this.jobs.push(job);
+      this.logger.info("Initialized feed images job");
+    }
   }
 
   async _fetchEntries() {
     const logger = this.logger.child({ job: FETCH_ENTRIES_JOB });
 
+    let counter = 0;
     logger.info("Starting feed refresh job");
+
     const feeds = this.opmlService.categories.flatMap((c) => c.feeds);
     const tasks = feeds.map((feed) =>
-      Promise.allSettled([this.feedService.fetchAndSaveEntries(feed), this.feedService.fetchImage(feed)]),
+      Promise.allSettled([this.feedService.fetchAndSaveEntries(feed), this.feedService.fetchImage(feed)]).finally(
+        () => {
+          this.logger.debug({
+            msg: "Fetched entries for feed",
+            feedId: feed.id,
+            counter: ++counter,
+            total: feeds.length,
+          });
+        },
+      ),
     );
     await Promise.allSettled(tasks);
     logger.info("Completed feed refresh job");
+  }
+
+  async _fetchFeedImages() {
+    const logger = this.logger.child({ job: FETCH_FEED_IMAGES_JOB });
+
+    let counter = 0;
+    logger.info("Starting feed images job");
+
+    const feeds = this.opmlService.categories.flatMap((c) => c.feeds);
+    const tasks = feeds.map((feed) =>
+      this.feedService.fetchImage(feed).finally(() => {
+        this.logger.debug({
+          msg: "Fetched image for feed",
+          feedId: feed.id,
+          counter: ++counter,
+          total: feeds.length,
+        });
+      }),
+    );
+    await Promise.allSettled(tasks);
+    logger.info("Completed feed images job");
   }
 }

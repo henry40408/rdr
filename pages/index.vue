@@ -89,7 +89,7 @@
 <script setup>
 import { useRouteQuery } from "@vueuse/router";
 
-const limit = 100;
+const LIMIT = 100;
 
 /** @type {Ref<import('../server/api/entries.post').EntryEntityWithFeed[]>} */
 const allItems = ref([]);
@@ -101,8 +101,7 @@ const hasMore = ref(true);
 const offset = ref(0);
 
 /** @type {Ref<"all"|"read"|"unread">} */
-const listStatus = ref("unread");
-
+const listStatus = useRouteQuery("status", "unread");
 /** @type {Ref<string|null>} */
 const selectedCategoryId = useRouteQuery("categoryId", null);
 /** @type {Ref<string|null>} */
@@ -146,12 +145,12 @@ const { reset } = useInfiniteScroll(
       );
       if (feedIds) body.feedIds = feedIds;
     }
-    body.limit = limit;
+    body.limit = LIMIT;
     body.offset = offset.value;
     body.status = listStatus.value;
 
     const entries = await $fetch("/api/entries", { method: "POST", body });
-    if (entries.length < limit) hasMore.value = false;
+    if (entries.length < LIMIT) hasMore.value = false;
     for (const entry of entries) allItems.value.push(entry);
     offset.value += entries.length;
   },

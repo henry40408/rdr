@@ -36,6 +36,28 @@ export class Repository {
   }
 
   /**
+   * @param {string[]} feedIds
+   * @returns {Promise<Record<string,number>>}
+   */
+  async countEntriesByFeedIds(feedIds) {
+    if (feedIds.length === 0) return {};
+
+    /** @type {Array<{ feed_id: string, count: number }>} */
+    const rows = await this.knex("entries")
+      .select("feed_id")
+      .count({ count: "*" })
+      .whereIn("feed_id", feedIds)
+      .groupBy("feed_id");
+
+    /** @type {Record<string,number>} */
+    const counts = {};
+    for (const row of rows) {
+      counts[row.feed_id] = Number(row.count);
+    }
+    return counts;
+  }
+
+  /**
    * @param {string} id
    * @returns {Promise<string|null>}
    */
@@ -136,7 +158,7 @@ export class Repository {
   /**
    * @returns {Promise<string[]>}
    */
-  async imagePks() {
+  async listImagePks() {
     const rows = await this.knex("image").select();
     return rows.map((row) => row.external_id);
   }

@@ -45,11 +45,13 @@
                 <a :href="feed.htmlUrl" target="_blank" rel="noopener noreferrer">{{ feed.title }}</a>
               </div>
               <div>
-                <div>
-                  <small>{{ feed.xmlUrl }}</small>
-                </div>
-                <FeedMetadata :metadata="findMetadataByFeed(feed)" />
+                <small>{{ feed.xmlUrl }}</small>
               </div>
+              <FeedData
+                v-if="feedDataByFeedId[feed.id]"
+                :count="feedDataByFeedId[feed.id].count"
+                :fetched-at="feedDataByFeedId[feed.id].metadata.fetchedAt"
+              />
             </td>
             <td>
               <button @click="refreshFeed(feed)" :disabled="refreshingFeedIds.has(feed.id)">
@@ -65,13 +67,26 @@
 
 <script setup>
 const { data: categories, execute: refreshCategories } = await useFetch("/api/categories");
-const { data: imagePks, execute: refreshImages } = await useFetch("/api/feeds/image-pks");
-const { data: feedMetadata, execute: refreshFeedMetadata } = await useFetch("/api/feed-metadata-list");
+const { data: feedData, execute: refreshFeedData } = await useFetch("/api/feed-data");
+
+const feedDataByFeedId = computed(() => feedData.value?.feeds || {});
 
 /** @type {Ref<Set<string>>} */
 const refreshingCategoryIds = ref(new Set());
 /** @type {Ref<Set<string>>} */
 const refreshingFeedIds = ref(new Set());
+
+async function afterRefresh() {
+  await Promise.all([refreshCategories(), refreshFeedData()]);
+}
+
+/**
+ * @param {string} feedId
+ * @returns {boolean}
+ */
+function imageExists(feedId) {
+  return feedData.value?.feeds[feedId]?.imageExists || false;
+}
 
 async function refreshAll() {
   if (refreshingCategoryIds.value.size > 0) return;
@@ -118,27 +133,6 @@ async function refreshFeed(feed) {
   } finally {
     refreshingFeedIds.value.delete(feed.id);
   }
-}
-
-async function afterRefresh() {
-  await Promise.all([refreshCategories(), refreshFeedMetadata(), refreshImages()]);
-}
-
-/**
- * @param {FeedEntity} feed
- * @returns {FeedMetadataEntity|undefined}
- */
-function findMetadataByFeed(feed) {
-  return feedMetadata.value?.find((m) => m.feedId === feed.id);
-}
-
-/**
- * @param {string} feedId
- * @returns {boolean}
- */
-function imageExists(feedId) {
-  const externalId = buildFeedImageExternalId(feedId);
-  return (imagePks && imagePks.value?.includes(externalId)) || false;
 }
 </script>
 
