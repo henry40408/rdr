@@ -126,7 +126,10 @@ export class FeedService {
         const url = await this._findFavicon(feed.htmlUrl);
         if (url) {
           const result = await this.imageService.download(externalId, url);
-          if (result) return result;
+          if (result) {
+            logger.debug({ msg: "Fetched favicon from HTML", url });
+            return result;
+          }
         }
       }
       return null;

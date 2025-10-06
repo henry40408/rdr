@@ -101,23 +101,6 @@ export class Repository {
   }
 
   /**
-   * @param {string} url
-   * @returns {Promise<ImageEntity|null>}
-   */
-  async findImageByUrl(url) {
-    const row = await this.knex("image").where({ url }).first();
-    if (!row) return null;
-    return new ImageEntity({
-      externalId: row.external_id,
-      url: row.url,
-      blob: row.blob,
-      contentType: row.content_type,
-      etag: row.etag || null,
-      lastModified: row.last_modified || null,
-    });
-  }
-
-  /**
    * @param {object} opts
    * @param {string[]} [opts.feedIds]
    * @param {number} [opts.limit=100]

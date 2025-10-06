@@ -19,7 +19,7 @@ export class ImageService {
   async download(externalId, url) {
     const logger = this.logger.child({ externalId });
     try {
-      const existing = await this.repository.findImageByUrl(url);
+      const existing = await this.repository.findImageByExternalId(externalId);
 
       /** @type {Record<string, string>} */
       const headers = {};
@@ -29,16 +29,19 @@ export class ImageService {
       }
       const res = await got(url, { responseType: "buffer", headers });
       if (res.statusCode === 304) {
-        logger.debug("Image not modified");
+        logger.debug({ msg: "Image not modified", url });
         return existing;
       }
 
-      const contentType = res.headers["content-type"] || "application/octet-stream";
-      if (!contentType.toLowerCase().startsWith("image/")) return null;
+      const data = res.body;
+      if (data.length === 0) {
+        logger.warn({ msg: "Image response is empty", url });
+        return existing || null;
+      }
 
+      const contentType = res.headers["content-type"] || "application/octet-stream";
       const etag = res.headers["etag"] || null;
       const lastModified = res.headers["last-modified"] || null;
-      const data = res.body;
 
       const newImage = new ImageEntity({
         externalId,
