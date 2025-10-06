@@ -48,8 +48,8 @@ export class ImageService {
       }
 
       const contentType = res.headers["content-type"] || "application/octet-stream";
-      const etag = res.headers["etag"];
-      const lastModified = res.headers["last-modified"];
+      const etag = res.headers["etag"] || undefined;
+      const lastModified = res.headers["last-modified"] || undefined;
 
       const newImage = new ImageEntity({
         externalId,

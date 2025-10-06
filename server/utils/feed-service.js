@@ -47,7 +47,7 @@ export class FeedService {
         logger.error("Response is undefined");
         throw new Error("Response is undefined");
       }
-      if (304 === res.statusCode) {
+      if (res.statusCode === 304) {
         logger.info("Feed is not modified");
         return { type: "not_modified", items: [] };
       }
@@ -77,8 +77,8 @@ export class FeedService {
         Readable.from(body).pipe(parser);
       });
 
-      const etag = res.headers["etag"];
-      const lastModified = res.headers["last-modified"];
+      const etag = res.headers["etag"] || undefined;
+      const lastModified = res.headers["last-modified"] || undefined;
       const newMetadata = new FeedMetadataEntity({ feedId: feed.id, etag, lastModified });
       return { type: "ok", items, meta, metadata: newMetadata };
     } catch (err) {
