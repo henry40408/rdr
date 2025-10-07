@@ -67,7 +67,7 @@
 
 <script setup>
 const { data: categories, execute: refreshCategories } = await useFetch("/api/categories");
-const { data: feedData, execute: refreshFeedData } = await useFetch("/api/feed-data");
+const { data: feedData, execute: refreshFeedData } = await useFetch("/api/feeds/data");
 
 const feedDataByFeedId = computed(() => feedData.value?.feeds || {});
 

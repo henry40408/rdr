@@ -38,6 +38,9 @@
           </span>
           <span v-else>All categories</span>
         </li>
+        <li>
+          <input type="text" v-model="searchQuery" placeholder="Search..." />
+        </li>
       </ul>
       <ul class="list-status-nav">
         <li>Actions</li>
@@ -54,8 +57,12 @@
           :initial="!!item.entry.readAt"
           @toggled="onEntryToggled"
         />
-        <span v-if="item.entry.readAt" class="read-title">{{ item.entry.title }}</span>
-        <span v-else>{{ item.entry.title }}</span>
+        <span v-if="item.entry.readAt" class="read-title">
+          <MarkedText :text="item.entry.title" :keyword="searchQuery" />
+        </span>
+        <span v-else>
+          <MarkedText :text="item.entry.title" :keyword="searchQuery" />
+        </span>
         {{ " " }}
         <NuxtLink target="_blank" rel="noopener noreferrer" :to="item.entry.link" @click="markAsRead(index)"
           >&#x2197;</NuxtLink
@@ -84,7 +91,7 @@
         </small>
       </div>
       <div>
-        <EntryContent :entryId="item.entry.id" />
+        <EntryContent :entryId="item.entry.id" :keyword="searchQuery" />
       </div>
     </div>
     <p v-if="hasMore">Loading more...</p>
@@ -112,6 +119,8 @@ const listStatus = useRouteQuery("status", "unread");
 const selectedCategoryId = useRouteQuery("categoryId", undefined);
 /** @type {Ref<string|undefined>} */
 const selectedFeedId = useRouteQuery("feedId", undefined);
+/** @type {Ref<string>} */
+const searchQuery = useRouteQuery("q", "");
 
 const feedIdsForCount = computed(() => {
   if (selectedFeedId.value) return [selectedFeedId.value];
@@ -133,6 +142,7 @@ const {
   method: "POST",
   body: {
     feedIds: feedIdsForCount,
+    search: searchQuery,
     status: listStatus,
   },
 });
@@ -151,6 +161,7 @@ const { reset } = useInfiniteScroll(
       );
       if (feedIds) body.feedIds = feedIds;
     }
+    if (searchQuery.value) body.search = searchQuery.value;
     body.limit = LIMIT;
     body.offset = offset.value;
     body.status = listStatus.value;
@@ -165,11 +176,18 @@ const { reset } = useInfiniteScroll(
     canLoadMore: () => hasMore.value,
   },
 );
-watch([selectedCategoryId, selectedFeedId, listStatus], () => {
+const resetItems = () => {
   allItems.value = [];
-  offset.value = 0;
   hasMore.value = true;
+  offset.value = 0;
   reset();
+};
+const debouncedResetItems = useDebounceFn(resetItems, 500);
+watch(searchQuery, () => {
+  debouncedResetItems();
+});
+watch([selectedCategoryId, selectedFeedId, listStatus], () => {
+  resetItems();
 });
 
 /**
@@ -233,6 +251,7 @@ function setCheckboxRef(index, el) {
 }
 
 .list-status-nav {
+  align-items: center;
   display: flex;
   gap: 1rem;
   justify-content: center;
