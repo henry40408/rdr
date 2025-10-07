@@ -5,8 +5,7 @@ export default defineNuxtConfig({
       title: "rdr",
     },
   },
-  css: ["~/vendor/water.min.css"],
-  modules: ["@vueuse/nuxt"],
+  modules: ["@vueuse/nuxt", "nuxt-quasar-ui"],
   runtimeConfig: {
     cachePath: "./data/cache.sqlite3",
     httpTimeoutMs: 90000,
