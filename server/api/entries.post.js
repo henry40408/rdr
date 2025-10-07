@@ -14,6 +14,7 @@ import { z } from "zod";
 const schema = z.object({
   feedIds: z.array(z.string()).optional(),
   limit: z.coerce.number().min(1).max(100).default(100),
+  search: z.string().optional(),
   offset: z.coerce.number().min(0).default(0),
   status: z.enum(["all", "read", "unread"]).default("all"),
 });
@@ -35,6 +36,7 @@ export default defineEventHandler(
       feedIds: query.feedIds,
       limit: query.limit,
       offset: query.offset,
+      search: query.search,
       status: query.status,
     });
     return entries

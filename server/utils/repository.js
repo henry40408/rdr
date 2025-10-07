@@ -23,15 +23,32 @@ export class Repository {
   /**
    * @param {object} opts
    * @param {string[]} [opts.feedIds=[]]
+   * @param {string} [opts.search]
    * @param {"all"|"read"|"unread"} [opts.status="all"]
    * @returns {Promise<number>}
    */
-  async countEntries({ feedIds = [], status = "all" }) {
-    const query = this.knex("entries");
-    if (status === "read") query.whereNotNull("read_at");
-    if (status === "unread") query.whereNull("read_at");
-    if (feedIds.length > 0) query.whereIn("feed_id", feedIds);
-    const result = await query.count({ count: "*" }).first();
+  async countEntries({ feedIds = [], search, status = "all" }) {
+    const q = this.knex("entries");
+    switch (status) {
+      case "all":
+        break;
+      case "read":
+        q.whereNotNull("read_at");
+        break;
+      case "unread":
+        q.whereNull("read_at");
+        break;
+    }
+    if (feedIds.length > 0) q.whereIn("feed_id", feedIds);
+    if (search) {
+      const uppered = search.toUpperCase();
+      q.where((builder) =>
+        builder
+          .where(this.knex.raw(`upper(title)`), "like", `%${uppered}%`)
+          .orWhere(this.knex.raw(`upper(description)`), "like", `%${uppered}%`),
+      );
+    }
+    const result = await q.count({ count: "*" }).first();
     return result ? Number(result.count) : 0;
   }
 
@@ -105,11 +122,12 @@ export class Repository {
    * @param {string[]} [opts.feedIds]
    * @param {number} [opts.limit=100]
    * @param {number} [opts.offset=0]
+   * @param {string} [opts.search]
    * @param {"all"|"read"|"unread"} [opts.status="all"]
    * @returns {Promise<EntryEntity[]>}
    */
-  async listEntries({ feedIds = [], limit = 100, offset = 0, status = "all" }) {
-    let query = this.knex("entries").select([
+  async listEntries({ feedIds = [], limit = 100, offset = 0, search, status = "all" }) {
+    let q = this.knex("entries").select([
       "feed_id",
       "guid",
       "title",
@@ -119,10 +137,27 @@ export class Repository {
       "read_at",
       "starred_at",
     ]);
-    if (status === "read") query.whereNotNull("read_at");
-    if (status === "unread") query.whereNull("read_at");
-    if (feedIds.length > 0) query.whereIn("feed_id", feedIds);
-    const rows = await query.orderBy("date", "desc").limit(limit).offset(offset);
+    switch (status) {
+      case "all":
+        break;
+      case "read":
+        q.whereNotNull("read_at");
+        break;
+      case "unread":
+        q.whereNull("read_at");
+        break;
+    }
+    if (feedIds.length > 0) q.whereIn("feed_id", feedIds);
+    if (search) {
+      const uppered = search.toUpperCase();
+      q.where((builder) =>
+        builder
+          .where(this.knex.raw(`upper(title)`), "like", `%${uppered}%`)
+          .orWhere(this.knex.raw(`upper(description)`), "like", `%${uppered}%`),
+      );
+    }
+
+    const rows = await q.orderBy("date", "desc").limit(limit).offset(offset);
     return rows.map(
       (row) =>
         new EntryEntity({

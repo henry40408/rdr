@@ -2,7 +2,9 @@
   <details @toggle="toggle">
     <summary>Read</summary>
     <div v-if="status === 'pending'">Loading...</div>
-    <div v-else-if="contentData" v-html="contentData.content"></div>
+    <div v-else-if="contentData">
+      <MarkedText is-html :text="contentData.content" :keyword="keyword" />
+    </div>
     <div v-else-if="error">Error: {{ error.message }}</div>
   </details>
 </template>
@@ -10,6 +12,7 @@
 <script setup>
 const props = defineProps({
   entryId: { type: String, required: true },
+  keyword: { type: String },
 });
 
 const opened = ref(false);
