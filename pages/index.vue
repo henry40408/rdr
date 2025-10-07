@@ -72,8 +72,8 @@
         >
         <q-chip size="sm" icon="numbers" outline>Entries: {{ countData ? countData.count : "..." }}</q-chip>
         <template v-slot:action>
-          <q-btn flat icon="refresh" label="refresh" @click="resetThenLoad()" />
-          <q-btn flat icon="done_all" label="mark all as read" @click="markAllAsRead()" />
+          <q-btn flat icon="refresh" round @click="resetThenLoad()" />
+          <q-btn flat icon="done_all" round @click="markAllAsRead()" />
         </template>
       </q-banner>
       <q-pull-to-refresh @refresh="resetThenLoad">
