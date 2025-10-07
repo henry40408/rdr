@@ -104,7 +104,9 @@
                   </q-avatar>
                 </q-item-section>
                 <q-item-section>
-                  <q-item-label lines="3">{{ item.entry.title }}</q-item-label>
+                  <q-item-label lines="3">
+                    <MarkedText :text="item.entry.title" :keyword="searchQuery" />
+                  </q-item-label>
                   <q-item-label caption>{{ item.feed.title }}</q-item-label>
                 </q-item-section>
               </template>
@@ -138,7 +140,13 @@
                   </div>
                 </q-card-section>
                 <q-card-section>
-                  <div class="entry-content" v-html="contents[item.entry.id]" />
+                  <MarkedText
+                    v-if="contents[item.entry.id]"
+                    class="entry-content"
+                    is-html
+                    :text="contents[item.entry.id]"
+                    :keyword="searchQuery"
+                  />
                 </q-card-section>
                 <q-separator />
                 <q-card-actions dense>
@@ -350,5 +358,10 @@ async function toggleEntry(entryId) {
 .entry-content img {
   max-width: 100%;
   height: auto;
+}
+
+.entry-content mark {
+  background-color: yellow;
+  color: black;
 }
 </style>
