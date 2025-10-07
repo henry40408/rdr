@@ -10,19 +10,19 @@
   </header>
   <main>
     <div>
-      <ul class="list-status-nav">
+      <ul>
         <li>Status</li>
         <li>
-          <a href="#" :class="{ active: listStatus === 'unread' }" @click.prevent="listStatus = 'unread'">Unread</a>
+          <a href="#" @click.prevent="listStatus = 'unread'">Unread</a>
         </li>
         <li>
-          <a href="#" :class="{ active: listStatus === 'all' }" @click.prevent="listStatus = 'all'">All</a>
+          <a href="#" @click.prevent="listStatus = 'all'">All</a>
         </li>
         <li>
-          <a href="#" :class="{ active: listStatus === 'read' }" @click.prevent="listStatus = 'read'">Read</a>
+          <a href="#" @click.prevent="listStatus = 'read'">Read</a>
         </li>
       </ul>
-      <ul class="list-status-nav">
+      <ul>
         <li>Filter</li>
         <li>
           <span v-if="selectedFeedId">
@@ -42,7 +42,7 @@
           <input type="text" v-model="searchQuery" placeholder="Search..." />
         </li>
       </ul>
-      <ul class="list-status-nav">
+      <ul>
         <li>Actions</li>
         <li>
           <a href="#" @click.prevent="markAllAsRead()">&#x2705; Mark all as read</a>
@@ -57,7 +57,7 @@
           :initial="!!item.entry.readAt"
           @toggled="onEntryToggled"
         />
-        <span v-if="item.entry.readAt" class="read-title">
+        <span v-if="item.entry.readAt">
           <MarkedText :text="item.entry.title" :keyword="searchQuery" />
         </span>
         <span v-else>
@@ -69,12 +69,7 @@
         >
       </h4>
       <div>
-        <img
-          v-if="imageExists(item.feed.id)"
-          :src="`/api/feeds/${item.feed.id}/image`"
-          alt="Feed Image"
-          class="feed-image"
-        />
+        <img v-if="imageExists(item.feed.id)" :src="`/api/feeds/${item.feed.id}/image`" alt="Feed Image" />
         <small>
           <span title="Feed">{{ item.feed.title }}</span>
           {{ " " }}
@@ -241,31 +236,3 @@ function setCheckboxRef(index, el) {
   if (el) checkboxRefs.value[index] = el;
 }
 </script>
-
-<style scoped>
-.feed-image {
-  width: 1rem;
-  height: 1rem;
-  vertical-align: middle;
-  margin-right: 0.25rem;
-}
-
-.list-status-nav {
-  align-items: center;
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
-  list-style: none;
-  padding: 0;
-}
-
-.list-status-nav .active::before {
-  content: "\2705";
-  margin-right: 0.25rem;
-}
-
-.read-title {
-  opacity: 0.5;
-  text-decoration: line-through;
-}
-</style>

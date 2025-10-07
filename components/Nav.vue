@@ -13,13 +13,3 @@
     </ul>
   </nav>
 </template>
-
-<style scoped>
-nav ul {
-  display: flex;
-  gap: 1rem;
-  list-style: none;
-  padding: 0;
-  justify-content: center;
-}
-</style>

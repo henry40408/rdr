@@ -38,6 +38,7 @@
     "zod": "^4.1.11"
   },
   "devDependencies": {
+    "@nuxtjs/tailwindcss": "^6.14.0",
     "@types/feedparser": "^2.2.8",
     "@types/knex": "^0.15.2",
     "@types/lodash": "^4.17.20",

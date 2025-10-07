@@ -5,7 +5,7 @@
   </header>
   <main>
     <div>
-      <nav class="top-nav">
+      <nav>
         <ul>
           <li>Actions</li>
           <li>
@@ -36,12 +36,7 @@
           <tr v-for="feed in category.feeds" :key="feed.id">
             <td>
               <div>
-                <img
-                  v-if="imageExists(feed.id)"
-                  :src="`/api/feeds/${feed.id}/image`"
-                  alt="Feed Image"
-                  class="feed-image"
-                />
+                <img v-if="imageExists(feed.id)" :src="`/api/feeds/${feed.id}/image`" alt="Feed Image" />
                 <a :href="feed.htmlUrl" target="_blank" rel="noopener noreferrer">{{ feed.title }}</a>
               </div>
               <div>
@@ -135,20 +130,3 @@ async function refreshFeed(feed) {
   }
 }
 </script>
-
-<style scoped>
-.feed-image {
-  width: 1rem;
-  height: 1rem;
-  vertical-align: middle;
-  margin-right: 0.25rem;
-}
-
-.top-nav ul {
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
-  list-style: none;
-  padding: 0;
-}
-</style>
