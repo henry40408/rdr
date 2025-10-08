@@ -24,7 +24,7 @@ export default defineEventHandler(
   async (event) => {
     const { container } = useNitroApp();
 
-    const query = await readValidatedBody(event, (query) => schema.parse(query));
+    const body = await readValidatedBody(event, (body) => schema.parse(body));
 
     /** @type {OpmlService} */
     const opmlService = container.resolve("opmlService");
@@ -33,11 +33,11 @@ export default defineEventHandler(
 
     const categories = opmlService.categories;
     const entries = await repository.listEntries({
-      feedIds: query.feedIds,
-      limit: query.limit,
-      offset: query.offset,
-      search: query.search,
-      status: query.status,
+      feedIds: body.feedIds,
+      limit: body.limit,
+      offset: body.offset,
+      search: body.search,
+      status: body.status,
     });
     return entries
       .map((entry) => {

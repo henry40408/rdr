@@ -1,25 +1,56 @@
 <template>
-  <q-layout view="hHh lpR fFf">
+  <q-layout view="hHh LpR fFf">
     <q-header elevated class="bg-primary text-white">
       <q-toolbar>
         <q-btn dense flat round icon="menu" @click="leftDrawerOpen = !leftDrawerOpen" />
         <q-toolbar-title>rdr</q-toolbar-title>
+        <q-input dark borderless v-model="searchQuery" input-class="text-right" class="q-ml-md q-mr-sm" debounce="500">
+          <template v-slot:append>
+            <q-icon v-if="!searchQuery" name="search" />
+            <q-icon v-else name="clear" class="cursor-pointer" @click="searchQuery = ''" />
+          </template>
+        </q-input>
         <q-btn dense flat round icon="menu" @click="rightDrawerOpen = !rightDrawerOpen" />
       </q-toolbar>
+      <q-tabs align="left">
+        <q-route-tab to="/" label="Home" />
+        <q-route-tab to="/feeds" label="Feeds" />
+      </q-tabs>
     </q-header>
 
-    <q-drawer show-if-above v-model="leftDrawerOpen" side="left" bordered> </q-drawer>
+    <q-drawer show-if-above v-model="leftDrawerOpen" side="left" bordered>
+      <q-banner>
+        <div class="text-h6">Categories</div>
+      </q-banner>
+      <q-list>
+        <template v-for="category in categories" :key="category.id">
+          <q-item clickable @click="() => $router.push({ path: '/', query: { categoryId: category.id } })">
+            <q-item-section>
+              <q-item-label>{{ category.name }}</q-item-label>
+            </q-item-section>
+          </q-item>
+          <q-separator />
+          <q-item
+            v-for="feed in category.feeds"
+            :key="feed.id"
+            clickable
+            @click="() => $router.push({ path: '/', query: { feedId: feed.id } })"
+          >
+            <q-item-section avatar>
+              <q-avatar size="sm" square v-if="imageExists(feed.id)">
+                <img :src="`/api/feeds/${feed.id}/image`" onerror="this.remove()" />
+              </q-avatar>
+            </q-item-section>
+            <q-item-section>
+              <q-item-label>{{ feed.title }}</q-item-label>
+            </q-item-section>
+          </q-item>
+        </template>
+      </q-list>
+    </q-drawer>
 
     <q-drawer show-if-above v-model="rightDrawerOpen" side="right" bordered>
       <q-list>
-        <q-item>
-          <q-input v-model="searchQuery" type="search" clearable placeholder="Search" debounce="500">
-            <template v-slot:prepend>
-              <q-icon name="search" />
-            </template>
-          </q-input>
-        </q-item>
-        <q-separator spaced />
         <q-item-label header>Status</q-item-label>
         <q-item tag="label" v-ripple>
           <q-item-section side top>
@@ -49,7 +80,10 @@
     </q-drawer>
 
     <q-page-container>
-      <q-banner>
+      <q-banner inline-actions>
+        <div class="text-h6" v-if="listStatus === 'unread'">Unread</div>
+        <div class="text-h6" v-else-if="listStatus === 'all'">All</div>
+        <div class="text-h6" v-else-if="listStatus === 'read'">Read</div>
         <q-chip
           v-if="selectedFeedId"
           size="sm"
@@ -72,9 +106,22 @@
         >
         <q-chip size="sm" icon="numbers" outline>Entries: {{ countData ? countData.count : "..." }}</q-chip>
         <template v-slot:action>
-          <q-btn flat icon="refresh" round @click="resetThenLoad()" />
-          <q-btn flat icon="done_all" round @click="markAllAsRead()" />
+          <q-btn flat icon="refresh" round @click="resetThenLoad()">
+            <q-tooltip>Refresh</q-tooltip>
+          </q-btn>
+          <q-btn flat icon="done_all" round @click="markAllAsRead()">
+            <q-tooltip>Mark all as read</q-tooltip>
+          </q-btn>
         </template>
+      </q-banner>
+      <q-banner class="text-center" v-if="loading">
+        <q-spinner color="primary" size="3em" />
+      </q-banner>
+      <q-banner class="bg-grey-2 text-grey-8" v-if="!loading && allItems.length === 0">
+        <template v-slot:avatar>
+          <q-icon name="info" />
+        </template>
+        No entries found.
       </q-banner>
       <q-pull-to-refresh @refresh="resetThenLoad">
         <q-infinite-scroll @load="onLoad" :offset="250">
@@ -134,7 +181,7 @@
                     >
                       Category: {{ item.feed.category.name }}
                     </q-chip>
-                    <q-chip size="sm" color="grey" icon="calendar_today" outline
+                    <q-chip size="sm" color="accent" icon="calendar_today" outline
                       >Date: <ClientSideDateTime :datetime="item.entry.date"
                     /></q-chip>
                   </div>
@@ -187,6 +234,7 @@ const entryRead = ref({});
 
 const hasMore = ref(true);
 const leftDrawerOpen = ref(false);
+const loading = ref(false);
 const offset = ref(0);
 const rightDrawerOpen = ref(false);
 
@@ -239,29 +287,41 @@ async function loadContent(entryId) {
  * @param {(stop?:boolean) => void} [done]
  */
 async function onLoad(index, done) {
-  const body = {};
-  if (selectedFeedId.value) {
-    body.feedIds = [selectedFeedId.value];
-  } else if (selectedCategoryId.value) {
-    const feedIds = categories.value?.flatMap((c) =>
-      c.id === selectedCategoryId.value ? c.feeds.map((f) => f.id) : [],
-    );
-    if (feedIds) body.feedIds = feedIds;
+  if (!hasMore.value && done) {
+    done();
+    return;
   }
-  if (searchQuery.value) body.search = searchQuery.value;
-  body.limit = LIMIT;
-  body.offset = offset.value;
-  body.status = listStatus.value;
+  try {
+    const body = {};
+    if (selectedFeedId.value) {
+      body.feedIds = [selectedFeedId.value];
+    } else if (selectedCategoryId.value) {
+      const feedIds = categories.value?.flatMap((c) =>
+        c.id === selectedCategoryId.value ? c.feeds.map((f) => f.id) : [],
+      );
+      if (feedIds) body.feedIds = feedIds;
+    }
+    if (searchQuery.value) body.search = searchQuery.value;
+    body.limit = LIMIT;
+    body.offset = offset.value;
+    body.status = listStatus.value;
 
-  const items = await $fetch("/api/entries", { method: "POST", body });
-  if (items.length < LIMIT) hasMore.value = false;
-  for (const item of items) {
-    allItems.value.push(item);
-    entryRead.value[item.entry.id] = item.entry.readAt ? "read" : "unread";
+    loading.value = true;
+    const items = await $fetch("/api/entries", { method: "POST", body });
+
+    if (items.length < LIMIT) hasMore.value = false;
+    for (const item of items) {
+      allItems.value.push(item);
+      entryRead.value[item.entry.id] = item.entry.readAt ? "read" : "unread";
+    }
+    offset.value += items.length;
+  } catch (e) {
+    console.error("Failed to load entries", e);
+    hasMore.value = false;
+  } finally {
+    loading.value = false;
+    if (done) done();
   }
-  offset.value += items.length;
-
-  if (done) done();
 }
 
 /**
