@@ -21,12 +21,23 @@
       </q-banner>
       <q-list class="q-mb-md">
         <template v-for="category in categories" :key="category.id">
-          <q-item clickable @click="() => $router.push({ path: '/', query: { categoryId: category.id } })">
+          <q-item>
             <q-item-section>
               <q-item-label>{{ category.name }}</q-item-label>
             </q-item-section>
             <q-item-section side>
               <q-item-label caption>{{ category.feeds.length }} feeds</q-item-label>
+            </q-item-section>
+            <q-item-section side>
+              <q-btn
+                dense
+                flat
+                round
+                icon="visibility"
+                @click="() => $router.push({ path: '/', query: { categoryId: category.id } })"
+              >
+                <q-tooltip anchor="center left" self="center right">Go to category</q-tooltip>
+              </q-btn>
             </q-item-section>
             <q-item-section side>
               <q-btn
@@ -43,12 +54,7 @@
           </q-item>
           <q-separator />
           <q-list>
-            <q-item
-              v-for="feed in category.feeds"
-              :key="feed.id"
-              clickable
-              @click="() => $router.push({ path: '/', query: { feedId: feed.id } })"
-            >
+            <q-item v-for="feed in category.feeds" :key="feed.id">
               <q-item-section avatar>
                 <q-avatar v-if="imageExists(feed.id)" size="sm">
                   <img :src="`/api/feeds/${feed.id}/image`" alt="Feed Image" />
@@ -65,6 +71,17 @@
               <q-item-section side>
                 <q-btn dense flat round icon="open_in_new" :href="feed.htmlUrl" target="_blank" rel="noopener">
                   <q-tooltip anchor="center left" self="center right">Open website</q-tooltip>
+                </q-btn>
+              </q-item-section>
+              <q-item-section side>
+                <q-btn
+                  dense
+                  flat
+                  round
+                  icon="visibility"
+                  @click="() => $router.push({ path: '/', query: { feedId: feed.id } })"
+                >
+                  <q-tooltip anchor="center left" self="center right">Go to feed</q-tooltip>
                 </q-btn>
               </q-item-section>
               <q-item-section side>
