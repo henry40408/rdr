@@ -84,13 +84,16 @@
         <div class="text-h6" v-if="listStatus === 'unread'">Unread</div>
         <div class="text-h6" v-else-if="listStatus === 'all'">All</div>
         <div class="text-h6" v-else-if="listStatus === 'read'">Read</div>
+        <q-chip v-if="searchQuery" outline removable color="accent" icon="search" size="sm" @remove="searchQuery = ''"
+          >Search: {{ searchQuery }}</q-chip
+        >
         <q-chip
           v-if="selectedFeedId"
-          size="sm"
-          color="primary"
-          icon="rss_feed"
           outline
           removable
+          color="primary"
+          icon="rss_feed"
+          size="sm"
           @remove="selectedFeedId = undefined"
           >Feed: {{ getFilteredFeedTitle() }}</q-chip
         >
@@ -294,12 +297,9 @@ async function onLoad(index, done) {
   try {
     const body = {};
     if (selectedFeedId.value) {
-      body.feedIds = [selectedFeedId.value];
+      body.selected = { type: "feed", id: selectedFeedId.value };
     } else if (selectedCategoryId.value) {
-      const feedIds = categories.value?.flatMap((c) =>
-        c.id === selectedCategoryId.value ? c.feeds.map((f) => f.id) : [],
-      );
-      if (feedIds) body.feedIds = feedIds;
+      body.selected = { type: "category", id: selectedCategoryId.value };
     }
     if (searchQuery.value) body.search = searchQuery.value;
     body.limit = LIMIT;

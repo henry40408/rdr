@@ -11,8 +11,18 @@ import { z } from "zod";
  * @property {string} feed.category.name
  */
 
+const selectedCategory = z.object({
+  type: z.literal("category"),
+  id: z.string(),
+});
+
+const selectedFeed = z.object({
+  type: z.literal("feed"),
+  id: z.string(),
+});
+
 const schema = z.object({
-  feedIds: z.array(z.string()).optional(),
+  selected: z.union([selectedCategory, selectedFeed]).optional(),
   limit: z.coerce.number().min(1).max(100).default(100),
   search: z.string().optional(),
   offset: z.coerce.number().min(0).default(0),
@@ -32,8 +42,21 @@ export default defineEventHandler(
     const repository = container.resolve("repository");
 
     const categories = opmlService.categories;
+
+    /** @type {string[]|undefined} */
+    let feedIds = undefined;
+    const selected = body.selected;
+    if (selected) {
+      if (selected.type === "category") {
+        const category = categories.find((c) => c.id === selected.id);
+        feedIds = category?.feeds.map((f) => f.id) || [];
+      } else if (selected.type === "feed") {
+        feedIds = [selected.id];
+      }
+    }
+
     const entries = await repository.listEntries({
-      feedIds: body.feedIds,
+      feedIds,
       limit: body.limit,
       offset: body.offset,
       search: body.search,
