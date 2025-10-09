@@ -1,6 +1,4 @@
 <template>
-  <q-ajax-bar ref="bar" position="bottom" color="accent" size="0.5rem" skip-hijack />
-
   <q-layout view="hHh LpR fFf">
     <q-header elevated reveal class="bg-primary text-white">
       <q-toolbar>
@@ -122,7 +120,7 @@
       <q-banner class="text-center" v-if="loading">
         <q-spinner color="primary" size="3em" />
       </q-banner>
-      <q-banner class="bg-grey-2 text-grey-8" v-if="!loading && allItems.length === 0">
+      <q-banner class="bg-grey-2 text-grey-8" v-if="!loading && items.length === 0">
         <template v-slot:avatar>
           <q-icon name="info" />
         </template>
@@ -134,7 +132,7 @@
             <q-expansion-item
               clickable
               group="entry"
-              v-for="item in allItems"
+              v-for="item in items"
               :key="item.entry.id"
               @before-show="loadContent(item.entry.id)"
               @hide="markAsRead(item.entry.id)"
@@ -142,9 +140,8 @@
               <template v-slot:header>
                 <q-item-section side>
                   <q-checkbox
-                    size="sm"
                     v-model="entryRead[item.entry.id]"
-                    :disable="entryRead[item.entry.id] === 'toggling'"
+                    size="sm"
                     true-value="read"
                     false-value="unread"
                     @click="toggleEntry(item.entry.id)"
@@ -216,7 +213,7 @@
                 </q-card-actions>
               </q-card>
             </q-expansion-item>
-            <q-item v-if="!hasMore && allItems.length > 0">
+            <q-item v-if="!hasMore && items.length > 0">
               <q-item-section>
                 <q-item-label class="text-center text-grey-8">End of list</q-item-label>
               </q-item-section>
@@ -233,20 +230,18 @@ import { useRouteQuery } from "@vueuse/router";
 
 const LIMIT = 100;
 
-const bar = useTemplateRef("bar");
-
 /** @type {Ref<import('../server/api/entries.get').EntryEntityWithFeed[]>} */
-const allItems = ref([]);
+const items = ref([]);
 
 /** @type {Ref<{ [key: string]: string }> } */
 const contents = ref({});
 
-/** @type {Ref<{ [key: string]: "read" | "unread" | "toggling" }> } */
+/** @type {Ref<Record<string,"read"|"toggling"|"unread">>} */
 const entryRead = ref({});
 
 const hasMore = ref(true);
 const leftDrawerOpen = ref(false);
-const loading = ref(true);
+const loading = ref(false);
 const offset = ref(0);
 const rightDrawerOpen = ref(false);
 
@@ -279,6 +274,39 @@ const { data: countData, execute: refreshCount } = await useFetch("/api/count", 
 });
 const { data: imagePks } = await useFetch("/api/image-pks");
 
+async function load() {
+  const query = {};
+  if (selectedCategoryId.value) {
+    query.selectedType = "category";
+    query.selectedId = selectedCategoryId.value;
+  } else if (selectedFeedId.value) {
+    query.selectedType = "feed";
+    query.selectedId = selectedFeedId.value;
+  }
+  if (searchQuery.value) query.search = searchQuery.value;
+  if (listStatus.value) query.status = listStatus.value;
+  query.limit = LIMIT;
+  query.offset = offset.value;
+
+  loading.value = true;
+  try {
+    const newItems = await $fetch("/api/entries", { query });
+    if (newItems) {
+      for (const item of newItems) {
+        items.value.push(item);
+        entryRead.value[item.entry.id] = item.entry.readAt ? "read" : "unread";
+      }
+      if (newItems.length < LIMIT) hasMore.value = false;
+    }
+  } catch (e) {
+    console.error(e);
+    hasMore.value = false;
+  } finally {
+    loading.value = false;
+  }
+}
+await load();
+
 /**
  * @param {string} entryId
  */
@@ -288,7 +316,7 @@ async function loadContent(entryId) {
     const { content } = await $fetch(`/api/entries/${entryId}/content`);
     contents.value[entryId] = content;
   } catch (e) {
-    console.error(e);
+    console.error("Failed to load content for entry", e);
   }
 }
 
@@ -297,55 +325,27 @@ async function loadContent(entryId) {
  * @param {(stop?:boolean) => void} [done]
  */
 async function onLoad(index, done) {
-  if (!hasMore.value && done) {
-    done();
+  if (!hasMore.value) {
+    if (done) done(true);
     return;
   }
-  try {
-    const query = {};
-    if (selectedFeedId.value) {
-      query.selectedId = selectedFeedId.value;
-      query.selectedType = "feed";
-    } else if (selectedCategoryId.value) {
-      query.selectedId = selectedCategoryId.value;
-      query.selectedType = "category";
-    }
-    if (searchQuery.value) query.search = searchQuery.value;
-    query.limit = LIMIT;
-    query.offset = offset.value;
-    query.status = listStatus.value;
-
-    loading.value = true;
-    if (bar.value && typeof bar.value.start === "function") bar.value.start();
-    const items = await $fetch("/api/entries", { query });
-
-    if (items.length < LIMIT) hasMore.value = false;
-    for (const item of items) {
-      allItems.value.push(item);
-      entryRead.value[item.entry.id] = item.entry.readAt ? "read" : "unread";
-    }
-    offset.value += items.length;
-  } catch (e) {
-    console.error("Failed to load entries", e);
-    hasMore.value = false;
-  } finally {
-    if (bar.value && typeof bar.value.stop === "function") bar.value.stop();
-    loading.value = false;
-    if (done) done();
-  }
+  offset.value += LIMIT;
+  await load();
+  if (done) done();
 }
 
 /**
  * @param {(stop?:boolean) => void} [done]
  */
-function resetThenLoad(done) {
-  allItems.value = [];
+async function resetThenLoad(done) {
   contents.value = {};
   hasMore.value = true;
+  items.value = [];
   offset.value = 0;
-  onLoad(undefined, done);
-}
 
+  await load();
+  if (done) done();
+}
 watch([listStatus, selectedCategoryId, selectedFeedId, searchQuery], () => {
   resetThenLoad();
 });
@@ -375,8 +375,8 @@ function imageExists(feedId) {
 async function markAllAsRead() {
   try {
     const tasks = [];
-    for (const item of allItems.value) {
-      if (entryRead.value[item.entry.id] === "read") continue;
+    for (const item of items.value) {
+      if (entryRead.value[item.entry.id] === "toggling") continue;
       const task = async () => {
         entryRead.value[item.entry.id] = "toggling";
         await $fetch(`/api/entries/${item.entry.id}/toggle`, { method: "PUT" });
@@ -397,14 +397,9 @@ async function markAllAsRead() {
 async function markAsRead(entryId) {
   if (entryRead.value[entryId] === "read") return;
   entryRead.value[entryId] = "toggling";
-  try {
-    await $fetch(`/api/entries/${entryId}/toggle`, { method: "PUT" });
-    refreshCount();
-  } catch (e) {
-    console.error("Failed to mark as read", e);
-  } finally {
-    entryRead.value[entryId] = "read";
-  }
+  await $fetch(`/api/entries/${entryId}/toggle`, { method: "PUT" });
+  entryRead.value[entryId] = "read";
+  refreshCount();
 }
 
 /**
@@ -412,16 +407,11 @@ async function markAsRead(entryId) {
  */
 async function toggleEntry(entryId) {
   if (entryRead.value[entryId] === "toggling") return;
-  const value = entryRead.value[entryId];
+  const oldValue = entryRead.value[entryId];
   entryRead.value[entryId] = "toggling";
-  try {
-    await $fetch(`/api/entries/${entryId}/toggle`, { method: "PUT" });
-    refreshCount();
-  } catch (e) {
-    console.error("Failed to toggle entry", e);
-  } finally {
-    entryRead.value[entryId] = value;
-  }
+  await $fetch(`/api/entries/${entryId}/toggle`, { method: "PUT" });
+  entryRead.value[entryId] = oldValue === "read" ? "unread" : "read";
+  refreshCount();
 }
 </script>
 
