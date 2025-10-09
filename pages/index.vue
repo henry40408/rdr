@@ -38,7 +38,7 @@
           >
             <q-item-section avatar>
               <q-avatar size="sm" square v-if="imageExists(feed.id)">
-                <img :src="`/api/feeds/${feed.id}/image`" onerror="this.remove()" />
+                <img :src="`/api/feeds/${feed.id}/image`" />
               </q-avatar>
             </q-item-section>
             <q-item-section>
@@ -149,7 +149,7 @@
                 </q-item-section>
                 <q-item-section avatar>
                   <q-avatar size="sm" square v-if="imageExists(item.feed.id)">
-                    <img :src="`/api/feeds/${item.feed.id}/image`" onerror="this.remove()" />
+                    <img :src="`/api/feeds/${item.feed.id}/image`" />
                   </q-avatar>
                 </q-item-section>
                 <q-item-section>
@@ -236,7 +236,7 @@ const items = ref([]);
 /** @type {Ref<{ [key: string]: string }> } */
 const contents = ref({});
 
-/** @type {Ref<Record<string,"read"|"toggling"|"unread">>} */
+/** @type {Ref<Record<string,"read"|"unread">>} */
 const entryRead = ref({});
 
 const hasMore = ref(true);
@@ -273,6 +273,20 @@ const { data: countData, execute: refreshCount } = await useFetch("/api/count", 
   query: countQuery,
 });
 const { data: imagePks } = await useFetch("/api/image-pks");
+
+function getFilteredCategoryName() {
+  if (!selectedCategoryId.value) return "None";
+  if (!categories.value) return "Unknown";
+  const entry = categories.value.find((c) => c.id === selectedCategoryId.value);
+  return entry ? entry.name : "Unknown";
+}
+
+function getFilteredFeedTitle() {
+  if (!selectedFeedId.value) return "None";
+  if (!categories.value) return "Unknown";
+  const entry = categories.value.flatMap((c) => c.feeds).find((f) => f.id === selectedFeedId.value);
+  return entry ? entry.title : "Unknown";
+}
 
 async function load() {
   const query = {};
@@ -335,36 +349,6 @@ async function onLoad(index, done) {
 }
 
 /**
- * @param {(stop?:boolean) => void} [done]
- */
-async function resetThenLoad(done) {
-  contents.value = {};
-  hasMore.value = true;
-  items.value = [];
-  offset.value = 0;
-
-  await load();
-  if (done) done();
-}
-watch([listStatus, selectedCategoryId, selectedFeedId, searchQuery], () => {
-  resetThenLoad();
-});
-
-function getFilteredCategoryName() {
-  if (!selectedCategoryId.value) return "None";
-  if (!categories.value) return "Unknown";
-  const entry = categories.value.find((c) => c.id === selectedCategoryId.value);
-  return entry ? entry.name : "Unknown";
-}
-
-function getFilteredFeedTitle() {
-  if (!selectedFeedId.value) return "None";
-  if (!categories.value) return "Unknown";
-  const entry = categories.value.flatMap((c) => c.feeds).find((f) => f.id === selectedFeedId.value);
-  return entry ? entry.title : "Unknown";
-}
-
-/**
  * @param {string} feedId
  * @returns {boolean}
  */
@@ -376,11 +360,9 @@ async function markAllAsRead() {
   try {
     const tasks = [];
     for (const item of items.value) {
-      if (entryRead.value[item.entry.id] === "toggling") continue;
+      if (entryRead.value[item.entry.id] === "read") continue;
       const task = async () => {
-        entryRead.value[item.entry.id] = "toggling";
         await $fetch(`/api/entries/${item.entry.id}/toggle`, { method: "PUT" });
-        entryRead.value[item.entry.id] = "read";
       };
       tasks.push(task());
     }
@@ -396,21 +378,32 @@ async function markAllAsRead() {
  */
 async function markAsRead(entryId) {
   if (entryRead.value[entryId] === "read") return;
-  entryRead.value[entryId] = "toggling";
-  await $fetch(`/api/entries/${entryId}/toggle`, { method: "PUT" });
   entryRead.value[entryId] = "read";
+  await $fetch(`/api/entries/${entryId}/toggle`, { method: "PUT" });
   refreshCount();
 }
+
+/**
+ * @param {(stop?:boolean) => void} [done]
+ */
+async function resetThenLoad(done) {
+  contents.value = {};
+  hasMore.value = true;
+  items.value = [];
+  offset.value = 0;
+
+  await load();
+  if (done) done();
+}
+watch([listStatus, selectedCategoryId, selectedFeedId, searchQuery], () => {
+  resetThenLoad();
+});
 
 /**
  * @param {string} entryId
  */
 async function toggleEntry(entryId) {
-  if (entryRead.value[entryId] === "toggling") return;
-  const oldValue = entryRead.value[entryId];
-  entryRead.value[entryId] = "toggling";
   await $fetch(`/api/entries/${entryId}/toggle`, { method: "PUT" });
-  entryRead.value[entryId] = oldValue === "read" ? "unread" : "read";
   refreshCount();
 }
 </script>
