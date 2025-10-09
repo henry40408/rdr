@@ -1,4 +1,6 @@
 <template>
+  <q-ajax-bar ref="bar" position="bottom" color="accent" size="0.5rem" skip-hijack />
+
   <q-layout view="hHh LpR fFf">
     <q-header elevated class="bg-primary text-white">
       <q-toolbar>
@@ -231,6 +233,8 @@ import { useRouteQuery } from "@vueuse/router";
 
 const LIMIT = 100;
 
+const bar = useTemplateRef("bar");
+
 /** @type {Ref<import('../server/api/entries.get').EntryEntityWithFeed[]>} */
 const allItems = ref([]);
 
@@ -312,6 +316,7 @@ async function onLoad(index, done) {
     query.status = listStatus.value;
 
     loading.value = true;
+    if (bar.value && typeof bar.value.start === "function") bar.value.start();
     const items = await $fetch("/api/entries", { query });
 
     if (items.length < LIMIT) hasMore.value = false;
@@ -324,6 +329,7 @@ async function onLoad(index, done) {
     console.error("Failed to load entries", e);
     hasMore.value = false;
   } finally {
+    if (bar.value && typeof bar.value.stop === "function") bar.value.stop();
     loading.value = false;
     if (done) done();
   }
