@@ -1,6 +1,6 @@
 <template>
-  <q-layout view="hHh LpR fFf">
-    <q-header elevated reveal class="bg-primary text-white">
+  <q-layout view="hhh LpR fFf">
+    <q-header elevated class="bg-primary text-white">
       <q-toolbar>
         <q-btn dense flat round icon="menu" @click="leftDrawerOpen = !leftDrawerOpen" />
         <q-toolbar-title>rdr</q-toolbar-title>
@@ -132,9 +132,11 @@
             <q-expansion-item
               clickable
               group="entry"
-              v-for="item in items"
+              v-for="(item, index) in items"
               :key="item.entry.id"
+              ref="x"
               @before-show="loadContent(item.entry.id)"
+              @show="scrollToContentRef(index)"
               @hide="markAsRead(item.entry.id)"
             >
               <template v-slot:header>
@@ -227,8 +229,11 @@
 
 <script setup>
 import { useRouteQuery } from "@vueuse/router";
+import { scroll } from "quasar";
 
 const LIMIT = 100;
+
+const itemRefs = useTemplateRef("x");
 
 /** @type {Ref<import('../server/api/entries.get').EntryEntityWithFeed[]>} */
 const items = ref([]);
@@ -398,6 +403,14 @@ async function resetThenLoad(done) {
 watch([listStatus, selectedCategoryId, selectedFeedId, searchQuery], () => {
   resetThenLoad();
 });
+
+/**
+ * @param {number} index
+ */
+function scrollToContentRef(index) {
+  // @ts-ignore
+  itemRefs.value?.[index]?.$el.scrollIntoView();
+}
 
 /**
  * @param {string} entryId
