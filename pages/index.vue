@@ -2,7 +2,7 @@
   <q-ajax-bar ref="bar" position="bottom" color="accent" size="0.5rem" skip-hijack />
 
   <q-layout view="hHh LpR fFf">
-    <q-header elevated class="bg-primary text-white">
+    <q-header elevated reveal class="bg-primary text-white">
       <q-toolbar>
         <q-btn dense flat round icon="menu" @click="leftDrawerOpen = !leftDrawerOpen" />
         <q-toolbar-title>rdr</q-toolbar-title>
