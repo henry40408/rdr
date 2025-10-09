@@ -11,21 +11,17 @@ import { z } from "zod";
  * @property {string} feed.category.name
  */
 
-const selectedCategory = z.object({
-  type: z.literal("category"),
-  id: z.string(),
-});
-
 const selectedFeed = z.object({
   type: z.literal("feed"),
   id: z.string(),
 });
 
 const schema = z.object({
-  selected: z.union([selectedCategory, selectedFeed]).optional(),
   limit: z.coerce.number().min(1).max(100).default(100),
   search: z.string().optional(),
   offset: z.coerce.number().min(0).default(0),
+  selectedId: z.string().optional(),
+  selectedType: z.enum(["category", "feed"]).optional(),
   status: z.enum(["all", "read", "unread"]).default("all"),
 });
 
@@ -34,7 +30,9 @@ export default defineEventHandler(
   async (event) => {
     const { container } = useNitroApp();
 
-    const body = await readValidatedBody(event, (body) => schema.parse(body));
+    const { limit, offset, search, selectedId, selectedType, status } = await getValidatedQuery(event, (query) =>
+      schema.parse(query),
+    );
 
     /** @type {OpmlService} */
     const opmlService = container.resolve("opmlService");
@@ -45,22 +43,19 @@ export default defineEventHandler(
 
     /** @type {string[]|undefined} */
     let feedIds = undefined;
-    const selected = body.selected;
-    if (selected) {
-      if (selected.type === "category") {
-        const category = categories.find((c) => c.id === selected.id);
-        feedIds = category?.feeds.map((f) => f.id) || [];
-      } else if (selected.type === "feed") {
-        feedIds = [selected.id];
-      }
+    if (selectedType === "category" && selectedId) {
+      const category = categories.find((c) => c.id === selectedId);
+      feedIds = category?.feeds.map((f) => f.id) || [];
+    } else if (selectedType === "feed" && selectedId) {
+      feedIds = [selectedId];
     }
 
     const entries = await repository.listEntries({
       feedIds,
-      limit: body.limit,
-      offset: body.offset,
-      search: body.search,
-      status: body.status,
+      limit,
+      offset,
+      search,
+      status,
     });
     return entries
       .map((entry) => {

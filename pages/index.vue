@@ -214,6 +214,11 @@
                 </q-card-actions>
               </q-card>
             </q-expansion-item>
+            <q-item v-if="!hasMore && allItems.length > 0">
+              <q-item-section>
+                <q-item-label class="text-center text-grey-8">End of list</q-item-label>
+              </q-item-section>
+            </q-item>
           </q-list>
         </q-infinite-scroll>
       </q-pull-to-refresh>
@@ -226,7 +231,7 @@ import { useRouteQuery } from "@vueuse/router";
 
 const LIMIT = 100;
 
-/** @type {Ref<import('../server/api/entries.post').EntryEntityWithFeed[]>} */
+/** @type {Ref<import('../server/api/entries.get').EntryEntityWithFeed[]>} */
 const allItems = ref([]);
 
 /** @type {Ref<{ [key: string]: string }> } */
@@ -250,25 +255,23 @@ const selectedFeedId = useRouteQuery("feedId", undefined);
 /** @type {Ref<string>} */
 const searchQuery = useRouteQuery("q", null);
 
-const feedIdsForCount = computed(() => {
-  if (selectedFeedId.value) return [selectedFeedId.value];
-  if (selectedCategoryId.value && categories.value) {
-    const feedIds = categories.value.flatMap((c) =>
-      c.id === selectedCategoryId.value ? c.feeds.map((f) => f.id) : [],
-    );
-    if (feedIds.length > 0) return feedIds;
+const countQuery = computed(() => {
+  const query = {};
+  if (selectedCategoryId.value) {
+    query.selectedType = "category";
+    query.selectedId = selectedCategoryId.value;
+  } else if (selectedFeedId.value) {
+    query.selectedType = "feed";
+    query.selectedId = selectedFeedId.value;
   }
-  return undefined;
+  if (searchQuery.value) query.search = searchQuery.value;
+  if (listStatus.value) query.status = listStatus.value;
+  return query;
 });
 
 const { data: categories } = await useFetch("/api/categories");
 const { data: countData, execute: refreshCount } = await useFetch("/api/count", {
-  method: "POST",
-  body: {
-    feedIds: feedIdsForCount,
-    search: searchQuery,
-    status: listStatus,
-  },
+  query: countQuery,
 });
 const { data: imagePks } = await useFetch("/api/image-pks");
 
@@ -295,19 +298,21 @@ async function onLoad(index, done) {
     return;
   }
   try {
-    const body = {};
+    const query = {};
     if (selectedFeedId.value) {
-      body.selected = { type: "feed", id: selectedFeedId.value };
+      query.selectedId = selectedFeedId.value;
+      query.selectedType = "feed";
     } else if (selectedCategoryId.value) {
-      body.selected = { type: "category", id: selectedCategoryId.value };
+      query.selectedId = selectedCategoryId.value;
+      query.selectedType = "category";
     }
-    if (searchQuery.value) body.search = searchQuery.value;
-    body.limit = LIMIT;
-    body.offset = offset.value;
-    body.status = listStatus.value;
+    if (searchQuery.value) query.search = searchQuery.value;
+    query.limit = LIMIT;
+    query.offset = offset.value;
+    query.status = listStatus.value;
 
     loading.value = true;
-    const items = await $fetch("/api/entries", { method: "POST", body });
+    const items = await $fetch("/api/entries", { query });
 
     if (items.length < LIMIT) hasMore.value = false;
     for (const item of items) {
