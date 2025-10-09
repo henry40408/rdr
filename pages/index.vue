@@ -234,7 +234,7 @@ const entryRead = ref({});
 
 const hasMore = ref(true);
 const leftDrawerOpen = ref(false);
-const loading = ref(false);
+const loading = ref(true);
 const offset = ref(0);
 const rightDrawerOpen = ref(false);
 
