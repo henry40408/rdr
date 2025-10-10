@@ -155,7 +155,7 @@
                       true-value="read"
                       :disable="entryRead[item.entry.id] === 'toggling'"
                       false-value="unread"
-                      @click="toggleEntry(item.entry.id)"
+                      @click="toggleEntry(item.entry.id, index)"
                     />
                   </q-item-section>
                   <q-item-section side>
@@ -310,7 +310,7 @@ const { data: feedsData, execute: refreshFeedData } = await useFetch("/api/feeds
  * @param {number} index
  */
 function collapseItem(index) {
-  // @ts-ignore
+  // @ts-expect-error
   itemRefs.value?.[index]?.hide();
 }
 
@@ -464,14 +464,15 @@ watch([listStatus, selectedCategoryId, selectedFeedId, searchQuery], () => {
  * @param {number} index
  */
 function scrollToContentRef(index) {
-  // @ts-ignore
+  // @ts-expect-error
   itemRefs.value?.[index]?.$el.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 /**
  * @param {string} entryId
+ * @param {number} index
  */
-async function toggleEntry(entryId) {
+async function toggleEntry(entryId, index) {
   if (entryRead.value[entryId] === "toggling") return;
 
   // status of checkbox is already changed by the time this function is called
@@ -486,6 +487,7 @@ async function toggleEntry(entryId) {
     console.error("Failed to toggle entry", e);
   } finally {
     entryRead.value[entryId] = value;
+    collapseItem(index);
   }
 }
 </script>
