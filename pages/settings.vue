@@ -24,11 +24,11 @@
               </div>
             </td>
             <td>
-              <ClientSideDateTime v-if="job.lastDate" :datetime="job.lastDate" />
+              <ClientDateTime v-if="job.lastDate" :datetime="job.lastDate" />
               <span v-else>never</span>
             </td>
             <td>
-              <ClientSideDateTime v-if="job.nextDate" :datetime="job.nextDate" />
+              <ClientDateTime v-if="job.nextDate" :datetime="job.nextDate" />
               <span v-else>never</span>
             </td>
             <td>

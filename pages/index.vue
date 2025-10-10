@@ -21,7 +21,7 @@
       </q-banner>
       <q-list>
         <template v-for="category in categories" :key="category.id">
-          <q-item clickable @click="() => $router.push({ path: '/', query: { categoryId: category.id } })">
+          <q-item clickable v-ripple @click="() => $router.push({ path: '/', query: { categoryId: category.id } })">
             <q-item-section>
               <q-item-label>{{ category.name }}</q-item-label>
             </q-item-section>
@@ -31,6 +31,7 @@
             v-for="feed in category.feeds"
             :key="feed.id"
             clickable
+            v-ripple
             @click="() => $router.push({ path: '/', query: { feedId: feed.id } })"
           >
             <q-item-section avatar>
@@ -139,10 +140,9 @@
                 group="entry"
                 v-for="(item, index) in items"
                 :key="item.entry.id"
-                ref="x"
+                ref="item-list"
                 @before-show="loadContent(item.entry.id)"
                 @after-show="scrollToContentRef(index)"
-                @hide="markAsRead(item.entry.id)"
               >
                 <template v-slot:header>
                   <q-item-section side>
@@ -150,6 +150,7 @@
                       v-model="entryRead[item.entry.id]"
                       size="sm"
                       true-value="read"
+                      :disable="entryRead[item.entry.id] === 'toggling'"
                       false-value="unread"
                       @click="toggleEntry(item.entry.id)"
                     />
@@ -193,21 +194,36 @@
                         Category: {{ item.feed.category.name }}
                       </q-chip>
                       <q-chip size="sm" color="accent" icon="calendar_today" outline
-                        >Date: <ClientSideDateTime :datetime="item.entry.date"
+                        >Date: <ClientDateTime :datetime="item.entry.date"
                       /></q-chip>
                     </div>
                   </q-card-section>
                   <q-card-section>
                     <MarkedText
                       v-if="contents[item.entry.id]"
-                      class="entry-content"
+                      class="col entry-content"
                       is-html
                       :text="contents[item.entry.id]"
                       :keyword="searchQuery"
                     />
                   </q-card-section>
-                  <q-separator />
-                  <q-card-actions dense>
+                  <q-card-actions>
+                    <q-btn
+                      size="sm"
+                      flat
+                      icon="check"
+                      color="primary"
+                      label="Mark as read and collapse"
+                      @click="markAsReadAndCollapse(item.entry.id, index)"
+                    />
+                    <q-btn
+                      size="sm"
+                      flat
+                      color="primary"
+                      label="Collapse"
+                      icon="unfold_less"
+                      @click="collapseItem(index)"
+                    />
                     <q-btn
                       size="sm"
                       flat
@@ -240,7 +256,7 @@ import { useRouteQuery } from "@vueuse/router";
 
 const LIMIT = 100;
 
-const itemRefs = useTemplateRef("x");
+const itemRefs = useTemplateRef("item-list");
 
 /** @type {Ref<import('../server/api/entries.get').EntryEntityWithFeed[]>} */
 const items = ref([]);
@@ -248,7 +264,7 @@ const items = ref([]);
 /** @type {Ref<{ [key: string]: string }> } */
 const contents = ref({});
 
-/** @type {Ref<Record<string,"read"|"unread">>} */
+/** @type {Ref<Record<string,"read"|"toggling"|"unread">>} */
 const entryRead = ref({});
 
 const hasMore = ref(true);
@@ -285,6 +301,14 @@ const { data: countData, execute: refreshCount } = await useFetch("/api/count", 
   query: countQuery,
 });
 const { data: imagePks } = await useFetch("/api/image-pks");
+
+/**
+ * @param {number} index
+ */
+function collapseItem(index) {
+  // @ts-ignore
+  itemRefs.value?.[index]?.hide();
+}
 
 function getFilteredCategoryName() {
   if (!selectedCategoryId.value) return "None";
@@ -347,10 +371,10 @@ async function loadContent(entryId) {
 }
 
 /**
- * @param {number} [index]
+ * @param {number} [_index]
  * @param {(stop?:boolean) => void} [done]
  */
-async function onLoad(index, done) {
+async function onLoad(_index, done) {
   if (!hasMore.value) {
     if (done) done(true);
     return;
@@ -374,6 +398,7 @@ async function markAllAsRead() {
     for (const item of items.value) {
       if (entryRead.value[item.entry.id] === "read") continue;
       const task = async () => {
+        entryRead.value[item.entry.id] = "toggling";
         await $fetch(`/api/entries/${item.entry.id}/toggle`, { method: "PUT" });
         entryRead.value[item.entry.id] = "read";
       };
@@ -391,9 +416,26 @@ async function markAllAsRead() {
  */
 async function markAsRead(entryId) {
   if (entryRead.value[entryId] === "read") return;
-  entryRead.value[entryId] = "read";
-  await $fetch(`/api/entries/${entryId}/toggle`, { method: "PUT" });
-  refreshCount();
+  const oldValue = entryRead.value[entryId];
+  try {
+    entryRead.value[entryId] = "toggling";
+    await $fetch(`/api/entries/${entryId}/toggle`, { method: "PUT" });
+    entryRead.value[entryId] = "read";
+    refreshCount();
+  } catch (e) {
+    console.error("Failed to mark as read", e);
+    entryRead.value[entryId] = oldValue;
+  }
+}
+
+/**
+ * @param {string} entryId
+ * @param {number} index
+ */
+async function markAsReadAndCollapse(entryId, index) {
+  await markAsRead(entryId);
+  collapseItem(index);
+  scrollToContentRef(index);
 }
 
 /**
@@ -424,8 +466,20 @@ function scrollToContentRef(index) {
  * @param {string} entryId
  */
 async function toggleEntry(entryId) {
-  await $fetch(`/api/entries/${entryId}/toggle`, { method: "PUT" });
-  refreshCount();
+  if (entryRead.value[entryId] === "toggling") return;
+
+  // status of checkbox is already changed by the time this function is called
+  const value = entryRead.value[entryId];
+
+  entryRead.value[entryId] = "toggling";
+  try {
+    await $fetch(`/api/entries/${entryId}/toggle`, { method: "PUT" });
+    refreshCount();
+  } catch (e) {
+    console.error("Failed to toggle entry", e);
+  } finally {
+    entryRead.value[entryId] = value;
+  }
 }
 </script>
 
