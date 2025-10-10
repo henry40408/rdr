@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
     repository.listImagePks(),
   ]);
 
-  /** @type {Record<string,{count:number,imageExists:boolean,metadata:FeedMetadataEntity}>} */
+  /** @type {Record<string,{ count: number, imageExists: boolean, metadata: FeedMetadataEntity, unreadCount: number }>} */
   const feeds = {};
   for (const feedId of feedIds) {
     if (typeof counts[feedId] === "undefined") continue;
@@ -23,9 +23,10 @@ export default defineEventHandler(async (event) => {
     if (typeof metadata === "undefined") continue;
 
     feeds[feedId] = {
-      count: counts[feedId],
+      count: counts[feedId].total,
       imageExists: imagePks.includes(feedId),
       metadata: metadata,
+      unreadCount: counts[feedId].unread,
     };
   }
 

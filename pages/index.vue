@@ -40,7 +40,10 @@
               </q-avatar>
             </q-item-section>
             <q-item-section>
-              <q-item-label>{{ feed.title }}</q-item-label>
+              <q-item-label lines="1">{{ feed.title }}</q-item-label>
+            </q-item-section>
+            <q-item-section side>
+              <q-badge color="primary">{{ feedsData?.feeds[feed.id]?.unreadCount || "0" }}</q-badge>
             </q-item-section>
           </q-item>
         </template>
@@ -301,6 +304,7 @@ const { data: countData, execute: refreshCount } = await useFetch("/api/count", 
   query: countQuery,
 });
 const { data: imagePks } = await useFetch("/api/image-pks");
+const { data: feedsData, execute: refreshFeedData } = await useFetch("/api/feeds/data");
 
 /**
  * @param {number} index
@@ -406,6 +410,7 @@ async function markAllAsRead() {
     }
     await Promise.allSettled(tasks);
     refreshCount();
+    refreshFeedData();
   } catch (e) {
     console.error("Failed to mark all as read", e);
   }
@@ -422,6 +427,7 @@ async function markAsRead(entryId) {
     await $fetch(`/api/entries/${entryId}/toggle`, { method: "PUT" });
     entryRead.value[entryId] = "read";
     refreshCount();
+    refreshFeedData();
   } catch (e) {
     console.error("Failed to mark as read", e);
     entryRead.value[entryId] = oldValue;
@@ -475,6 +481,7 @@ async function toggleEntry(entryId) {
   try {
     await $fetch(`/api/entries/${entryId}/toggle`, { method: "PUT" });
     refreshCount();
+    refreshFeedData();
   } catch (e) {
     console.error("Failed to toggle entry", e);
   } finally {

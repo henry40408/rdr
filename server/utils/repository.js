@@ -54,22 +54,26 @@ export class Repository {
 
   /**
    * @param {string[]} feedIds
-   * @returns {Promise<Record<string,number>>}
+   * @returns {Promise<Record<string,{ total: number, unread: number }>>}
    */
   async countEntriesByFeedIds(feedIds) {
     if (feedIds.length === 0) return {};
 
-    /** @type {Array<{ feed_id: string, count: number }>} */
+    /** @type {Array<{ feed_id: string, total: number, unread: number }>} */
     const rows = await this.knex("entries")
       .select("feed_id")
-      .count({ count: "*" })
+      .count({ total: "*" })
+      .sum({ unread: this.knex.raw("CASE WHEN read_at IS NULL THEN 1 ELSE 0 END") })
       .whereIn("feed_id", feedIds)
       .groupBy("feed_id");
 
-    /** @type {Record<string,number>} */
+    /** @type {Record<string,{ total: number, unread: number }>} */
     const counts = {};
     for (const row of rows) {
-      counts[row.feed_id] = Number(row.count);
+      counts[row.feed_id] = {
+        total: Number(row.total),
+        unread: Number(row.unread),
+      };
     }
     return counts;
   }

@@ -50,7 +50,7 @@
                   </q-item-section>
                   <q-item-section side>
                     <div class="q-mt-xs">
-                      <q-badge color="primary">{{ feedDataByFeedId[feed.id]?.count || 0 }}</q-badge>
+                      <q-badge color="primary">{{ feedDataByFeedId[feed.id]?.unreadCount || 0 }}</q-badge>
                     </div>
                   </q-item-section>
                 </template>
