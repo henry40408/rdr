@@ -315,6 +315,13 @@ const { data: categories } = await useFetch("/api/categories");
 const { data: countData, execute: refreshCount } = await useFetch("/api/count", {
   query: countQuery,
 });
+useHead(() => ({
+  title: selectedFeedId.value
+    ? `(${countData.value?.count || 0}) Feed: ${getFilteredFeedTitle()} - rdr`
+    : selectedCategoryId.value
+      ? `(${countData.value?.count || 0}) Category: ${getFilteredCategoryName()} - rdr`
+      : "rdr",
+}));
 const { data: imagePks } = await useFetch("/api/image-pks");
 const { data: feedsData, execute: refreshFeedData } = await useFetch("/api/feeds/data");
 
