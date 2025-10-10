@@ -25,6 +25,9 @@
             <q-item-section>
               <q-item-label>{{ category.name }}</q-item-label>
             </q-item-section>
+            <q-item-section side>
+              <q-badge color="primary">{{ categoryUnreadCount(category.feeds) }}</q-badge>
+            </q-item-section>
           </q-item>
           <q-separator />
           <q-item
@@ -305,6 +308,15 @@ const { data: countData, execute: refreshCount } = await useFetch("/api/count", 
 });
 const { data: imagePks } = await useFetch("/api/image-pks");
 const { data: feedsData, execute: refreshFeedData } = await useFetch("/api/feeds/data");
+
+/**
+ * @param {import('../server/utils/entities').FeedEntity[]} feeds
+ * @returns {number}
+ */
+function categoryUnreadCount(feeds) {
+  if (!feedsData.value) return 0;
+  return feeds.map((f) => feedsData.value?.feeds[f.id]?.unreadCount || 0).reduce((a, b) => a + b, 0);
+}
 
 /**
  * @param {number} index
