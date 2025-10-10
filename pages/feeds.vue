@@ -8,95 +8,43 @@
     </q-header>
 
     <q-page-container>
-      <q-banner inline-actions>
-        <div class="text-h6">Feeds</div>
-        <template v-slot:action>
-          <q-btn flat round icon="refresh" @click="refreshAll" :disable="refreshingCategoryIds.size > 0">
-            <q-tooltip anchor="center left" self="center right">Refresh all</q-tooltip>
-          </q-btn>
-        </template>
-      </q-banner>
-      <q-list class="q-mb-md">
-        <template v-for="category in categories" :key="category.id">
-          <q-item>
-            <q-item-section>
-              <q-item-label>{{ category.name }}</q-item-label>
-            </q-item-section>
-            <q-item-section side>
-              <q-item-label caption>{{ category.feeds.length }} feeds</q-item-label>
-            </q-item-section>
-            <q-item-section side>
-              <q-btn
-                dense
-                flat
-                round
-                icon="visibility"
-                @click="() => $router.push({ path: '/', query: { categoryId: category.id } })"
-              >
-                <q-tooltip anchor="center left" self="center right">Go to category</q-tooltip>
-              </q-btn>
-            </q-item-section>
-            <q-item-section side>
-              <q-btn
-                dense
-                flat
-                round
-                icon="refresh"
-                :loading="refreshingCategoryIds.has(category.id)"
-                @click="refreshCategory(category)"
-              >
-                <q-tooltip anchor="center left" self="center right">Refresh category</q-tooltip>
-              </q-btn>
-            </q-item-section>
-          </q-item>
-          <q-separator />
-          <q-list>
-            <q-item v-for="feed in category.feeds" :key="feed.id">
-              <q-item-section avatar>
-                <q-avatar v-if="imageExists(feed.id)" size="sm">
-                  <img :src="`/api/feeds/${feed.id}/image`" alt="Feed Image" />
-                </q-avatar>
-                <q-icon v-else name="rss_feed" class="feed-image" />
-              </q-item-section>
+      <q-page>
+        <q-banner inline-actions>
+          <div class="text-h6">Feeds</div>
+          <template v-slot:action>
+            <q-btn flat round icon="refresh" @click="refreshAll" :disable="refreshingCategoryIds.size > 0">
+              <q-tooltip anchor="center left" self="center right">Refresh all</q-tooltip>
+            </q-btn>
+          </template>
+        </q-banner>
+        <q-list class="q-mb-md">
+          <template v-for="category in categories" :key="category.id">
+            <q-item>
               <q-item-section>
-                <q-item-label>{{ feed.title }}</q-item-label>
-                <q-item-label caption>{{ feedDataByFeedId[feed.id]?.count ?? 0 }} entries</q-item-label>
-                <q-item-label caption v-if="feedDataByFeedId[feed.id]?.metadata.fetchedAt">
-                  Last fetched: <ClientSideDateTime :datetime="feedDataByFeedId[feed.id].metadata.fetchedAt" />
-                </q-item-label>
+                <q-item-label>{{ category.name }}</q-item-label>
               </q-item-section>
-              <q-item-section side>
-                <q-btn dense flat round icon="open_in_new" :href="feed.htmlUrl" target="_blank" rel="noopener">
-                  <q-tooltip anchor="center left" self="center right">Open website</q-tooltip>
-                </q-btn>
-              </q-item-section>
-              <q-item-section side>
-                <q-btn
-                  dense
-                  flat
-                  round
-                  icon="visibility"
-                  @click="() => $router.push({ path: '/', query: { feedId: feed.id } })"
-                >
-                  <q-tooltip anchor="center left" self="center right">Go to feed</q-tooltip>
-                </q-btn>
-              </q-item-section>
-              <q-item-section side>
-                <q-btn
-                  dense
-                  flat
-                  round
-                  icon="refresh"
-                  :loading="refreshingFeedIds.has(feed.id)"
-                  @click.stop="refreshFeed(feed)"
-                >
-                  <q-tooltip anchor="center left" self="center right">Refresh feed</q-tooltip>
-                </q-btn>
-              </q-item-section>
+              <q-item-section side>{{ category.feeds.length }} feeds</q-item-section>
             </q-item>
-          </q-list>
-        </template>
-      </q-list>
+            <q-separator />
+            <q-list>
+              <q-item v-for="feed in category.feeds" :key="feed.id">
+                <q-item-section side>
+                  <q-avatar v-if="imageExists(feed.id)" size="sm">
+                    <img :src="`/api/feeds/${feed.id}/image`" alt="Feed Image" />
+                  </q-avatar>
+                  <q-icon v-else name="rss_feed" class="feed-image" />
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label>{{ feed.title }}</q-item-label>
+                </q-item-section>
+                <q-item-section side>
+                  <q-badge color="primary">{{ feedDataByFeedId[feed.id]?.count || 0 }}</q-badge>
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </template>
+        </q-list>
+      </q-page>
     </q-page-container>
   </q-layout>
 </template>
