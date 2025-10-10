@@ -26,7 +26,9 @@
               <q-item-label>{{ category.name }}</q-item-label>
             </q-item-section>
             <q-item-section side>
-              <q-badge color="primary">{{ categoryUnreadCount(category.feeds) }}</q-badge>
+              <q-badge color="primary" :outline="!categoryUnreadCount(category.id)">{{
+                categoryUnreadCount(category.id)
+              }}</q-badge>
             </q-item-section>
           </q-item>
           <q-separator />
@@ -41,12 +43,13 @@
               <q-avatar size="sm" square v-if="imageExists(feed.id)">
                 <img :src="`/api/feeds/${feed.id}/image`" />
               </q-avatar>
+              <q-icon v-else name="rss_feed" />
             </q-item-section>
             <q-item-section>
               <q-item-label lines="1">{{ feed.title }}</q-item-label>
             </q-item-section>
             <q-item-section side>
-              <q-badge color="primary">{{ feedsData?.feeds[feed.id]?.unreadCount || "0" }}</q-badge>
+              <q-badge color="primary" :outline="!feedUnreadCount(feed.id)">{{ feedUnreadCount(feed.id) }}</q-badge>
             </q-item-section>
           </q-item>
         </template>
@@ -86,43 +89,45 @@
     <q-page-container>
       <q-page>
         <q-banner inline-actions>
-          <div class="q-my-sm">
-            <div class="text-h6" v-if="listStatus === 'unread'">Unread</div>
-            <div class="text-h6" v-else-if="listStatus === 'all'">All</div>
-            <div class="text-h6" v-else-if="listStatus === 'read'">Read</div>
-          </div>
-          <div class="q-my-sm">
-            <q-chip
-              v-if="searchQuery"
-              outline
-              removable
-              color="accent"
-              icon="search"
-              size="sm"
-              @remove="searchQuery = ''"
-              >Search: {{ searchQuery }}</q-chip
-            >
-            <q-chip
-              v-if="selectedFeedId"
-              outline
-              removable
-              color="primary"
-              icon="rss_feed"
-              size="sm"
-              @remove="selectedFeedId = undefined"
-              >Feed: {{ getFilteredFeedTitle() }}</q-chip
-            >
-            <q-chip
-              v-if="selectedCategoryId"
-              size="sm"
-              color="secondary"
-              icon="category"
-              outline
-              removable
-              @remove="selectedCategoryId = undefined"
-              >Category: {{ getFilteredCategoryName() }}</q-chip
-            >
-            <q-chip size="sm" icon="numbers" outline>Entries: {{ countData ? countData.count : "..." }}</q-chip>
+          <div class="q-my-sm q-gutter-sm row items-center">
+            <div class="text-body1">
+              <span v-if="listStatus === 'unread'">Unread</span>
+              <span v-else-if="listStatus === 'read'">Read</span>
+              <span v-else>All</span>
+            </div>
+            <q-badge class="q-mx-sm">{{ countData ? countData.count : "..." }}</q-badge>
+            <div>
+              <q-chip
+                v-if="searchQuery"
+                outline
+                removable
+                color="accent"
+                icon="search"
+                size="sm"
+                @remove="searchQuery = ''"
+                >Search: {{ searchQuery }}</q-chip
+              >
+              <q-chip
+                v-if="selectedFeedId"
+                outline
+                removable
+                color="primary"
+                icon="rss_feed"
+                size="sm"
+                @remove="selectedFeedId = undefined"
+                >Feed: {{ getFilteredFeedTitle() }}</q-chip
+              >
+              <q-chip
+                v-if="selectedCategoryId"
+                size="sm"
+                color="secondary"
+                icon="category"
+                outline
+                removable
+                @remove="selectedCategoryId = undefined"
+                >Category: {{ getFilteredCategoryName() }}</q-chip
+              >
+            </div>
           </div>
           <template v-slot:action>
             <q-btn flat icon="refresh" round @click="resetThenLoad()" />
@@ -162,15 +167,19 @@
                     />
                   </q-item-section>
                   <q-item-section side>
-                    <q-avatar size="xs" square>
+                    <q-avatar size="sm" square>
                       <img :src="`/api/feeds/${item.feed.id}/image`" v-if="imageExists(item.feed.id)" />
+                      <q-icon v-else size="sm" name="rss_feed" />
                     </q-avatar>
                   </q-item-section>
                   <q-item-section>
                     <q-item-label lines="3">
                       <MarkedText :text="item.entry.title" :keyword="searchQuery" />
                     </q-item-label>
-                    <q-item-label caption>{{ item.feed.category.name }} &middot; {{ item.feed.title }}</q-item-label>
+                    <q-item-label lines="2" caption
+                      >{{ item.feed.category.name }} &middot; {{ item.feed.title }} &middot;
+                      <ClientAgo :datetime="item.entry.date"
+                    /></q-item-label>
                   </q-item-section>
                 </template>
 
@@ -310,12 +319,22 @@ const { data: imagePks } = await useFetch("/api/image-pks");
 const { data: feedsData, execute: refreshFeedData } = await useFetch("/api/feeds/data");
 
 /**
- * @param {import('../server/utils/entities').FeedEntity[]} feeds
+ * @param {string} categoryId
  * @returns {number}
  */
-function categoryUnreadCount(feeds) {
+function categoryUnreadCount(categoryId) {
   if (!feedsData.value) return 0;
-  return feeds.map((f) => feedsData.value?.feeds[f.id]?.unreadCount || 0).reduce((a, b) => a + b, 0);
+  const feedIds = categories.value?.filter((c) => c.id === categoryId).flatMap((c) => c.feeds.map((f) => f.id)) || [];
+  return feedIds.reduce((sum, feedId) => sum + (feedsData.value?.feeds[feedId]?.unreadCount || 0), 0);
+}
+
+/**
+ * @param {string} feedId
+ * @returns {number}
+ */
+function feedUnreadCount(feedId) {
+  if (!feedsData.value) return 0;
+  return feedsData.value?.feeds[feedId]?.unreadCount || 0;
 }
 
 /**

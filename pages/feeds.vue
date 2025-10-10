@@ -23,7 +23,14 @@
               <q-item-section>
                 <q-item-label>{{ category.name }}</q-item-label>
               </q-item-section>
-              <q-item-section side>{{ category.feeds.length }} feeds</q-item-section>
+              <q-item-section side top>
+                <q-item-label caption>{{ category.feeds.length }} feeds</q-item-label>
+                <div class="q-mt-xs">
+                  <q-badge color="primary" :outline="!categoryUnreadCount(category.id)">{{
+                    categoryUnreadCount(category.id)
+                  }}</q-badge>
+                </div>
+              </q-item-section>
             </q-item>
             <q-list separator>
               <q-expansion-item
@@ -50,7 +57,9 @@
                   </q-item-section>
                   <q-item-section side>
                     <div class="q-mt-xs">
-                      <q-badge color="primary">{{ feedDataByFeedId[feed.id]?.unreadCount || 0 }}</q-badge>
+                      <q-badge color="primary" :outline="!feedUnreadCount(feed.id)">{{
+                        feedUnreadCount(feed.id)
+                      }}</q-badge>
                     </div>
                   </q-item-section>
                 </template>
@@ -104,6 +113,27 @@ const refreshingFeedIds = ref(new Set());
 
 async function afterRefresh() {
   await Promise.all([refreshCategories(), refreshFeedData()]);
+}
+
+/**
+ * @param {string} categoryId
+ * @returns {number}
+ */
+function categoryUnreadCount(categoryId) {
+  const category = categories.value?.find((cat) => cat.id === categoryId);
+  if (!category) return 0;
+  return category.feeds.reduce((sum, feed) => {
+    const feedData = feedDataByFeedId.value[feed.id];
+    return sum + (feedData?.unreadCount || 0);
+  }, 0);
+}
+
+/**
+ * @param {string} feedId
+ * @returns {number}
+ */
+function feedUnreadCount(feedId) {
+  return feedDataByFeedId.value[feedId]?.unreadCount || 0;
 }
 
 /**
