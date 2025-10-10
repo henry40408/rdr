@@ -4,10 +4,7 @@
       <q-toolbar>
         <q-toolbar-title>rdr</q-toolbar-title>
       </q-toolbar>
-      <q-tabs align="left">
-        <q-route-tab to="/" label="Home" />
-        <q-route-tab to="/feeds" label="Feeds" />
-      </q-tabs>
+      <Nav />
     </q-header>
 
     <q-page-container>
