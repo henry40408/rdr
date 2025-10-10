@@ -159,8 +159,8 @@
                     />
                   </q-item-section>
                   <q-item-section side>
-                    <q-avatar size="xs" square v-if="imageExists(item.feed.id)">
-                      <img :src="`/api/feeds/${item.feed.id}/image`" />
+                    <q-avatar size="xs" square>
+                      <img :src="`/api/feeds/${item.feed.id}/image`" v-if="imageExists(item.feed.id)" />
                     </q-avatar>
                   </q-item-section>
                   <q-item-section>
