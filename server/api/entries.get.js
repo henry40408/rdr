@@ -17,7 +17,7 @@ const schema = z.object({
   offset: z.coerce.number().min(0).default(0),
   selectedId: z.coerce.number().optional(),
   selectedType: z.enum(["category", "feed"]).optional(),
-  status: z.enum(["all", "read", "unread"]).default("all"),
+  status: z.enum(["all", "read", "unread", "starred"]).default("all"),
 });
 
 export default defineEventHandler(

@@ -115,6 +115,14 @@
             <q-item-label>Read</q-item-label>
           </q-item-section>
         </q-item>
+        <q-item v-ripple tag="label">
+          <q-item-section side top>
+            <q-radio v-model="listStatus" val="starred" />
+          </q-item-section>
+          <q-item-section>
+            <q-item-label>Starred</q-item-label>
+          </q-item-section>
+        </q-item>
       </q-list>
     </q-drawer>
 
@@ -128,6 +136,7 @@
                   <div class="text-h5">
                     <span v-if="listStatus === 'unread'">Unread</span>
                     <span v-else-if="listStatus === 'read'">Read</span>
+                    <span v-else-if="listStatus === 'starred'">Starred</span>
                     <span v-else>All</span>
                   </div>
                   <q-badge>{{ countData ? countData.count : "..." }}</q-badge>
@@ -195,6 +204,7 @@
                 v-for="(item, index) in items"
                 :key="item.entry.id"
                 ref="item-list"
+                :class="{ 'bg-grey-3': entryRead[item.entry.id] === 'read' }"
                 clickable
                 group="entry"
                 @before-show="loadContent(item.entry.id)"
@@ -204,11 +214,13 @@
                   <q-item-section side>
                     <q-checkbox
                       v-model="entryRead[item.entry.id]"
-                      size="sm"
+                      checked-icon="drafts"
+                      color="grey-6"
+                      unchecked-icon="mail"
                       true-value="read"
                       :disable="entryRead[item.entry.id] === 'toggling'"
                       false-value="unread"
-                      @click="toggleEntry(item.entry.id, index)"
+                      @click="toggleReadEntry(item.entry.id, index)"
                     />
                   </q-item-section>
                   <q-item-section side>
@@ -245,6 +257,17 @@
                     </div>
                     <div class="q-my-sm">by {{ item.entry.author }}</div>
                     <div class="q-my-sm">
+                      <q-chip
+                        size="sm"
+                        :color="entryStar[item.entry.id] === 'starred' ? 'yellow' : 'grey'"
+                        :icon="entryStar[item.entry.id] === 'starred' ? 'star' : 'star_border'"
+                        :outline="entryStar[item.entry.id] === 'unstarred'"
+                        clickable
+                        :disable="entryStar[item.entry.id] === 'starring'"
+                        @click="toggleStarEntry(item.entry.id)"
+                      >
+                        {{ entryStar[item.entry.id] === "starred" ? "Starred" : "Not starred" }}
+                      </q-chip>
                       <q-chip
                         size="sm"
                         color="secondary"
@@ -349,7 +372,7 @@ const loading = ref(false);
 const offset = ref(0);
 const rightDrawerOpen = ref(false);
 
-/** @type {Ref<"all"|"read"|"unread">} */
+/** @type {Ref<"all"|"read"|"unread"|"starred">} */
 const listStatus = useRouteQuery("status", "unread");
 /** @type {Ref<string|undefined>} */
 const selectedCategoryId = useRouteQuery("categoryId", undefined);
@@ -366,6 +389,9 @@ const contents = ref({});
 
 /** @type {Ref<Record<string,"read"|"toggling"|"unread">>} */
 const entryRead = ref({});
+
+/** @type {Ref<Record<string,"unstarred"|"starring"|"starred">>} */
+const entryStar = ref({});
 
 const countQuery = computed(() => {
   const query = {};
@@ -502,6 +528,7 @@ async function load() {
       for (const item of newItems) {
         items.value.push(item);
         entryRead.value[item.entry.id] = item.entry.readAt ? "read" : "unread";
+        entryStar.value[item.entry.id] = item.entry.starredAt ? "starred" : "unstarred";
       }
       if (newItems.length < LIMIT) hasMore.value = false;
     }
@@ -645,7 +672,7 @@ function scrollToContentRef(index) {
  * @param {number} entryId
  * @param {number} index
  */
-async function toggleEntry(entryId, index) {
+async function toggleReadEntry(entryId, index) {
   if (entryRead.value[entryId] === "toggling") return;
 
   // status of checkbox is already changed by the time this function is called
@@ -665,6 +692,28 @@ async function toggleEntry(entryId, index) {
   } finally {
     entryRead.value[entryId] = value;
     if (value === "read") collapseItem(index);
+  }
+}
+
+/**
+ * @param {number} entryId
+ */
+async function toggleStarEntry(entryId) {
+  if (entryStar.value[entryId] === "starring") return;
+
+  const value = entryStar.value[entryId];
+  entryStar.value[entryId] = "starring";
+  try {
+    await $fetch(`/api/entries/${entryId}/star`, { method: "PUT" });
+    refreshCount();
+    refreshFeedData();
+    entryStar.value[entryId] = value === "starred" ? "unstarred" : "starred";
+  } catch (err) {
+    $q.notify({
+      type: "negative",
+      message: `Failed to toggle star for entry ${entryId}: ${err}`,
+      actions: [{ icon: "close", color: "white" }],
+    });
   }
 }
 </script>
