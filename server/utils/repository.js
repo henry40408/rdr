@@ -1,5 +1,6 @@
 import chunk from "lodash/chunk.js";
 import get from "lodash/get.js";
+import { EntryEntity } from "./entities";
 
 export class Repository {
   /**
@@ -76,6 +77,25 @@ export class Repository {
       };
     }
     return counts;
+  }
+
+  /**
+   * @param {string} id
+   * @returns {Promise<EntryEntity|undefined>}
+   */
+  async findEntryById(id) {
+    const row = await this.knex("entries").where({ id }).first();
+    if (!row) return undefined;
+    return new EntryEntity({
+      feedId: row.feed_id,
+      guid: row.guid,
+      title: row.title,
+      link: row.link,
+      date: row.date,
+      author: row.author,
+      readAt: row.read_at,
+      starredAt: row.starred_at,
+    });
   }
 
   /**

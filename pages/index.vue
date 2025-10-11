@@ -30,45 +30,51 @@
         </q-item>
         <q-item>
           <q-item-section>
-            <q-toggle v-model="hideEmpty" label="Hide empty" />
+            <ClientOnly>
+              <q-toggle v-model="hideEmpty" label="Hide empty" />
+            </ClientOnly>
           </q-item-section>
         </q-item>
-        <template v-for="category in categories" :key="category.id">
-          <template v-if="!hideEmpty || categoryUnreadCount(category.id) > 0">
-            <q-item clickable v-ripple @click="() => $router.push({ path: '/', query: { categoryId: category.id } })">
-              <q-item-section>
-                <q-item-label>{{ category.name }}</q-item-label>
-              </q-item-section>
-              <q-item-section side>
-                <q-badge color="primary" :outline="!categoryUnreadCount(category.id)">{{
-                  categoryUnreadCount(category.id)
-                }}</q-badge>
-              </q-item-section>
-            </q-item>
-            <q-separator />
-            <template v-for="feed in category.feeds" :key="feed.id">
-              <q-item
-                clickable
-                v-if="!hideEmpty || feedUnreadCount(feed.id) > 0"
-                v-ripple
-                @click="() => $router.push({ path: '/', query: { feedId: feed.id } })"
-              >
-                <q-item-section avatar>
-                  <q-avatar size="sm" square v-if="imageExists(feed.id)">
-                    <img :src="`/api/feeds/${feed.id}/image`" />
-                  </q-avatar>
-                  <q-icon v-else name="rss_feed" />
-                </q-item-section>
+        <ClientOnly>
+          <template v-for="category in categories" :key="category.id">
+            <template v-if="!hideEmpty || categoryUnreadCount(category.id) > 0">
+              <q-item clickable v-ripple @click="() => $router.push({ path: '/', query: { categoryId: category.id } })">
                 <q-item-section>
-                  <q-item-label lines="1">{{ feed.title }}</q-item-label>
+                  <q-item-label>{{ category.name }}</q-item-label>
                 </q-item-section>
                 <q-item-section side>
-                  <q-badge color="primary" :outline="!feedUnreadCount(feed.id)">{{ feedUnreadCount(feed.id) }}</q-badge>
+                  <q-badge color="primary" :outline="!categoryUnreadCount(category.id)">{{
+                    categoryUnreadCount(category.id)
+                  }}</q-badge>
                 </q-item-section>
               </q-item>
+              <q-separator />
+              <template v-for="feed in category.feeds" :key="feed.id">
+                <q-item
+                  clickable
+                  v-if="!hideEmpty || feedUnreadCount(feed.id) > 0"
+                  v-ripple
+                  @click="() => $router.push({ path: '/', query: { feedId: feed.id } })"
+                >
+                  <q-item-section avatar>
+                    <q-avatar size="sm" square v-if="imageExists(feed.id)">
+                      <img :src="`/api/feeds/${feed.id}/image`" />
+                    </q-avatar>
+                    <q-icon v-else name="rss_feed" />
+                  </q-item-section>
+                  <q-item-section>
+                    <q-item-label lines="1">{{ feed.title }}</q-item-label>
+                  </q-item-section>
+                  <q-item-section side>
+                    <q-badge color="primary" :outline="!feedUnreadCount(feed.id)">{{
+                      feedUnreadCount(feed.id)
+                    }}</q-badge>
+                  </q-item-section>
+                </q-item>
+              </template>
             </template>
           </template>
-        </template>
+        </ClientOnly>
       </q-list>
     </q-drawer>
 
@@ -211,7 +217,18 @@
 
                 <q-card>
                   <q-card-section>
-                    <div class="q-my-sm text-h5">{{ item.entry.title }}</div>
+                    <div class="q-my-sm text-h5">
+                      {{ item.entry.title }}
+                      <q-btn
+                        flat
+                        size="sm"
+                        round
+                        icon="open_in_new"
+                        :href="item.entry.link"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      />
+                    </div>
                     <div class="q-my-sm">by {{ item.entry.author }}</div>
                     <div class="q-my-sm">
                       <q-chip
@@ -241,10 +258,10 @@
                   </q-card-section>
                   <q-card-section>
                     <MarkedText
-                      v-if="contents[item.entry.id]"
+                      v-if="getContent(item.entry.id)"
                       class="col entry-content"
                       is-html
-                      :text="contents[item.entry.id]"
+                      :text="getContent(item.entry.id)"
                       :keyword="searchQuery"
                     />
                   </q-card-section>
@@ -269,12 +286,20 @@
                       size="sm"
                       flat
                       color="primary"
-                      label="Read more"
-                      icon="open_in_new"
-                      :href="item.entry.link"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      @click="markAsRead(item.entry.id)"
+                      label="Download"
+                      icon="file_download"
+                      :loading="downloading"
+                      @click="downloadContent(item.entry.id)"
+                      v-if="!contents[downloadedKey(item.entry.id)]"
+                    />
+                    <q-btn
+                      v-else
+                      size="sm"
+                      flat
+                      color="primary"
+                      label="See original"
+                      icon="undo"
+                      @click="contents[downloadedKey(item.entry.id)] = ''"
                     />
                   </q-card-actions>
                 </q-card>
@@ -303,6 +328,7 @@ const $q = useQuasar();
 const itemRefs = useTemplateRef("item-list");
 const { hideEmpty } = useLocalSettings();
 
+const downloading = ref(false);
 const hasMore = ref(true);
 const leftDrawerOpen = ref(false);
 const loading = ref(false);
@@ -366,12 +392,48 @@ function categoryUnreadCount(categoryId) {
 }
 
 /**
- * @param {string} feedId
- * @returns {number}
+ * @param {string} entryId
+ * @returns {string}
  */
-function feedUnreadCount(feedId) {
-  if (!feedsData.value) return 0;
-  return feedsData.value?.feeds[feedId]?.unreadCount || 0;
+function contentKey(entryId) {
+  return `content:${entryId}`;
+}
+
+/**
+ * @param {string} entryId
+ * @returns {string}
+ */
+function downloadedKey(entryId) {
+  return `downloaded:${entryId}`;
+}
+
+/**
+ * @param {string} entryId
+ */
+async function downloadContent(entryId) {
+  const key = downloadedKey(entryId);
+  try {
+    if (contents.value[key]) return;
+    downloading.value = true;
+    const parsed = await $fetch(`/api/entries/${entryId}/download`);
+    if (parsed && parsed.content) contents.value[key] = parsed.content;
+  } catch (err) {
+    $q.notify({
+      type: "negative",
+      message: `Failed to download entry content: ${err}`,
+      actions: [{ icon: "close", color: "white" }],
+    });
+  } finally {
+    downloading.value = false;
+  }
+}
+
+/**
+ * @param {string} entryId
+ * @returns {string}
+ */
+function getContent(entryId) {
+  return contents.value[downloadedKey(entryId)] || contents.value[contentKey(entryId)] || "";
 }
 
 /**
@@ -380,6 +442,15 @@ function feedUnreadCount(feedId) {
 function collapseItem(index) {
   // @ts-expect-error
   itemRefs.value?.[index]?.hide();
+}
+
+/**
+ * @param {string} feedId
+ * @returns {number}
+ */
+function feedUnreadCount(feedId) {
+  if (!feedsData.value) return 0;
+  return feedsData.value?.feeds[feedId]?.unreadCount || 0;
 }
 
 function getFilteredCategoryName() {
@@ -437,10 +508,11 @@ await load();
  * @param {string} entryId
  */
 async function loadContent(entryId) {
+  const key = contentKey(entryId);
   try {
-    if (contents.value[entryId]) return contents.value[entryId];
+    if (contents.value[key]) return contents.value[key];
     const { content } = await $fetch(`/api/entries/${entryId}/content`);
-    contents.value[entryId] = content;
+    contents.value[key] = content;
   } catch (err) {
     $q.notify({
       type: "negative",
@@ -577,7 +649,7 @@ async function toggleEntry(entryId, index) {
     });
   } finally {
     entryRead.value[entryId] = value;
-    collapseItem(index);
+    if (value === "read") collapseItem(index);
   }
 }
 </script>
