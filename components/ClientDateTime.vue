@@ -1,7 +1,7 @@
 <template>
   <span v-if="datetime">
-    <span v-if="onClient" :datetime="datetime" title="Date">{{ new Date(datetime).toLocaleString() }}</span>
-    <span v-else :datetime="datetime" title="Date">{{ datetime }}</span>
+    <span v-if="onClient" title="Date" :datetime="datetime">{{ new Date(datetime).toLocaleString() }}</span>
+    <span v-else title="Date" :datetime="datetime">{{ datetime }}</span>
   </span>
 </template>
 

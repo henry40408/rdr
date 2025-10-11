@@ -2,25 +2,25 @@
   <q-layout view="hhh LpR fFf">
     <q-header elevated class="bg-primary text-white">
       <q-toolbar>
-        <q-btn dense flat round icon="menu" @click="leftDrawerOpen = !leftDrawerOpen" />
+        <q-btn flat dense round icon="menu" @click="leftDrawerOpen = !leftDrawerOpen" />
         <q-toolbar-title>
           <q-avatar>
             <q-icon name="rss_feed" />
           </q-avatar>
           rdr
         </q-toolbar-title>
-        <q-input v-model="searchQuery" dark borderless input-class="text-right" class="q-ml-md q-mr-sm" debounce="500">
+        <q-input v-model="searchQuery" dark borderless debounce="500" class="q-ml-md q-mr-sm" input-class="text-right">
           <template #append>
             <q-icon v-if="!searchQuery" name="search" />
             <q-icon v-else name="clear" class="cursor-pointer" @click="searchQuery = ''" />
           </template>
         </q-input>
-        <q-btn dense flat round icon="menu" @click="rightDrawerOpen = !rightDrawerOpen" />
+        <q-btn flat dense round icon="menu" @click="rightDrawerOpen = !rightDrawerOpen" />
       </q-toolbar>
       <NavTabs />
     </q-header>
 
-    <q-drawer v-model="leftDrawerOpen" show-if-above side="left" bordered>
+    <q-drawer v-model="leftDrawerOpen" bordered side="left" show-if-above>
       <q-list padding>
         <q-item>
           <q-item-section header>
@@ -57,7 +57,7 @@
                   @click="() => $router.push({ path: '/', query: { feedId: feed.id } })"
                 >
                   <q-item-section avatar>
-                    <q-avatar v-if="imageExists(feed.id)" size="sm" square>
+                    <q-avatar v-if="imageExists(feed.id)" square size="sm">
                       <!-- prettier-ignore -->
                       <img :src="`/api/images/${buildFeedImageKey(feed.id)}`">
                     </q-avatar>
@@ -88,11 +88,11 @@
       </q-list>
     </q-drawer>
 
-    <q-drawer v-model="rightDrawerOpen" show-if-above side="right" bordered>
+    <q-drawer v-model="rightDrawerOpen" bordered side="right" show-if-above>
       <q-list>
         <q-item-label header>Status</q-item-label>
         <q-item v-ripple tag="label">
-          <q-item-section side top>
+          <q-item-section top side>
             <q-radio v-model="listStatus" val="unread" />
           </q-item-section>
           <q-item-section>
@@ -100,7 +100,7 @@
           </q-item-section>
         </q-item>
         <q-item v-ripple tag="label">
-          <q-item-section side top>
+          <q-item-section top side>
             <q-radio v-model="listStatus" val="all" />
           </q-item-section>
           <q-item-section>
@@ -108,7 +108,7 @@
           </q-item-section>
         </q-item>
         <q-item v-ripple tag="label">
-          <q-item-section side top>
+          <q-item-section top side>
             <q-radio v-model="listStatus" val="read" />
           </q-item-section>
           <q-item-section>
@@ -116,7 +116,7 @@
           </q-item-section>
         </q-item>
         <q-item v-ripple tag="label">
-          <q-item-section side top>
+          <q-item-section top side>
             <q-radio v-model="listStatus" val="starred" />
           </q-item-section>
           <q-item-section>
@@ -143,11 +143,11 @@
                   <div>
                     <q-chip
                       v-if="selectedCategoryId"
-                      size="sm"
-                      color="secondary"
-                      icon="category"
                       outline
                       removable
+                      size="sm"
+                      icon="category"
+                      color="secondary"
                       @remove="selectedCategoryId = undefined"
                       >Category: {{ getFilteredCategoryName() }}</q-chip
                     >
@@ -155,9 +155,9 @@
                       v-if="selectedFeedId"
                       outline
                       removable
+                      size="sm"
                       color="primary"
                       icon="rss_feed"
-                      size="sm"
                       @remove="selectedFeedId = undefined"
                       >Feed: {{ getFilteredFeedTitle() }}</q-chip
                     >
@@ -165,9 +165,9 @@
                       v-if="searchQuery"
                       outline
                       removable
-                      color="accent"
-                      icon="search"
                       size="sm"
+                      icon="search"
+                      color="accent"
                       @remove="searchQuery = ''"
                       >Search: {{ searchQuery }}</q-chip
                     >
@@ -177,15 +177,15 @@
             </q-item-section>
             <q-item-section side>
               <div>
-                <q-btn flat icon="refresh" round @click="resetThenLoad()" />
-                <q-btn flat icon="done_all" round @click="markAllAsRead()" />
+                <q-btn flat round icon="refresh" @click="resetThenLoad()" />
+                <q-btn flat round icon="done_all" @click="markAllAsRead()" />
               </div>
             </q-item-section>
           </q-item>
         </q-list>
         <q-card v-if="loading" flat>
           <q-card-section class="row justify-center">
-            <q-spinner color="primary" size="3em" />
+            <q-spinner size="3em" color="primary" />
           </q-card-section>
         </q-card>
         <q-banner v-if="!loading && items.length === 0" class="bg-grey-2 text-grey-8">
@@ -202,29 +202,29 @@
             <q-list separator>
               <q-expansion-item
                 v-for="(item, index) in items"
-                :key="item.entry.id"
                 ref="item-list"
-                :class="{ 'bg-grey-3': entryRead[item.entry.id] === 'read' }"
+                :key="item.entry.id"
                 clickable
                 group="entry"
-                @before-show="loadContent(item.entry.id)"
+                :class="{ 'bg-grey-3': entryRead[item.entry.id] === 'read' }"
                 @after-show="scrollToContentRef(index)"
+                @before-show="loadContent(item.entry.id)"
               >
                 <template #header>
                   <q-item-section side>
                     <q-checkbox
                       v-model="entryRead[item.entry.id]"
-                      checked-icon="drafts"
                       color="grey-6"
-                      unchecked-icon="mail"
                       true-value="read"
-                      :disable="entryRead[item.entry.id] === 'toggling'"
                       false-value="unread"
+                      checked-icon="drafts"
+                      unchecked-icon="mail"
+                      :disable="entryRead[item.entry.id] === 'toggling'"
                       @click="toggleReadEntry(item.entry.id, index)"
                     />
                   </q-item-section>
                   <q-item-section side>
-                    <q-avatar size="sm" square>
+                    <q-avatar square size="sm">
                       <!-- prettier-ignore -->
                       <img v-if="imageExists(item.feed.id)" :src="`/api/images/${buildFeedImageKey(item.feed.id)}`">
                       <q-icon v-else size="sm" name="rss_feed" />
@@ -232,9 +232,9 @@
                   </q-item-section>
                   <q-item-section>
                     <q-item-label lines="3">
-                      <MarkedText :text="item.entry.title" :keyword="searchQuery" />
+                      <MarkedText :keyword="searchQuery" :text="item.entry.title" />
                     </q-item-label>
-                    <q-item-label lines="2" caption
+                    <q-item-label caption lines="2"
                       >{{ item.feed.category.name }} &middot; {{ item.feed.title }} &middot;
                       <ClientAgo :datetime="item.entry.date"
                     /></q-item-label>
@@ -247,48 +247,48 @@
                       {{ item.entry.title }}
                       <q-btn
                         flat
-                        size="sm"
                         round
+                        size="sm"
+                        target="_blank"
                         icon="open_in_new"
                         :href="item.entry.link"
-                        target="_blank"
                         rel="noopener noreferrer"
                       />
                     </div>
                     <div class="q-my-sm">by {{ item.entry.author }}</div>
                     <div class="q-my-sm">
                       <q-chip
+                        clickable
                         size="sm"
+                        :disable="entryStar[item.entry.id] === 'starring'"
+                        :outline="entryStar[item.entry.id] === 'unstarred'"
                         :color="entryStar[item.entry.id] === 'starred' ? 'yellow' : 'grey'"
                         :icon="entryStar[item.entry.id] === 'starred' ? 'star' : 'star_border'"
-                        :outline="entryStar[item.entry.id] === 'unstarred'"
-                        clickable
-                        :disable="entryStar[item.entry.id] === 'starring'"
                         @click="toggleStarEntry(item.entry.id)"
                       >
                         {{ entryStar[item.entry.id] === "starred" ? "Starred" : "Not starred" }}
                       </q-chip>
                       <q-chip
-                        size="sm"
-                        color="secondary"
-                        icon="category"
                         outline
                         clickable
+                        size="sm"
+                        icon="category"
+                        color="secondary"
                         @click="selectedCategoryId = String(item.feed.category.id)"
                       >
                         Category: {{ item.feed.category.name }}
                       </q-chip>
                       <q-chip
+                        outline
+                        clickable
                         size="sm"
                         color="primary"
                         icon="rss_feed"
-                        outline
-                        clickable
                         @click="selectedFeedId = String(item.feed.id)"
                       >
                         Feed: {{ item.feed.title }}
                       </q-chip>
-                      <q-chip size="sm" color="accent" icon="calendar_today" outline
+                      <q-chip outline size="sm" color="accent" icon="calendar_today"
                         >Date: <ClientDateTime :datetime="item.entry.date"
                       /></q-chip>
                     </div>
@@ -296,24 +296,24 @@
                   <q-card-section>
                     <MarkedText
                       v-if="getContent(item.entry.id)"
-                      class="col entry-content"
                       is-html
-                      :text="getContent(item.entry.id)"
                       :keyword="searchQuery"
+                      class="col entry-content"
+                      :text="getContent(item.entry.id)"
                     />
                   </q-card-section>
                   <q-card-actions>
                     <q-btn
-                      size="sm"
                       flat
+                      size="sm"
                       icon="check"
                       color="primary"
                       label="Mark as read"
                       @click="markAsReadAndCollapse(item.entry.id, index)"
                     />
                     <q-btn
-                      size="sm"
                       flat
+                      size="sm"
                       color="primary"
                       label="Collapse"
                       icon="unfold_less"
@@ -321,8 +321,8 @@
                     />
                     <q-btn
                       v-if="!contents[downloadedKey(item.entry.id)]"
-                      size="sm"
                       flat
+                      size="sm"
                       color="primary"
                       label="Download"
                       icon="file_download"
@@ -331,11 +331,11 @@
                     />
                     <q-btn
                       v-else
-                      size="sm"
                       flat
+                      size="sm"
+                      icon="undo"
                       color="primary"
                       label="See original"
-                      icon="undo"
                       @click="contents[downloadedKey(item.entry.id)] = ''"
                     />
                   </q-card-actions>

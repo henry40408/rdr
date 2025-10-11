@@ -28,11 +28,11 @@
               </template>
             </q-file>
             <q-btn
-              class="q-ml-sm"
-              label="Import"
-              :disabled="!uploadedFile"
-              color="primary"
               size="sm"
+              label="Import"
+              class="q-ml-sm"
+              color="primary"
+              :disabled="!uploadedFile"
               @click="importOPML"
             />
           </q-item>
@@ -67,7 +67,7 @@
                 :loading="triggeringJobs.has(job.name)"
                 @click="() => triggerJob(job.name)"
               >
-                <q-tooltip anchor="center left" self="center right">Run job</q-tooltip>
+                <q-tooltip self="center right" anchor="center left">Run job</q-tooltip>
               </q-btn>
             </q-item-section>
           </q-item>
