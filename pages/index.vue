@@ -25,6 +25,7 @@
         <q-item>
           <q-item-section header>
             <q-item-label class="text-h5">Categories</q-item-label>
+            <q-item-label caption>Browse by category</q-item-label>
           </q-item-section>
         </q-item>
         <q-item>
