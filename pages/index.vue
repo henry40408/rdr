@@ -1,117 +1,313 @@
 <template>
-  <header>
-    <h1>
-      <span v-if="listStatus === 'unread'">Unread entries</span>
-      <span v-else-if="listStatus === 'read'">Read entries</span>
-      <span v-else>All entries</span>
-      ({{ countStatus == "success" && countData ? countData.count : "?" }})
-    </h1>
-    <Nav />
-  </header>
-  <main>
-    <div>
-      <ul class="list-status-nav">
-        <li>Status</li>
-        <li>
-          <a href="#" :class="{ active: listStatus === 'unread' }" @click.prevent="listStatus = 'unread'">Unread</a>
-        </li>
-        <li>
-          <a href="#" :class="{ active: listStatus === 'all' }" @click.prevent="listStatus = 'all'">All</a>
-        </li>
-        <li>
-          <a href="#" :class="{ active: listStatus === 'read' }" @click.prevent="listStatus = 'read'">Read</a>
-        </li>
-      </ul>
-      <ul class="list-status-nav">
-        <li>Filter</li>
-        <li>
-          <span v-if="selectedFeedId">
-            {{ getFilteredFeedTitle() }}
-            <a href="#" @click.prevent="selectedFeedId = undefined">(unfilter)</a>
-          </span>
-          <span v-else>All feeds</span>
-        </li>
-        <li>
-          <span v-if="selectedCategoryId">
-            {{ getFilteredCategoryName() }}
-            <a href="#" @click.prevent="selectedCategoryId = undefined">(unfilter)</a>
-          </span>
-          <span v-else>All categories</span>
-        </li>
-        <li>
-          <input type="text" v-model="searchQuery" placeholder="Search..." />
-        </li>
-      </ul>
-      <ul class="list-status-nav">
-        <li>Actions</li>
-        <li>
-          <a href="#" @click.prevent="markAllAsRead()">&#x2705; Mark all as read</a>
-        </li>
-      </ul>
-    </div>
-    <div v-for="(item, index) in allItems" :key="item.entry.guid">
-      <h4>
-        <EntryCheckbox
-          :ref="(el) => setCheckboxRef(index, el)"
-          :entryId="item.entry.id"
-          :initial="!!item.entry.readAt"
-          @toggled="onEntryToggled"
-        />
-        <span v-if="item.entry.readAt" class="read-title">
-          <MarkedText :text="item.entry.title" :keyword="searchQuery" />
-        </span>
-        <span v-else>
-          <MarkedText :text="item.entry.title" :keyword="searchQuery" />
-        </span>
-        {{ " " }}
-        <NuxtLink target="_blank" rel="noopener noreferrer" :to="item.entry.link" @click="markAsRead(index)"
-          >&#x2197;</NuxtLink
-        >
-      </h4>
-      <div>
-        <img
-          v-if="imageExists(item.feed.id)"
-          :src="`/api/feeds/${item.feed.id}/image`"
-          alt="Feed Image"
-          class="feed-image"
-        />
-        <small>
-          <span title="Feed">{{ item.feed.title }}</span>
-          {{ " " }}
-          <a href="#" v-if="!selectedFeedId" @click.prevent="selectedFeedId = item.feed.id">(filter)</a>
-          &#x1F4C2;
-          <span title="Category">{{ item.feed.category.name }}</span>
-          {{ " " }}
-          <a href="#" v-if="!selectedCategoryId" @click.prevent="selectedCategoryId = item.feed.category.id"
-            >(filter)</a
-          >
-          {{ " " }}
-          &#x1F5D3;
-          <ClientSideDateTime :datetime="item.entry.date" />
-        </small>
-      </div>
-      <div>
-        <EntryContent :entryId="item.entry.id" :keyword="searchQuery" />
-      </div>
-    </div>
-    <p v-if="hasMore">Loading more...</p>
-    <p v-else>No more items.</p>
-  </main>
+  <q-layout view="hhh LpR fFf">
+    <q-header elevated class="bg-primary text-white">
+      <q-toolbar>
+        <q-btn dense flat round icon="menu" @click="leftDrawerOpen = !leftDrawerOpen" />
+        <q-toolbar-title>
+          <q-avatar>
+            <q-icon name="rss_feed" />
+          </q-avatar>
+          rdr
+        </q-toolbar-title>
+        <q-input dark borderless v-model="searchQuery" input-class="text-right" class="q-ml-md q-mr-sm" debounce="500">
+          <template v-slot:append>
+            <q-icon v-if="!searchQuery" name="search" />
+            <q-icon v-else name="clear" class="cursor-pointer" @click="searchQuery = ''" />
+          </template>
+        </q-input>
+        <q-btn dense flat round icon="menu" @click="rightDrawerOpen = !rightDrawerOpen" />
+      </q-toolbar>
+      <Nav />
+    </q-header>
+
+    <q-drawer show-if-above v-model="leftDrawerOpen" side="left" bordered>
+      <q-list padding>
+        <q-item>
+          <q-item-section header>
+            <q-item-label class="text-h5">Categories</q-item-label>
+            <q-item-label caption>Browse by category</q-item-label>
+          </q-item-section>
+        </q-item>
+        <q-item>
+          <q-item-section>
+            <q-toggle v-model="hideEmpty" label="Hide empty" />
+          </q-item-section>
+        </q-item>
+        <template v-for="category in categories" :key="category.id">
+          <template v-if="!hideEmpty || categoryUnreadCount(category.id) > 0">
+            <q-item clickable v-ripple @click="() => $router.push({ path: '/', query: { categoryId: category.id } })">
+              <q-item-section>
+                <q-item-label>{{ category.name }}</q-item-label>
+              </q-item-section>
+              <q-item-section side>
+                <q-badge color="primary" :outline="!categoryUnreadCount(category.id)">{{
+                  categoryUnreadCount(category.id)
+                }}</q-badge>
+              </q-item-section>
+            </q-item>
+            <q-separator />
+            <template v-for="feed in category.feeds" :key="feed.id">
+              <q-item
+                clickable
+                v-if="!hideEmpty || feedUnreadCount(feed.id) > 0"
+                v-ripple
+                @click="() => $router.push({ path: '/', query: { feedId: feed.id } })"
+              >
+                <q-item-section avatar>
+                  <q-avatar size="sm" square v-if="imageExists(feed.id)">
+                    <img :src="`/api/feeds/${feed.id}/image`" />
+                  </q-avatar>
+                  <q-icon v-else name="rss_feed" />
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label lines="1">{{ feed.title }}</q-item-label>
+                </q-item-section>
+                <q-item-section side>
+                  <q-badge color="primary" :outline="!feedUnreadCount(feed.id)">{{ feedUnreadCount(feed.id) }}</q-badge>
+                </q-item-section>
+              </q-item>
+            </template>
+          </template>
+        </template>
+      </q-list>
+    </q-drawer>
+
+    <q-drawer show-if-above v-model="rightDrawerOpen" side="right" bordered>
+      <q-list>
+        <q-item-label header>Status</q-item-label>
+        <q-item tag="label" v-ripple>
+          <q-item-section side top>
+            <q-radio v-model="listStatus" val="unread" />
+          </q-item-section>
+          <q-item-section>
+            <q-item-label>Unread</q-item-label>
+          </q-item-section>
+        </q-item>
+        <q-item tag="label" v-ripple>
+          <q-item-section side top>
+            <q-radio v-model="listStatus" val="all" />
+          </q-item-section>
+          <q-item-section>
+            <q-item-label>All</q-item-label>
+          </q-item-section>
+        </q-item>
+        <q-item tag="label" v-ripple>
+          <q-item-section side top>
+            <q-radio v-model="listStatus" val="read" />
+          </q-item-section>
+          <q-item-section>
+            <q-item-label>Read</q-item-label>
+          </q-item-section>
+        </q-item>
+      </q-list>
+    </q-drawer>
+
+    <q-page-container>
+      <q-page>
+        <q-list padding>
+          <q-item>
+            <q-item-section header>
+              <q-item-label>
+                <div class="q-gutter-sm row items-center">
+                  <div class="text-h5">
+                    <span v-if="listStatus === 'unread'">Unread</span>
+                    <span v-else-if="listStatus === 'read'">Read</span>
+                    <span v-else>All</span>
+                  </div>
+                  <q-badge>{{ countData ? countData.count : "..." }}</q-badge>
+                  <div>
+                    <q-chip
+                      v-if="selectedCategoryId"
+                      size="sm"
+                      color="secondary"
+                      icon="category"
+                      outline
+                      removable
+                      @remove="selectedCategoryId = undefined"
+                      >Category: {{ getFilteredCategoryName() }}</q-chip
+                    >
+                    <q-chip
+                      v-if="selectedFeedId"
+                      outline
+                      removable
+                      color="primary"
+                      icon="rss_feed"
+                      size="sm"
+                      @remove="selectedFeedId = undefined"
+                      >Feed: {{ getFilteredFeedTitle() }}</q-chip
+                    >
+                    <q-chip
+                      v-if="searchQuery"
+                      outline
+                      removable
+                      color="accent"
+                      icon="search"
+                      size="sm"
+                      @remove="searchQuery = ''"
+                      >Search: {{ searchQuery }}</q-chip
+                    >
+                  </div>
+                </div>
+              </q-item-label>
+            </q-item-section>
+            <q-item-section side>
+              <div>
+                <q-btn flat icon="refresh" round @click="resetThenLoad()" />
+                <q-btn flat icon="done_all" round @click="markAllAsRead()" />
+              </div>
+            </q-item-section>
+          </q-item>
+        </q-list>
+        <q-card flat v-if="loading">
+          <q-card-section class="row justify-center">
+            <q-spinner color="primary" size="3em" />
+          </q-card-section>
+        </q-card>
+        <q-banner class="bg-grey-2 text-grey-8" v-if="!loading && items.length === 0">
+          <template v-slot:avatar>
+            <q-icon name="info" />
+          </template>
+          No entries found.
+        </q-banner>
+        <q-pull-to-refresh @refresh="resetThenLoad">
+          <q-infinite-scroll @load="onLoad" :offset="250">
+            <q-list separator>
+              <q-expansion-item
+                clickable
+                group="entry"
+                v-for="(item, index) in items"
+                :key="item.entry.id"
+                ref="item-list"
+                @before-show="loadContent(item.entry.id)"
+                @after-show="scrollToContentRef(index)"
+              >
+                <template v-slot:header>
+                  <q-item-section side>
+                    <q-checkbox
+                      v-model="entryRead[item.entry.id]"
+                      size="sm"
+                      true-value="read"
+                      :disable="entryRead[item.entry.id] === 'toggling'"
+                      false-value="unread"
+                      @click="toggleEntry(item.entry.id, index)"
+                    />
+                  </q-item-section>
+                  <q-item-section side>
+                    <q-avatar size="sm" square>
+                      <img :src="`/api/feeds/${item.feed.id}/image`" v-if="imageExists(item.feed.id)" />
+                      <q-icon v-else size="sm" name="rss_feed" />
+                    </q-avatar>
+                  </q-item-section>
+                  <q-item-section>
+                    <q-item-label lines="3">
+                      <MarkedText :text="item.entry.title" :keyword="searchQuery" />
+                    </q-item-label>
+                    <q-item-label lines="2" caption
+                      >{{ item.feed.category.name }} &middot; {{ item.feed.title }} &middot;
+                      <ClientAgo :datetime="item.entry.date"
+                    /></q-item-label>
+                  </q-item-section>
+                </template>
+
+                <q-card>
+                  <q-card-section>
+                    <div class="q-my-sm text-h5">{{ item.entry.title }}</div>
+                    <div class="q-my-sm">by {{ item.entry.author }}</div>
+                    <div class="q-my-sm">
+                      <q-chip
+                        size="sm"
+                        color="secondary"
+                        icon="category"
+                        outline
+                        clickable
+                        @click="selectedCategoryId = item.feed.category.id"
+                      >
+                        Category: {{ item.feed.category.name }}
+                      </q-chip>
+                      <q-chip
+                        size="sm"
+                        color="primary"
+                        icon="rss_feed"
+                        outline
+                        clickable
+                        @click="selectedFeedId = item.feed.id"
+                      >
+                        Feed: {{ item.feed.title }}
+                      </q-chip>
+                      <q-chip size="sm" color="accent" icon="calendar_today" outline
+                        >Date: <ClientDateTime :datetime="item.entry.date"
+                      /></q-chip>
+                    </div>
+                  </q-card-section>
+                  <q-card-section>
+                    <MarkedText
+                      v-if="contents[item.entry.id]"
+                      class="col entry-content"
+                      is-html
+                      :text="contents[item.entry.id]"
+                      :keyword="searchQuery"
+                    />
+                  </q-card-section>
+                  <q-card-actions>
+                    <q-btn
+                      size="sm"
+                      flat
+                      icon="check"
+                      color="primary"
+                      label="Mark as read"
+                      @click="markAsReadAndCollapse(item.entry.id, index)"
+                    />
+                    <q-btn
+                      size="sm"
+                      flat
+                      color="primary"
+                      label="Collapse"
+                      icon="unfold_less"
+                      @click="collapseItem(index)"
+                    />
+                    <q-btn
+                      size="sm"
+                      flat
+                      color="primary"
+                      label="Read more"
+                      icon="open_in_new"
+                      :href="item.entry.link"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      @click="markAsRead(item.entry.id)"
+                    />
+                  </q-card-actions>
+                </q-card>
+              </q-expansion-item>
+              <q-item v-if="!hasMore && items.length > 0">
+                <q-item-section>
+                  <q-item-label class="text-center text-grey-8">End of list</q-item-label>
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </q-infinite-scroll>
+        </q-pull-to-refresh>
+      </q-page>
+    </q-page-container>
+  </q-layout>
 </template>
 
 <script setup>
+import { useQuasar } from "quasar";
 import { useRouteQuery } from "@vueuse/router";
+import { useLocalSettings } from "./local-settings";
 
 const LIMIT = 100;
 
-/** @type {Ref<import('../server/api/entries.post').EntryEntityWithFeed[]>} */
-const allItems = ref([]);
-
-/** @type {Ref<(ComponentPublicInstance|Element)[]>} */
-const checkboxRefs = ref([]);
+const $q = useQuasar();
+const itemRefs = useTemplateRef("item-list");
+const { hideEmpty } = useLocalSettings();
 
 const hasMore = ref(true);
+const leftDrawerOpen = ref(false);
+const loading = ref(false);
 const offset = ref(0);
+const rightDrawerOpen = ref(false);
 
 /** @type {Ref<"all"|"read"|"unread">} */
 const listStatus = useRouteQuery("status", "unread");
@@ -120,84 +316,70 @@ const selectedCategoryId = useRouteQuery("categoryId", undefined);
 /** @type {Ref<string|undefined>} */
 const selectedFeedId = useRouteQuery("feedId", undefined);
 /** @type {Ref<string>} */
-const searchQuery = useRouteQuery("q", "");
+const searchQuery = useRouteQuery("q", null);
 
-const feedIdsForCount = computed(() => {
-  if (selectedFeedId.value) return [selectedFeedId.value];
-  if (selectedCategoryId.value && categories.value) {
-    const feedIds = categories.value.flatMap((c) =>
-      c.id === selectedCategoryId.value ? c.feeds.map((f) => f.id) : [],
-    );
-    if (feedIds.length > 0) return feedIds;
+/** @type {Ref<import('../server/api/entries.get').EntryEntityWithFeed[]>} */
+const items = ref([]);
+
+/** @type {Ref<{ [key: string]: string }> } */
+const contents = ref({});
+
+/** @type {Ref<Record<string,"read"|"toggling"|"unread">>} */
+const entryRead = ref({});
+
+const countQuery = computed(() => {
+  const query = {};
+  if (selectedFeedId.value) {
+    query.selectedType = "feed";
+    query.selectedId = selectedFeedId.value;
+  } else if (selectedCategoryId.value) {
+    query.selectedType = "category";
+    query.selectedId = selectedCategoryId.value;
   }
-  return undefined;
+  if (searchQuery.value) query.search = searchQuery.value;
+  if (listStatus.value) query.status = listStatus.value;
+  return query;
 });
 
 const { data: categories } = await useFetch("/api/categories");
-const {
-  data: countData,
-  status: countStatus,
-  execute: refreshCount,
-} = await useFetch("/api/count", {
-  method: "POST",
-  body: {
-    feedIds: feedIdsForCount,
-    search: searchQuery,
-    status: listStatus,
-  },
+const { data: countData, execute: refreshCount } = await useFetch("/api/count", {
+  query: countQuery,
 });
+useHead(() => ({
+  title: selectedFeedId.value
+    ? `(${countData.value?.count || 0}) Feed: ${getFilteredFeedTitle()} - rdr`
+    : selectedCategoryId.value
+      ? `(${countData.value?.count || 0}) Category: ${getFilteredCategoryName()} - rdr`
+      : `(${countData.value?.count || 0}) rdr`,
+}));
 const { data: imagePks } = await useFetch("/api/image-pks");
+const { data: feedsData, execute: refreshFeedData } = await useFetch("/api/feeds/data");
 
-const el = ref(document);
-const { reset } = useInfiniteScroll(
-  el,
-  async () => {
-    const body = {};
-    if (selectedFeedId.value) {
-      body.feedIds = [selectedFeedId.value];
-    } else if (selectedCategoryId.value) {
-      const feedIds = categories.value?.flatMap((c) =>
-        c.id === selectedCategoryId.value ? c.feeds.map((f) => f.id) : [],
-      );
-      if (feedIds) body.feedIds = feedIds;
-    }
-    if (searchQuery.value) body.search = searchQuery.value;
-    body.limit = LIMIT;
-    body.offset = offset.value;
-    body.status = listStatus.value;
+/**
+ * @param {string} categoryId
+ * @returns {number}
+ */
+function categoryUnreadCount(categoryId) {
+  if (!feedsData.value) return 0;
+  const feedIds = categories.value?.filter((c) => c.id === categoryId).flatMap((c) => c.feeds.map((f) => f.id)) || [];
+  return feedIds.reduce((sum, feedId) => sum + (feedsData.value?.feeds[feedId]?.unreadCount || 0), 0);
+}
 
-    const entries = await $fetch("/api/entries", { method: "POST", body });
-    if (entries.length < LIMIT) hasMore.value = false;
-    for (const entry of entries) allItems.value.push(entry);
-    offset.value += entries.length;
-  },
-  {
-    distance: 10,
-    canLoadMore: () => hasMore.value,
-  },
-);
-const resetItems = () => {
-  allItems.value = [];
-  hasMore.value = true;
-  offset.value = 0;
-  reset();
-};
-const debouncedResetItems = useDebounceFn(resetItems, 500);
-watch(searchQuery, () => {
-  debouncedResetItems();
-});
-watch([selectedCategoryId, selectedFeedId, listStatus], () => {
-  resetItems();
-});
+/**
+ * @param {string} feedId
+ * @returns {number}
+ */
+function feedUnreadCount(feedId) {
+  if (!feedsData.value) return 0;
+  return feedsData.value?.feeds[feedId]?.unreadCount || 0;
+}
 
 /**
  * @param {number} index
  */
-function markAsRead(index) {
-  if (allItems.value[index].entry.readAt) return; // already read
-
-  const checkbox = checkboxRefs.value[index];
-  if (checkbox && "$el" in checkbox) checkbox.$el.click();
+function collapseItem(index) {
+  // @ts-expect-error
+  itemRefs.value?.[index]?.hide();
 }
 
 function getFilteredCategoryName() {
@@ -214,6 +396,74 @@ function getFilteredFeedTitle() {
   return entry ? entry.title : "Unknown";
 }
 
+async function load() {
+  const query = {};
+  if (selectedFeedId.value) {
+    query.selectedType = "feed";
+    query.selectedId = selectedFeedId.value;
+  } else if (selectedCategoryId.value) {
+    query.selectedType = "category";
+    query.selectedId = selectedCategoryId.value;
+  }
+  if (searchQuery.value) query.search = searchQuery.value;
+  if (listStatus.value) query.status = listStatus.value;
+  query.limit = LIMIT;
+  query.offset = offset.value;
+
+  loading.value = true;
+  try {
+    const newItems = await $fetch("/api/entries", { query });
+    if (newItems) {
+      for (const item of newItems) {
+        items.value.push(item);
+        entryRead.value[item.entry.id] = item.entry.readAt ? "read" : "unread";
+      }
+      if (newItems.length < LIMIT) hasMore.value = false;
+    }
+  } catch (err) {
+    $q.notify({
+      type: "negative",
+      message: `Failed to load entries: ${err}`,
+      actions: [{ icon: "close", color: "white" }],
+    });
+    hasMore.value = false;
+  } finally {
+    loading.value = false;
+  }
+}
+await load();
+
+/**
+ * @param {string} entryId
+ */
+async function loadContent(entryId) {
+  try {
+    if (contents.value[entryId]) return contents.value[entryId];
+    const { content } = await $fetch(`/api/entries/${entryId}/content`);
+    contents.value[entryId] = content;
+  } catch (err) {
+    $q.notify({
+      type: "negative",
+      message: `Failed to load entry content: ${err}`,
+      actions: [{ icon: "close", color: "white" }],
+    });
+  }
+}
+
+/**
+ * @param {number} [_index]
+ * @param {(stop?:boolean) => void} [done]
+ */
+async function onLoad(_index, done) {
+  if (!hasMore.value) {
+    if (done) done(true);
+    return;
+  }
+  offset.value += LIMIT;
+  await load();
+  if (done) done();
+}
+
 /**
  * @param {string} feedId
  * @returns {boolean}
@@ -222,50 +472,124 @@ function imageExists(feedId) {
   return (imagePks && imagePks.value?.includes(feedId)) || false;
 }
 
-function markAllAsRead() {
-  for (let i = 0; i < allItems.value.length; i += 1) markAsRead(i);
-}
-
-/** @param {string} entryId */
-function onEntryToggled(entryId) {
-  const entry = allItems.value.find((e) => e.entry.id === entryId);
-  if (entry) entry.entry.readAt = entry.entry.readAt ? undefined : new Date().toISOString();
+async function markAllAsRead() {
+  const tasks = [];
+  for (const item of items.value) {
+    if (entryRead.value[item.entry.id] === "read") continue;
+    const task = async () => {
+      const value = entryRead.value[item.entry.id];
+      try {
+        entryRead.value[item.entry.id] = "toggling";
+        await $fetch(`/api/entries/${item.entry.id}/toggle`, { method: "PUT" });
+        entryRead.value[item.entry.id] = "read";
+      } catch (err) {
+        $q.notify({
+          type: "negative",
+          message: `Failed to mark entry ${item.entry.id} as read: ${err}`,
+          actions: [{ icon: "close", color: "white" }],
+        });
+        entryRead.value[item.entry.id] = value;
+      }
+    };
+    tasks.push(task());
+  }
+  await Promise.all(tasks);
   refreshCount();
+  refreshFeedData();
 }
 
 /**
- * @param {number} index
- * @param {ComponentPublicInstance|Element|null} el
+ * @param {string} entryId
  */
-function setCheckboxRef(index, el) {
-  if (el) checkboxRefs.value[index] = el;
+async function markAsRead(entryId) {
+  if (entryRead.value[entryId] === "read") return;
+  const value = entryRead.value[entryId];
+  try {
+    entryRead.value[entryId] = "toggling";
+    await $fetch(`/api/entries/${entryId}/toggle`, { method: "PUT" });
+    entryRead.value[entryId] = "read";
+    refreshCount();
+    refreshFeedData();
+  } catch (err) {
+    $q.notify({
+      type: "negative",
+      message: `Failed to mark entry ${entryId} as read: ${err}`,
+      actions: [{ icon: "close", color: "white" }],
+    });
+    entryRead.value[entryId] = value;
+  }
+}
+
+/**
+ * @param {string} entryId
+ * @param {number} index
+ */
+async function markAsReadAndCollapse(entryId, index) {
+  await markAsRead(entryId);
+  collapseItem(index);
+  scrollToContentRef(index);
+}
+
+/**
+ * @param {(stop?:boolean) => void} [done]
+ */
+async function resetThenLoad(done) {
+  contents.value = {};
+  hasMore.value = true;
+  items.value = [];
+  offset.value = 0;
+
+  await load();
+  if (done) done();
+}
+watch([listStatus, selectedCategoryId, selectedFeedId, searchQuery], () => {
+  resetThenLoad();
+});
+
+/**
+ * @param {number} index
+ */
+function scrollToContentRef(index) {
+  // @ts-expect-error
+  itemRefs.value?.[index]?.$el.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+/**
+ * @param {string} entryId
+ * @param {number} index
+ */
+async function toggleEntry(entryId, index) {
+  if (entryRead.value[entryId] === "toggling") return;
+
+  // status of checkbox is already changed by the time this function is called
+  const value = entryRead.value[entryId];
+
+  entryRead.value[entryId] = "toggling";
+  try {
+    await $fetch(`/api/entries/${entryId}/toggle`, { method: "PUT" });
+    refreshCount();
+    refreshFeedData();
+  } catch (err) {
+    $q.notify({
+      type: "negative",
+      message: `Failed to toggle entry ${entryId}: ${err}`,
+      actions: [{ icon: "close", color: "white" }],
+    });
+  } finally {
+    entryRead.value[entryId] = value;
+    collapseItem(index);
+  }
 }
 </script>
 
-<style scoped>
-.feed-image {
-  width: 1rem;
-  height: 1rem;
-  vertical-align: middle;
-  margin-right: 0.25rem;
+<style>
+.entry-content img {
+  max-width: 100%;
+  height: auto;
 }
 
-.list-status-nav {
-  align-items: center;
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
-  list-style: none;
-  padding: 0;
-}
-
-.list-status-nav .active::before {
-  content: "\2705";
-  margin-right: 0.25rem;
-}
-
-.read-title {
-  opacity: 0.5;
-  text-decoration: line-through;
+.entry-content mark {
+  background-color: yellow;
+  color: black;
 }
 </style>
