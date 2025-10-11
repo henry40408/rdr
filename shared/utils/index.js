@@ -3,5 +3,5 @@
  * @returns {string}
  */
 export function buildFeedImageKey(feedId) {
-  return `feed-${feedId}`;
+  return `feed:${feedId}`;
 }

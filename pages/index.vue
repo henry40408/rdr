@@ -58,7 +58,7 @@
                 >
                   <q-item-section avatar>
                     <q-avatar size="sm" square v-if="imageExists(feed.id)">
-                      <img :src="`/api/feeds/${feed.id}/image`" />
+                      <img :src="`/api/images/${buildFeedImageKey(feed.id)}`" />
                     </q-avatar>
                     <q-icon v-else name="rss_feed" />
                   </q-item-section>
@@ -74,6 +74,15 @@
               </template>
             </template>
           </template>
+          <q-item v-if="!categories?.length">
+            <q-item-section>
+              <q-item-label class="text-subtitle2">No categories found.</q-item-label>
+              <q-item-label caption>
+                You can add new feeds on the
+                <router-link to="/settings">settings page</router-link>.
+              </q-item-label>
+            </q-item-section>
+          </q-item>
         </ClientOnly>
       </q-list>
     </q-drawer>
@@ -173,7 +182,10 @@
           <template v-slot:avatar>
             <q-icon name="info" />
           </template>
-          No entries found.
+          <div>No entries found.</div>
+          <div class="text-caption">
+            Try adjusting your filters or <router-link to="/settings">add new feeds</router-link>.
+          </div>
         </q-banner>
         <q-pull-to-refresh @refresh="resetThenLoad">
           <q-infinite-scroll @load="onLoad" :offset="250">
@@ -200,7 +212,7 @@
                   </q-item-section>
                   <q-item-section side>
                     <q-avatar size="sm" square>
-                      <img :src="`/api/feeds/${item.feed.id}/image`" v-if="imageExists(item.feed.id)" />
+                      <img :src="`/api/images/${buildFeedImageKey(item.feed.id)}`" v-if="imageExists(item.feed.id)" />
                       <q-icon v-else size="sm" name="rss_feed" />
                     </q-avatar>
                   </q-item-section>

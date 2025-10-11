@@ -395,7 +395,7 @@ export class Repository {
     }
     logger.info({ msg: "Upserted entries", count: items.length });
 
-    await this.knex("feed").where({ id: feed.id }).update({ fetched_at: now.toISOString() });
+    await this.knex("feeds").where({ id: feed.id }).update({ fetched_at: now.toISOString() });
     logger.info({ msg: "Updated feed", feedId: feed.id, fetchedAt: now });
   }
 
@@ -423,15 +423,20 @@ export class Repository {
   /**
    * @param {FeedEntity} feed
    */
-  async upsertFeed(feed) {
+  async updateFeedMetadata(feed) {
     const logger = this.logger.child({ feedId: feed.id });
 
-    logger.debug({ msg: "Upserting feed", feed });
-    await this.knex("feed")
-      .insert({ id: feed.id, etag: feed.etag, last_modified: feed.lastModified })
-      .onConflict("id")
-      .merge();
-    logger.info({ msg: "Upserted feed", feedId: feed.id });
+    const update = {};
+    if (typeof feed.etag !== "undefined") update.etag = feed.etag;
+    if (typeof feed.lastModified !== "undefined") update.last_modified = feed.lastModified;
+    if (Object.keys(update).length === 0) {
+      logger.debug("No metadata to update");
+      return;
+    }
+
+    logger.debug({ msg: "Update feed metadata", feed });
+    await this.knex("feeds").where({ id: feed.id }).update(update);
+    logger.info({ msg: "Updated feed metadata", feedId: feed.id });
   }
 
   async _setPragmas() {

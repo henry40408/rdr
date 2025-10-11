@@ -75,7 +75,7 @@
                     <template v-slot:header>
                       <q-item-section side>
                         <q-avatar square v-if="imageExists(feed.id)" size="xs">
-                          <img :src="`/api/feeds/${feed.id}/image`" alt="Feed Image" />
+                          <img :src="`/api/images/${buildFeedImageKey(feed.id)}`" alt="Feed Image" />
                         </q-avatar>
                         <q-icon v-else name="rss_feed" class="feed-image" />
                       </q-item-section>
@@ -127,6 +127,15 @@
               </q-list>
             </template>
           </template>
+          <q-item v-if="!categories?.length">
+            <q-item-section>
+              <q-item-label class="text-subtitle2">No categories found.</q-item-label>
+              <q-item-label caption>
+                You can add new feeds on the
+                <router-link to="/settings">settings page</router-link>.
+              </q-item-label>
+            </q-item-section>
+          </q-item>
         </q-list>
       </q-page>
     </q-page-container>

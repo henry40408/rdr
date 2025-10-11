@@ -125,7 +125,7 @@ export class FeedService {
     const result = await this.fetchEntries(feed);
     if (result.type === "ok") {
       await this.repository.upsertEntries(feed, result.items);
-      await this.repository.upsertFeed(result.feed);
+      await this.repository.updateFeedMetadata(result.feed);
     }
   }
 }
