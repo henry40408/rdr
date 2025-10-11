@@ -75,7 +75,7 @@
                     <template v-slot:header>
                       <q-item-section side>
                         <q-avatar square v-if="imageExists(feed.id)" size="xs">
-                          <img :src="`/api/feeds/${feed.id}/image`" alt="Feed Image" />
+                          <img :src="`/api/images/${buildFeedImageKey(feed.id)}`" alt="Feed Image" />
                         </q-avatar>
                         <q-icon v-else name="rss_feed" class="feed-image" />
                       </q-item-section>
@@ -127,6 +127,15 @@
               </q-list>
             </template>
           </template>
+          <q-item v-if="!categories?.length">
+            <q-item-section>
+              <q-item-label class="text-subtitle2">No categories found.</q-item-label>
+              <q-item-label caption>
+                You can add new feeds on the
+                <router-link to="/settings">settings page</router-link>.
+              </q-item-label>
+            </q-item-section>
+          </q-item>
         </q-list>
       </q-page>
     </q-page-container>
@@ -146,9 +155,9 @@ const { data: feedData, execute: refreshFeedData } = await useFetch("/api/feeds/
 
 const feedDataByFeedId = computed(() => feedData.value?.feeds || {});
 
-/** @type {Ref<Set<string>>} */
+/** @type {Ref<Set<number>>} */
 const refreshingCategoryIds = ref(new Set());
-/** @type {Ref<Set<string>>} */
+/** @type {Ref<Set<number>>} */
 const refreshingFeedIds = ref(new Set());
 
 async function afterRefresh() {
@@ -156,11 +165,11 @@ async function afterRefresh() {
 }
 
 /**
- * @param {string} categoryId
+ * @param {number} categoryId
  * @returns {number}
  */
 function categoryUnreadCount(categoryId) {
-  const category = categories.value?.find((cat) => cat.id === categoryId);
+  const category = categories.value?.find((c) => c.id === categoryId);
   if (!category) return 0;
   return category.feeds.reduce((sum, feed) => {
     const feedData = feedDataByFeedId.value[feed.id];
@@ -169,7 +178,7 @@ function categoryUnreadCount(categoryId) {
 }
 
 /**
- * @param {string} feedId
+ * @param {number} feedId
  * @returns {number}
  */
 function feedUnreadCount(feedId) {
@@ -177,17 +186,17 @@ function feedUnreadCount(feedId) {
 }
 
 /**
- * @param {string} feedId
+ * @param {number} feedId
  * @returns {string}
  */
 function formatFetchedAtToNow(feedId) {
-  const fetchedAt = feedData.value?.feeds[feedId]?.metadata.fetchedAt;
+  const fetchedAt = feedData.value?.feeds[feedId]?.fetchedAt;
   if (!fetchedAt) return "never";
   return formatDistanceToNow(new Date(fetchedAt), { addSuffix: true });
 }
 
 /**
- * @param {string} feedId
+ * @param {number} feedId
  * @returns {boolean}
  */
 function imageExists(feedId) {

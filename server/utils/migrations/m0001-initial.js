@@ -5,44 +5,46 @@ export const name = "0001-initial";
  */
 export function up(knex) {
   return knex.schema
-    .createTable("entries", (t) => {
-      t.string("id").primary(); // hash of feed_id + guid
+    .createTable("categories", (t) => {
+      t.increments("id").primary();
 
-      t.string("feed_id").notNullable();
-      t.string("guid").notNullable();
+      t.string("name").notNullable().unique();
+
+      t.timestamps(true, true);
+    })
+    .createTable("feeds", (t) => {
+      t.increments("id").primary();
+      t.integer("category_id").notNullable();
+
+      t.string("title").notNullable();
+      t.string("xml_url").notNullable().unique();
+      t.string("html_url").notNullable();
+
+      t.timestamp("fetched_at").index();
+      t.string("etag");
+      t.string("last_modified");
+
+      t.timestamps(true, true);
+    })
+    .createTable("entries", (t) => {
+      t.increments("id").primary();
+
+      t.integer("feed_id").notNullable().index();
+      t.string("guid").notNullable().index();
+      t.unique(["feed_id", "guid"]);
 
       t.string("title").notNullable();
       t.string("link").notNullable();
-      t.timestamp("date").notNullable();
+      t.timestamp("date").notNullable().index();
       t.string("summary").notNullable();
 
       t.string("description");
       t.string("author");
 
-      t.timestamp("read_at");
-      t.timestamp("starred_at");
+      t.timestamp("read_at").index();
+      t.timestamp("starred_at").index();
 
       t.timestamps(true, true);
-
-      t.unique(["feed_id", "guid"]);
-
-      t.index("feed_id");
-      t.index("guid");
-      t.index("date");
-      t.index("read_at");
-      t.index("starred_at");
-    })
-    .createTable("feed_metadata", (t) => {
-      t.string("feed_id").primary().notNullable();
-
-      t.timestamp("fetched_at");
-
-      t.string("etag");
-      t.string("last_modified");
-
-      t.timestamps(true, true);
-
-      t.index("fetched_at");
     })
     .createTable("image", (t) => {
       t.string("external_id").primary().notNullable();
@@ -62,7 +64,7 @@ export function up(knex) {
  * @param {import('knex').Knex} knex
  */
 export function down(knex) {
-  return knex.schema.dropTable("image").dropTable("feed_metadata").dropTable("entries");
+  return knex.schema.dropTable("image").dropTable("entries").dropTable("feeds").dropTable("categories");
 }
 
 export default {

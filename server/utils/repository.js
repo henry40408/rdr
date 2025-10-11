@@ -1,6 +1,6 @@
 import chunk from "lodash/chunk.js";
 import get from "lodash/get.js";
-import { EntryEntity } from "./entities";
+import { CategoryEntity, EntryEntity, FeedEntity } from "./entities";
 
 export class Repository {
   /**
@@ -23,7 +23,7 @@ export class Repository {
 
   /**
    * @param {object} opts
-   * @param {string[]} [opts.feedIds=[]]
+   * @param {number[]} [opts.feedIds=[]]
    * @param {string} [opts.search]
    * @param {"all"|"read"|"unread"} [opts.status="all"]
    * @returns {Promise<number>}
@@ -54,13 +54,13 @@ export class Repository {
   }
 
   /**
-   * @param {string[]} feedIds
+   * @param {number[]} feedIds
    * @returns {Promise<Record<string,{ total: number, unread: number }>>}
    */
   async countEntriesByFeedIds(feedIds) {
     if (feedIds.length === 0) return {};
 
-    /** @type {Array<{ feed_id: string, total: number, unread: number }>} */
+    /** @type {Array<{ feed_id: number, total: number, unread: number }>} */
     const rows = await this.knex("entries")
       .select("feed_id")
       .count({ total: "*" })
@@ -79,79 +79,71 @@ export class Repository {
     return counts;
   }
 
-  /**
-   * @param {string} id
-   * @returns {Promise<EntryEntity|undefined>}
-   */
-  async findEntryById(id) {
-    const row = await this.knex("entries").where({ id }).first();
-    if (!row) return undefined;
-    return new EntryEntity({
-      feedId: row.feed_id,
-      guid: row.guid,
-      title: row.title,
-      link: row.link,
-      date: row.date,
-      author: row.author,
-      readAt: row.read_at,
-      starredAt: row.starred_at,
-    });
-  }
+  async findCategoriesWithFeed() {
+    const rows = await this.knex("categories")
+      .join("feeds", "categories.id", "feeds.category_id")
+      .select(
+        this.knex.ref("categories.id").as("category_id"),
+        this.knex.ref("categories.name").as("category_name"),
+        this.knex.ref("feeds.id").as("feed_id"),
+        this.knex.ref("feeds.title").as("feed_title"),
+        this.knex.ref("feeds.xml_url").as("feed_xml_url"),
+        this.knex.ref("feeds.html_url").as("feed_html_url"),
+        this.knex.ref("feeds.fetched_at").as("feed_fetched_at"),
+        this.knex.ref("feeds.etag").as("feed_etag"),
+        this.knex.ref("feeds.last_modified").as("feed_last_modified"),
+      );
 
-  /**
-   * @param {string} id
-   * @returns {Promise<string|undefined>}
-   */
-  async findEntryContentById(id) {
-    const row = await this.knex("entries").where({ id }).first();
-    if (!row) return undefined;
-    return row.description;
-  }
+    /** @type {CategoryEntity[]} */
+    const categories = [];
 
-  /**
-   *
-   * @param {string} feedId
-   * @returns {Promise<FeedMetadataEntity|undefined>}
-   */
-  async findFeedMetadataByFeedId(feedId) {
-    const row = await this.knex("feed_metadata").where({ feed_id: feedId }).first();
-    if (!row) return undefined;
-
-    return new FeedMetadataEntity({
-      feedId: row.feed_id,
-      etag: row.etag,
-      lastModified: row.last_modified,
-    });
-  }
-
-  /**
-   * @param {string} externalId
-   * @returns {Promise<ImageEntity|undefined>}
-   */
-  async findImageByExternalId(externalId) {
-    const row = await this.knex("image").where({ external_id: externalId }).first();
-    if (!row) return undefined;
-    return new ImageEntity({
-      externalId: row.external_id,
-      url: row.url,
-      blob: row.blob,
-      contentType: row.content_type,
-      etag: row.etag,
-      lastModified: row.last_modified,
-    });
+    for (const row of rows) {
+      const category = categories.find((c) => c.id === row.category_id);
+      if (category) {
+        category.feeds.push(
+          new FeedEntity({
+            id: row.feed_id,
+            categoryId: row.category_id,
+            title: row.feed_title,
+            xmlUrl: row.feed_xml_url,
+            htmlUrl: row.feed_html_url,
+            fetchedAt: row.feed_fetched_at,
+            etag: row.feed_etag,
+            lastModified: row.feed_last_modified,
+          }),
+        );
+      } else {
+        const newCategory = new CategoryEntity({ id: row.category_id, name: row.category_name });
+        newCategory.feeds.push(
+          new FeedEntity({
+            id: row.feed_id,
+            categoryId: row.category_id,
+            title: row.feed_title,
+            xmlUrl: row.feed_xml_url,
+            htmlUrl: row.feed_html_url,
+            fetchedAt: row.feed_fetched_at,
+            etag: row.feed_etag,
+            lastModified: row.feed_last_modified,
+          }),
+        );
+        categories.push(newCategory);
+      }
+    }
+    return categories;
   }
 
   /**
    * @param {object} opts
-   * @param {string[]} [opts.feedIds]
+   * @param {number[]} [opts.feedIds]
    * @param {number} [opts.limit=100]
    * @param {number} [opts.offset=0]
    * @param {string} [opts.search]
    * @param {"all"|"read"|"unread"} [opts.status="all"]
    * @returns {Promise<EntryEntity[]>}
    */
-  async listEntries({ feedIds = [], limit = 100, offset = 0, search, status = "all" }) {
+  async findEntries({ feedIds = [], limit = 100, offset = 0, search, status = "all" }) {
     let q = this.knex("entries").select([
+      "id",
       "feed_id",
       "guid",
       "title",
@@ -185,6 +177,7 @@ export class Repository {
     return rows.map(
       (row) =>
         new EntryEntity({
+          id: row.id,
           feedId: row.feed_id,
           guid: row.guid,
           title: row.title,
@@ -198,22 +191,68 @@ export class Repository {
   }
 
   /**
-   * @returns {Promise<string[]>}
+   * @param {number} id
+   * @returns {Promise<EntryEntity|undefined>}
    */
-  async listImagePks() {
-    const rows = await this.knex("image").select();
-    return rows.map((row) => row.external_id);
+  async findEntryById(id) {
+    const row = await this.knex("entries").where({ id }).first();
+    if (!row) return undefined;
+    return new EntryEntity({
+      id: row.id,
+      feedId: row.feed_id,
+      guid: row.guid,
+      title: row.title,
+      link: row.link,
+      date: row.date,
+      author: row.author,
+      readAt: row.read_at,
+      starredAt: row.starred_at,
+    });
   }
 
   /**
-   * @returns {Promise<FeedMetadataEntity[]>}
+   * @param {number} id
+   * @returns {Promise<string|undefined>}
    */
-  async listFeedMetadata() {
-    const rows = await this.knex("feed_metadata").select();
+  async findEntryContentById(id) {
+    const row = await this.knex("entries").where({ id }).first();
+    if (!row) return undefined;
+    return row.description;
+  }
+
+  /**
+   *
+   * @param {number} id
+   * @returns {Promise<FeedEntity|undefined>}
+   */
+  async findFeedById(id) {
+    const row = await this.knex("feeds").where({ id }).first();
+    if (!row) return undefined;
+
+    return new FeedEntity({
+      id: row.id,
+      categoryId: row.category_id,
+      title: row.title,
+      xmlUrl: row.xml_url,
+      htmlUrl: row.html_url,
+      etag: row.etag,
+      lastModified: row.last_modified,
+    });
+  }
+
+  /**
+   * @returns {Promise<FeedEntity[]>}
+   */
+  async findFeeds() {
+    const rows = await this.knex("feeds").select();
     return rows.map(
       (row) =>
-        new FeedMetadataEntity({
-          feedId: row.feed_id,
+        new FeedEntity({
+          id: row.id,
+          categoryId: row.category_id,
+          title: row.title,
+          xmlUrl: row.xml_url,
+          htmlUrl: row.html_url,
           fetchedAt: row.fetched_at,
           etag: row.etag,
           lastModified: row.last_modified,
@@ -222,7 +261,53 @@ export class Repository {
   }
 
   /**
-   * @param {string} id
+   * @param {number} categoryId
+   * @returns {Promise<FeedEntity[]>}
+   */
+  async findFeedsWithCategoryId(categoryId) {
+    const rows = await this.knex("feeds").where({ category_id: categoryId }).select();
+    return rows.map(
+      (row) =>
+        new FeedEntity({
+          id: row.id,
+          categoryId: row.category_id,
+          title: row.title,
+          xmlUrl: row.xml_url,
+          htmlUrl: row.html_url,
+          fetchedAt: row.fetched_at,
+          etag: row.etag,
+          lastModified: row.last_modified,
+        }),
+    );
+  }
+
+  /**
+   * @param {string} externalId
+   * @returns {Promise<ImageEntity|undefined>}
+   */
+  async findImageByExternalId(externalId) {
+    const row = await this.knex("image").where({ external_id: externalId }).first();
+    if (!row) return undefined;
+    return new ImageEntity({
+      externalId: row.external_id,
+      url: row.url,
+      blob: row.blob,
+      contentType: row.content_type,
+      etag: row.etag,
+      lastModified: row.last_modified,
+    });
+  }
+
+  /**
+   * @returns {Promise<string[]>}
+   */
+  async findImagePks() {
+    const rows = await this.knex("image").select();
+    return rows.map((row) => row.external_id);
+  }
+
+  /**
+   * @param {number} id
    * @returns {Promise<Date|undefined>}
    */
   async toggleEntry(id) {
@@ -245,6 +330,36 @@ export class Repository {
   }
 
   /**
+   * @param {CategoryEntity[]} categories
+   */
+  async upsertCategories(categories) {
+    this.knex.transaction(async (tx) => {
+      for (const category of categories) {
+        await tx("categories").insert({ name: category.name }).onConflict("name").merge();
+        this.logger.info({ msg: "Upserted category", name: category.name });
+
+        const found = await tx("categories").where({ name: category.name }).first();
+        if (!found) throw new Error("Category not found after upsert");
+
+        for (const feed of category.feeds) {
+          await tx("feeds")
+            .insert({
+              category_id: found.id,
+              title: feed.title,
+              xml_url: feed.xmlUrl,
+              html_url: feed.htmlUrl,
+            })
+            .onConflict("xml_url")
+            .merge();
+
+          this.logger.info({ msg: "Upserted feed", category: category.name, title: feed.title });
+        }
+      }
+    });
+    this.logger.info({ msg: "Upserted categories", count: categories.length });
+  }
+
+  /**
    * @param {FeedEntity} feed
    * @param {import('feedparser').Item[]} items
    */
@@ -264,7 +379,6 @@ export class Repository {
       await this.knex("entries")
         .insert(
           chunk.map((e) => ({
-            id: generateEntryId(feed.id, e.guid),
             feed_id: feed.id,
             guid: e.guid,
             title: e.title || "(no title)",
@@ -281,11 +395,8 @@ export class Repository {
     }
     logger.info({ msg: "Upserted entries", count: items.length });
 
-    await this.knex("feed_metadata")
-      .insert({ feed_id: feed.id, fetched_at: now.toISOString() })
-      .onConflict("feed_id")
-      .merge();
-    logger.info({ msg: "Updated feed metadata", feedId: feed.id, fetchedAt: now });
+    await this.knex("feeds").where({ id: feed.id }).update({ fetched_at: now.toISOString() });
+    logger.info({ msg: "Updated feed", feedId: feed.id, fetchedAt: now });
   }
 
   /**
@@ -310,17 +421,22 @@ export class Repository {
   }
 
   /**
-   * @param {FeedMetadataEntity} metadata
+   * @param {FeedEntity} feed
    */
-  async upsertFeedMetadata(metadata) {
-    const logger = this.logger.child({ feedId: metadata.feedId });
+  async updateFeedMetadata(feed) {
+    const logger = this.logger.child({ feedId: feed.id });
 
-    logger.debug({ msg: "Upserting feed metadata", metadata });
-    await this.knex("feed_metadata")
-      .insert({ feed_id: metadata.feedId, etag: metadata.etag, last_modified: metadata.lastModified })
-      .onConflict("feed_id")
-      .merge();
-    logger.info({ msg: "Upserted feed metadata", metadata });
+    const update = {};
+    if (typeof feed.etag !== "undefined") update.etag = feed.etag;
+    if (typeof feed.lastModified !== "undefined") update.last_modified = feed.lastModified;
+    if (Object.keys(update).length === 0) {
+      logger.debug("No metadata to update");
+      return;
+    }
+
+    logger.debug({ msg: "Update feed metadata", feed });
+    await this.knex("feeds").where({ id: feed.id }).update(update);
+    logger.info({ msg: "Updated feed metadata", feedId: feed.id });
   }
 
   async _setPragmas() {

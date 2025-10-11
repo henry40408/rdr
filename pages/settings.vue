@@ -21,6 +21,21 @@
               <q-item-label caption>Manage your subscriptions</q-item-label>
             </q-item-section>
           </q-item>
+          <q-item>
+            <q-file v-model="uploadedFile" label="Upload OPML">
+              <template v-slot:prepend>
+                <q-icon name="attach_file" />
+              </template>
+            </q-file>
+            <q-btn
+              class="q-ml-sm"
+              label="Import"
+              :disabled="!uploadedFile"
+              color="primary"
+              size="sm"
+              @click="importOPML"
+            />
+          </q-item>
           <q-item href="/api/opml">
             <q-item-section>
               <q-item-label>Export OPML</q-item-label>
@@ -66,9 +81,29 @@
 import { useQuasar } from "quasar";
 
 const $q = useQuasar();
-const { data: jobsData } = await useFetch("/api/jobs");
 
 const triggeringJobs = ref(new Set());
+const uploadedFile = ref(null);
+
+const { data: jobsData } = await useFetch("/api/jobs");
+
+async function importOPML() {
+  if (!uploadedFile.value) return;
+  const formData = new FormData();
+  formData.append("file", uploadedFile.value);
+  try {
+    await $fetch("/api/opml", { method: "POST", body: formData });
+    $q.notify({
+      type: "positive",
+      message: "OPML file imported successfully",
+    });
+  } catch (err) {
+    $q.notify({
+      type: "negative",
+      message: `Failed to import OPML file: ${err}`,
+    });
+  }
+}
 
 /**
  * @param {string} name

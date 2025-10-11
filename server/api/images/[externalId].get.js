@@ -1,19 +1,19 @@
 import { z } from "zod";
 
 const schema = z.object({
-  feedId: z.string(),
+  externalId: z.string(),
 });
 
 export default defineEventHandler(async (event) => {
   const { container } = useNitroApp();
 
+  const { externalId } = await getValidatedRouterParams(event, (params) => schema.parse(params));
+
   /** @type {Repository} */
   const repository = container.resolve("repository");
 
-  const { feedId } = await getValidatedRouterParams(event, (query) => schema.parse(query));
-
-  const image = await repository.findImageByExternalId(feedId);
-  if (!image) throw createError({ statusCode: 404, statusMessage: "Feed image not found" });
+  const image = await repository.findImageByExternalId(externalId);
+  if (!image) throw createError({ statusCode: 404, statusMessage: "Image not found" });
 
   event.node.res.setHeader("Content-Type", image.contentType);
   return image.blob;

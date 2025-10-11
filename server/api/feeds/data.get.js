@@ -1,32 +1,28 @@
 export default defineEventHandler(async (event) => {
   const { container } = useNitroApp();
 
-  /** @type {OpmlService} */
-  const opmlService = container.resolve("opmlService");
-
+  /** @type {FeedService} */
+  const feedService = container.resolve("feedService");
   /** @type {Repository} */
   const repository = container.resolve("repository");
 
-  const feedIds = opmlService.categories.flatMap((c) => c.feeds).map((f) => f.id);
-  const [counts, allMetadata, imagePks] = await Promise.all([
-    repository.countEntriesByFeedIds(feedIds),
-    repository.listFeedMetadata(),
-    repository.listImagePks(),
+  const categories = await repository.findCategoriesWithFeed();
+  const rows = categories.flatMap((c) => c.feeds);
+  const [counts, imagePks] = await Promise.all([
+    repository.countEntriesByFeedIds(rows.map((f) => f.id)),
+    repository.findImagePks(),
   ]);
 
-  /** @type {Record<string,{ count: number, imageExists: boolean, metadata: FeedMetadataEntity, unreadCount: number }>} */
+  /** @type {Record<string,{ count: number, fetchedAt: string|undefined, imageExists: boolean, unreadCount: number }>} */
   const feeds = {};
-  for (const feedId of feedIds) {
-    if (typeof counts[feedId] === "undefined") continue;
+  for (const row of rows) {
+    if (typeof counts[row.id] === "undefined") continue;
 
-    const metadata = allMetadata.find((m) => m.feedId === feedId);
-    if (typeof metadata === "undefined") continue;
-
-    feeds[feedId] = {
-      count: counts[feedId].total,
-      imageExists: imagePks.includes(feedId),
-      metadata: metadata,
-      unreadCount: counts[feedId].unread,
+    feeds[row.id] = {
+      count: counts[row.id].total,
+      fetchedAt: row.fetchedAt?.toString(),
+      imageExists: imagePks.includes(buildFeedImageKey(row.id)),
+      unreadCount: counts[row.id].unread,
     };
   }
 

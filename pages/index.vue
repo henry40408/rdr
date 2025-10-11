@@ -58,7 +58,7 @@
                 >
                   <q-item-section avatar>
                     <q-avatar size="sm" square v-if="imageExists(feed.id)">
-                      <img :src="`/api/feeds/${feed.id}/image`" />
+                      <img :src="`/api/images/${buildFeedImageKey(feed.id)}`" />
                     </q-avatar>
                     <q-icon v-else name="rss_feed" />
                   </q-item-section>
@@ -74,6 +74,15 @@
               </template>
             </template>
           </template>
+          <q-item v-if="!categories?.length">
+            <q-item-section>
+              <q-item-label class="text-subtitle2">No categories found.</q-item-label>
+              <q-item-label caption>
+                You can add new feeds on the
+                <router-link to="/settings">settings page</router-link>.
+              </q-item-label>
+            </q-item-section>
+          </q-item>
         </ClientOnly>
       </q-list>
     </q-drawer>
@@ -173,7 +182,10 @@
           <template v-slot:avatar>
             <q-icon name="info" />
           </template>
-          No entries found.
+          <div>No entries found.</div>
+          <div class="text-caption">
+            Try adjusting your filters or <router-link to="/settings">add new feeds</router-link>.
+          </div>
         </q-banner>
         <q-pull-to-refresh @refresh="resetThenLoad">
           <q-infinite-scroll @load="onLoad" :offset="250">
@@ -200,7 +212,7 @@
                   </q-item-section>
                   <q-item-section side>
                     <q-avatar size="sm" square>
-                      <img :src="`/api/feeds/${item.feed.id}/image`" v-if="imageExists(item.feed.id)" />
+                      <img :src="`/api/images/${buildFeedImageKey(item.feed.id)}`" v-if="imageExists(item.feed.id)" />
                       <q-icon v-else size="sm" name="rss_feed" />
                     </q-avatar>
                   </q-item-section>
@@ -237,7 +249,7 @@
                         icon="category"
                         outline
                         clickable
-                        @click="selectedCategoryId = item.feed.category.id"
+                        @click="selectedCategoryId = String(item.feed.category.id)"
                       >
                         Category: {{ item.feed.category.name }}
                       </q-chip>
@@ -247,7 +259,7 @@
                         icon="rss_feed"
                         outline
                         clickable
-                        @click="selectedFeedId = item.feed.id"
+                        @click="selectedFeedId = String(item.feed.id)"
                       >
                         Feed: {{ item.feed.title }}
                       </q-chip>
@@ -378,11 +390,11 @@ useHead(() => ({
       ? `(${countData.value?.count || 0}) Category: ${getFilteredCategoryName()} - rdr`
       : `(${countData.value?.count || 0}) rdr`,
 }));
-const { data: imagePks } = await useFetch("/api/image-pks");
+const { data: imagePks } = await useFetch("/api/images/primary-keys");
 const { data: feedsData, execute: refreshFeedData } = await useFetch("/api/feeds/data");
 
 /**
- * @param {string} categoryId
+ * @param {number} categoryId
  * @returns {number}
  */
 function categoryUnreadCount(categoryId) {
@@ -392,7 +404,7 @@ function categoryUnreadCount(categoryId) {
 }
 
 /**
- * @param {string} entryId
+ * @param {number} entryId
  * @returns {string}
  */
 function contentKey(entryId) {
@@ -400,7 +412,7 @@ function contentKey(entryId) {
 }
 
 /**
- * @param {string} entryId
+ * @param {number} entryId
  * @returns {string}
  */
 function downloadedKey(entryId) {
@@ -408,7 +420,7 @@ function downloadedKey(entryId) {
 }
 
 /**
- * @param {string} entryId
+ * @param {number} entryId
  */
 async function downloadContent(entryId) {
   const key = downloadedKey(entryId);
@@ -429,7 +441,7 @@ async function downloadContent(entryId) {
 }
 
 /**
- * @param {string} entryId
+ * @param {number} entryId
  * @returns {string}
  */
 function getContent(entryId) {
@@ -445,7 +457,7 @@ function collapseItem(index) {
 }
 
 /**
- * @param {string} feedId
+ * @param {number} feedId
  * @returns {number}
  */
 function feedUnreadCount(feedId) {
@@ -456,14 +468,14 @@ function feedUnreadCount(feedId) {
 function getFilteredCategoryName() {
   if (!selectedCategoryId.value) return "None";
   if (!categories.value) return "Unknown";
-  const entry = categories.value.find((c) => c.id === selectedCategoryId.value);
+  const entry = categories.value.find((c) => c.id === Number(selectedCategoryId.value));
   return entry ? entry.name : "Unknown";
 }
 
 function getFilteredFeedTitle() {
   if (!selectedFeedId.value) return "None";
   if (!categories.value) return "Unknown";
-  const entry = categories.value.flatMap((c) => c.feeds).find((f) => f.id === selectedFeedId.value);
+  const entry = categories.value.flatMap((c) => c.feeds).find((f) => f.id === Number(selectedFeedId.value));
   return entry ? entry.title : "Unknown";
 }
 
@@ -505,7 +517,7 @@ async function load() {
 await load();
 
 /**
- * @param {string} entryId
+ * @param {number} entryId
  */
 async function loadContent(entryId) {
   const key = contentKey(entryId);
@@ -537,11 +549,12 @@ async function onLoad(_index, done) {
 }
 
 /**
- * @param {string} feedId
+ * @param {number} feedId
  * @returns {boolean}
  */
 function imageExists(feedId) {
-  return (imagePks && imagePks.value?.includes(feedId)) || false;
+  const key = buildFeedImageKey(feedId);
+  return (imagePks && imagePks.value?.includes(key)) || false;
 }
 
 async function markAllAsRead() {
@@ -571,7 +584,7 @@ async function markAllAsRead() {
 }
 
 /**
- * @param {string} entryId
+ * @param {number} entryId
  */
 async function markAsRead(entryId) {
   if (entryRead.value[entryId] === "read") return;
@@ -593,7 +606,7 @@ async function markAsRead(entryId) {
 }
 
 /**
- * @param {string} entryId
+ * @param {number} entryId
  * @param {number} index
  */
 async function markAsReadAndCollapse(entryId, index) {
@@ -627,7 +640,7 @@ function scrollToContentRef(index) {
 }
 
 /**
- * @param {string} entryId
+ * @param {number} entryId
  * @param {number} index
  */
 async function toggleEntry(entryId, index) {

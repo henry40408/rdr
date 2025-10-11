@@ -3,7 +3,7 @@ import { Readability } from "@mozilla/readability";
 import { JSDOM } from "jsdom";
 
 const schema = z.object({
-  entryId: z.string(),
+  entryId: z.coerce.number(),
 });
 
 export default defineEventHandler(async (event) => {

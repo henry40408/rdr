@@ -1,13 +1,13 @@
 import { z } from "zod";
 
 const schema = z.object({
-  entryId: z.string(),
+  entryId: z.coerce.number(),
 });
 
 export default defineEventHandler(async (event) => {
   const { container } = useNitroApp();
 
-  const { entryId } = await getValidatedRouterParams(event, (query) => schema.parse(query));
+  const { entryId } = await getValidatedRouterParams(event, (params) => schema.parse(params));
 
   /** @type {Repository} */
   const repository = container.resolve("repository");

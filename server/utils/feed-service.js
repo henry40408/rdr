@@ -1,7 +1,7 @@
-import os from "node:os";
 import { Readable } from "node:stream";
 
 import FeedParser from "feedparser";
+import { FeedEntity } from "./entities";
 
 export class FeedService {
   /**
@@ -23,23 +23,22 @@ export class FeedService {
   /**
    * @typedef {object} FetchEntriesResult
    * @property {'ok'|'not_modified'} type
+   * @property {FeedEntity} feed
    * @property {import('feedparser').Item[]} items
    * @property {import('feedparser').Meta|undefined} [meta]
-   * @property {FeedMetadataEntity|undefined} [metadata]
    *
    * @param {FeedEntity} feed
-   * @param {FeedMetadataEntity|undefined} metadata
    * @returns {Promise<FetchEntriesResult>}
    */
-  async fetchEntries(feed, metadata) {
+  async fetchEntries(feed) {
     const logger = this.logger.child({ feedId: feed.id, xmlUrl: feed.xmlUrl });
 
     try {
       logger.debug("Fetching feed");
       const res = await this.downloadService.downloadText({
         url: feed.xmlUrl,
-        etag: metadata?.etag,
-        lastModified: metadata?.lastModified,
+        etag: feed.etag,
+        lastModified: feed.lastModified,
       });
       logger.info("Fetched feed");
 
@@ -49,7 +48,7 @@ export class FeedService {
       }
       if (res.statusCode === 304) {
         logger.info("Feed is not modified");
-        return { type: "not_modified", items: [] };
+        return { type: "not_modified", feed, items: [] };
       }
 
       const body = res.body;
@@ -77,10 +76,11 @@ export class FeedService {
         Readable.from(body).pipe(parser);
       });
 
-      const etag = res.headers["etag"] || undefined;
-      const lastModified = res.headers["last-modified"] || undefined;
-      const newMetadata = new FeedMetadataEntity({ feedId: feed.id, etag, lastModified });
-      return { type: "ok", items, meta, metadata: newMetadata };
+      const cloned = structuredClone(feed);
+      cloned.etag = res.headers["etag"] || undefined;
+      cloned.lastModified = res.headers["last-modified"] || undefined;
+
+      return { type: "ok", items, meta, feed: cloned };
     } catch (err) {
       logger.error(err);
       throw err;
@@ -97,14 +97,14 @@ export class FeedService {
       {
         logger.debug("Trying to fetch favicon from base URL");
         const url = new URL("/favicon.ico", feed.htmlUrl).toString();
-        const result = await this.imageService.download(feed.id, url);
+        const result = await this.imageService.download(buildFeedImageKey(feed.id), url);
         if (result) return result;
       }
       {
         logger.debug("Trying to find favicon from HTML");
         const url = await this.downloadService.findFavicon(feed.htmlUrl);
         if (url) {
-          const result = await this.imageService.download(feed.id, url);
+          const result = await this.imageService.download(buildFeedImageKey(feed.id), url);
           if (result) {
             logger.debug({ msg: "Fetched favicon from HTML", url });
             return result;
@@ -122,11 +122,10 @@ export class FeedService {
    * @param {FeedEntity} feed
    */
   async fetchAndSaveEntries(feed) {
-    const metadata = await this.repository.findFeedMetadataByFeedId(feed.id);
-    const result = await this.fetchEntries(feed, metadata);
+    const result = await this.fetchEntries(feed);
     if (result.type === "ok") {
       await this.repository.upsertEntries(feed, result.items);
-      if (result.metadata) await this.repository.upsertFeedMetadata(result.metadata);
+      await this.repository.updateFeedMetadata(result.feed);
     }
   }
 }

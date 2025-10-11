@@ -1,41 +1,36 @@
 export class CategoryEntity {
   /**
    * @param {object} opts
+   * @param {number} opts.id
    * @param {string} opts.name
+   * @param {FeedEntity[]} [opts.feeds]
    */
-  constructor({ name }) {
-    this.id = generateId(name);
+  constructor({ id, name, feeds = [] }) {
+    this.id = id;
     this.name = name;
     /** @type {FeedEntity[]} */
-    this.feeds = [];
+    this.feeds = feeds;
   }
 }
 
 export class FeedEntity {
   /**
    * @param {object} opts
+   * @param {number} opts.id
+   * @param {number} opts.categoryId
    * @param {string} opts.title
    * @param {string} opts.xmlUrl
    * @param {string} opts.htmlUrl
-   */
-  constructor({ title, xmlUrl, htmlUrl }) {
-    this.id = generateId(xmlUrl);
-    this.title = title;
-    this.xmlUrl = xmlUrl;
-    this.htmlUrl = htmlUrl;
-  }
-}
-
-export class FeedMetadataEntity {
-  /**
-   * @param {object} opts
-   * @param {string} opts.feedId
    * @param {string} [opts.fetchedAt]
    * @param {string} [opts.etag]
    * @param {string} [opts.lastModified]
    */
-  constructor({ feedId, fetchedAt, etag, lastModified }) {
-    this.feedId = feedId;
+  constructor({ id, categoryId, title, xmlUrl, htmlUrl, fetchedAt, etag, lastModified }) {
+    this.id = id;
+    this.categoryId = categoryId;
+    this.title = title;
+    this.xmlUrl = xmlUrl;
+    this.htmlUrl = htmlUrl;
     this.fetchedAt = fetchedAt;
     this.etag = etag;
     this.lastModified = lastModified;
@@ -64,19 +59,11 @@ export class ImageEntity {
   }
 }
 
-/**
- * @param {string} feedId
- * @param {string} guid
- * @returns {string}
- */
-export function generateEntryId(feedId, guid) {
-  return generateId(`${feedId}|${guid}`);
-}
-
 export class EntryEntity {
   /**
    * @param {object} opts
-   * @param {string} opts.feedId
+   * @param {number} opts.id
+   * @param {number} opts.feedId
    * @param {string} opts.guid
    * @param {string} opts.title
    * @param {string} opts.link
@@ -85,8 +72,8 @@ export class EntryEntity {
    * @param {string} [opts.readAt]
    * @param {string} [opts.starredAt]
    */
-  constructor({ feedId, guid, title, link, date, author, readAt, starredAt }) {
-    this.id = generateEntryId(feedId, guid);
+  constructor({ id, feedId, guid, title, link, date, author, readAt, starredAt }) {
+    this.id = id;
     this.feedId = feedId;
     this.guid = guid;
 
