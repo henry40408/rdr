@@ -390,7 +390,7 @@ useHead(() => ({
       ? `(${countData.value?.count || 0}) Category: ${getFilteredCategoryName()} - rdr`
       : `(${countData.value?.count || 0}) rdr`,
 }));
-const { data: imagePks } = await useFetch("/api/image-pks");
+const { data: imagePks } = await useFetch("/api/images/primary-keys");
 const { data: feedsData, execute: refreshFeedData } = await useFetch("/api/feeds/data");
 
 /**
