@@ -228,7 +228,7 @@
                       flat
                       icon="check"
                       color="primary"
-                      label="Mark as read and collapse"
+                      label="Mark as read"
                       @click="markAsReadAndCollapse(item.entry.id, index)"
                     />
                     <q-btn
