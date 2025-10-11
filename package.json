@@ -5,8 +5,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "nuxt dev",
     "build": "nuxt build",
+    "dev": "nuxt dev",
+    "lint:fix": "eslint . --fix",
+    "lint": "eslint .",
     "start": "nuxt start",
     "test": "node --test"
   },
@@ -43,6 +45,7 @@
     "zod": "^4.1.11"
   },
   "devDependencies": {
+    "@nuxt/eslint": "^1.9.0",
     "@types/feedparser": "^2.2.8",
     "@types/jsdom": "^27.0.0",
     "@types/knex": "^0.15.2",
@@ -50,6 +53,7 @@
     "@types/node": "^24.5.2",
     "@types/sanitize-html": "^2.16.0",
     "@types/xml2js": "^0.4.14",
+    "eslint": "^9.37.0",
     "prettier": "^3.6.2",
     "typescript": "^5.9.2",
     "vue-tsc": "^3.0.8"

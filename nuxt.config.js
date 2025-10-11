@@ -5,7 +5,7 @@ export default defineNuxtConfig({
       title: "rdr",
     },
   },
-  modules: ["@vueuse/nuxt", "nuxt-quasar-ui"],
+  modules: ["@nuxt/eslint", "@vueuse/nuxt", "nuxt-quasar-ui"],
   runtimeConfig: {
     cachePath: "./data/cache.sqlite3",
     httpTimeoutMs: 90000,

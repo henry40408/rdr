@@ -9,7 +9,7 @@
           rdr
         </q-toolbar-title>
       </q-toolbar>
-      <Nav />
+      <NavTabs />
     </q-header>
 
     <q-page-container>
@@ -23,7 +23,7 @@
           </q-item>
           <q-item>
             <q-file v-model="uploadedFile" label="Upload OPML">
-              <template v-slot:prepend>
+              <template #prepend>
                 <q-icon name="attach_file" />
               </template>
             </q-file>
@@ -55,7 +55,7 @@
               <q-item-label>{{ job.description }}</q-item-label>
               <q-item-label caption
                 >Last run:
-                <ClientDateTime :datetime="job.lastDate" v-if="job.lastDate" />
+                <ClientDateTime v-if="job.lastDate" :datetime="job.lastDate" />
                 <span v-else>Never</span>
               </q-item-label>
             </q-item-section>

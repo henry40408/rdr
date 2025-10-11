@@ -9,18 +9,18 @@
           </q-avatar>
           rdr
         </q-toolbar-title>
-        <q-input dark borderless v-model="searchQuery" input-class="text-right" class="q-ml-md q-mr-sm" debounce="500">
-          <template v-slot:append>
+        <q-input v-model="searchQuery" dark borderless input-class="text-right" class="q-ml-md q-mr-sm" debounce="500">
+          <template #append>
             <q-icon v-if="!searchQuery" name="search" />
             <q-icon v-else name="clear" class="cursor-pointer" @click="searchQuery = ''" />
           </template>
         </q-input>
         <q-btn dense flat round icon="menu" @click="rightDrawerOpen = !rightDrawerOpen" />
       </q-toolbar>
-      <Nav />
+      <NavTabs />
     </q-header>
 
-    <q-drawer show-if-above v-model="leftDrawerOpen" side="left" bordered>
+    <q-drawer v-model="leftDrawerOpen" show-if-above side="left" bordered>
       <q-list padding>
         <q-item>
           <q-item-section header>
@@ -38,7 +38,7 @@
         <ClientOnly>
           <template v-for="category in categories" :key="category.id">
             <template v-if="!hideEmpty || categoryUnreadCount(category.id) > 0">
-              <q-item clickable v-ripple @click="() => $router.push({ path: '/', query: { categoryId: category.id } })">
+              <q-item v-ripple clickable @click="() => $router.push({ path: '/', query: { categoryId: category.id } })">
                 <q-item-section>
                   <q-item-label>{{ category.name }}</q-item-label>
                 </q-item-section>
@@ -51,14 +51,15 @@
               <q-separator />
               <template v-for="feed in category.feeds" :key="feed.id">
                 <q-item
-                  clickable
                   v-if="!hideEmpty || feedUnreadCount(feed.id) > 0"
                   v-ripple
+                  clickable
                   @click="() => $router.push({ path: '/', query: { feedId: feed.id } })"
                 >
                   <q-item-section avatar>
-                    <q-avatar size="sm" square v-if="imageExists(feed.id)">
-                      <img :src="`/api/images/${buildFeedImageKey(feed.id)}`" />
+                    <q-avatar v-if="imageExists(feed.id)" size="sm" square>
+                      <!-- prettier-ignore -->
+                      <img :src="`/api/images/${buildFeedImageKey(feed.id)}`">
                     </q-avatar>
                     <q-icon v-else name="rss_feed" />
                   </q-item-section>
@@ -87,10 +88,10 @@
       </q-list>
     </q-drawer>
 
-    <q-drawer show-if-above v-model="rightDrawerOpen" side="right" bordered>
+    <q-drawer v-model="rightDrawerOpen" show-if-above side="right" bordered>
       <q-list>
         <q-item-label header>Status</q-item-label>
-        <q-item tag="label" v-ripple>
+        <q-item v-ripple tag="label">
           <q-item-section side top>
             <q-radio v-model="listStatus" val="unread" />
           </q-item-section>
@@ -98,7 +99,7 @@
             <q-item-label>Unread</q-item-label>
           </q-item-section>
         </q-item>
-        <q-item tag="label" v-ripple>
+        <q-item v-ripple tag="label">
           <q-item-section side top>
             <q-radio v-model="listStatus" val="all" />
           </q-item-section>
@@ -106,7 +107,7 @@
             <q-item-label>All</q-item-label>
           </q-item-section>
         </q-item>
-        <q-item tag="label" v-ripple>
+        <q-item v-ripple tag="label">
           <q-item-section side top>
             <q-radio v-model="listStatus" val="read" />
           </q-item-section>
@@ -173,13 +174,13 @@
             </q-item-section>
           </q-item>
         </q-list>
-        <q-card flat v-if="loading">
+        <q-card v-if="loading" flat>
           <q-card-section class="row justify-center">
             <q-spinner color="primary" size="3em" />
           </q-card-section>
         </q-card>
-        <q-banner class="bg-grey-2 text-grey-8" v-if="!loading && items.length === 0">
-          <template v-slot:avatar>
+        <q-banner v-if="!loading && items.length === 0" class="bg-grey-2 text-grey-8">
+          <template #avatar>
             <q-icon name="info" />
           </template>
           <div>No entries found.</div>
@@ -188,18 +189,18 @@
           </div>
         </q-banner>
         <q-pull-to-refresh @refresh="resetThenLoad">
-          <q-infinite-scroll @load="onLoad" :offset="250">
+          <q-infinite-scroll :offset="250" @load="onLoad">
             <q-list separator>
               <q-expansion-item
-                clickable
-                group="entry"
                 v-for="(item, index) in items"
                 :key="item.entry.id"
                 ref="item-list"
+                clickable
+                group="entry"
                 @before-show="loadContent(item.entry.id)"
                 @after-show="scrollToContentRef(index)"
               >
-                <template v-slot:header>
+                <template #header>
                   <q-item-section side>
                     <q-checkbox
                       v-model="entryRead[item.entry.id]"
@@ -212,7 +213,8 @@
                   </q-item-section>
                   <q-item-section side>
                     <q-avatar size="sm" square>
-                      <img :src="`/api/images/${buildFeedImageKey(item.feed.id)}`" v-if="imageExists(item.feed.id)" />
+                      <!-- prettier-ignore -->
+                      <img v-if="imageExists(item.feed.id)" :src="`/api/images/${buildFeedImageKey(item.feed.id)}`">
                       <q-icon v-else size="sm" name="rss_feed" />
                     </q-avatar>
                   </q-item-section>
@@ -295,6 +297,7 @@
                       @click="collapseItem(index)"
                     />
                     <q-btn
+                      v-if="!contents[downloadedKey(item.entry.id)]"
                       size="sm"
                       flat
                       color="primary"
@@ -302,7 +305,6 @@
                       icon="file_download"
                       :loading="downloading"
                       @click="downloadContent(item.entry.id)"
-                      v-if="!contents[downloadedKey(item.entry.id)]"
                     />
                     <q-btn
                       v-else
@@ -452,7 +454,7 @@ function getContent(entryId) {
  * @param {number} index
  */
 function collapseItem(index) {
-  // @ts-expect-error
+  // @ts-expect-error: hide exists
   itemRefs.value?.[index]?.hide();
 }
 
@@ -635,7 +637,7 @@ watch([listStatus, selectedCategoryId, selectedFeedId, searchQuery], () => {
  * @param {number} index
  */
 function scrollToContentRef(index) {
-  // @ts-expect-error
+  // @ts-expect-error: scrollIntoView exists
   itemRefs.value?.[index]?.$el.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
