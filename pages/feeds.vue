@@ -134,8 +134,10 @@
 
 <script setup>
 import { formatDistanceToNow } from "date-fns";
+import { useQuasar } from "quasar";
 import { useLocalSettings } from "./local-settings";
 
+const $q = useQuasar();
 const { hideEmpty } = useLocalSettings();
 
 const { data: categories, execute: refreshCategories } = await useFetch("/api/categories");
@@ -212,10 +214,15 @@ async function refreshCategory(category) {
   try {
     const tasks = [];
     for (const feedId of feedIds) tasks.push($fetch(`/api/feeds/${feedId}/refresh`, { method: "POST" }));
-    await Promise.allSettled(tasks);
+    await Promise.all(tasks);
     await afterRefresh();
   } catch (err) {
-    console.error("Error refreshing category:", err);
+    $q.notify({
+      type: "negative",
+      message: `Error refreshing category ${category.name}: ${err}`,
+      progress: true,
+      actions: [{ icon: "close", color: "white" }],
+    });
   } finally {
     for (const feedId of feedIds) refreshingFeedIds.value.delete(feedId);
     refreshingCategoryIds.value.delete(category.id);
@@ -232,7 +239,12 @@ async function refreshFeed(feed) {
     await $fetch(`/api/feeds/${feed.id}/refresh`, { method: "POST" });
     await afterRefresh();
   } catch (err) {
-    console.error("Error refreshing feed:", err);
+    $q.notify({
+      type: "negative",
+      message: `Error refreshing feed ${feed.title}: ${err}`,
+      progress: true,
+      actions: [{ icon: "close", color: "white" }],
+    });
   } finally {
     refreshingFeedIds.value.delete(feed.id);
   }

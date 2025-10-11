@@ -292,11 +292,13 @@
 </template>
 
 <script setup>
+import { useQuasar } from "quasar";
 import { useRouteQuery } from "@vueuse/router";
 import { useLocalSettings } from "./local-settings";
 
 const LIMIT = 100;
 
+const $q = useQuasar();
 const itemRefs = useTemplateRef("item-list");
 const { hideEmpty } = useLocalSettings();
 
@@ -417,8 +419,12 @@ async function load() {
       }
       if (newItems.length < LIMIT) hasMore.value = false;
     }
-  } catch (e) {
-    console.error(e);
+  } catch (err) {
+    $q.notify({
+      type: "negative",
+      message: `Failed to load entries: ${err}`,
+      actions: [{ icon: "close", color: "white" }],
+    });
     hasMore.value = false;
   } finally {
     loading.value = false;
@@ -434,8 +440,12 @@ async function loadContent(entryId) {
     if (contents.value[entryId]) return contents.value[entryId];
     const { content } = await $fetch(`/api/entries/${entryId}/content`);
     contents.value[entryId] = content;
-  } catch (e) {
-    console.error("Failed to load content for entry", e);
+  } catch (err) {
+    $q.notify({
+      type: "negative",
+      message: `Failed to load entry content: ${err}`,
+      actions: [{ icon: "close", color: "white" }],
+    });
   }
 }
 
@@ -462,23 +472,29 @@ function imageExists(feedId) {
 }
 
 async function markAllAsRead() {
-  try {
-    const tasks = [];
-    for (const item of items.value) {
-      if (entryRead.value[item.entry.id] === "read") continue;
-      const task = async () => {
+  const tasks = [];
+  for (const item of items.value) {
+    if (entryRead.value[item.entry.id] === "read") continue;
+    const task = async () => {
+      const value = entryRead.value[item.entry.id];
+      try {
         entryRead.value[item.entry.id] = "toggling";
         await $fetch(`/api/entries/${item.entry.id}/toggle`, { method: "PUT" });
         entryRead.value[item.entry.id] = "read";
-      };
-      tasks.push(task());
-    }
-    await Promise.allSettled(tasks);
-    refreshCount();
-    refreshFeedData();
-  } catch (e) {
-    console.error("Failed to mark all as read", e);
+      } catch (err) {
+        $q.notify({
+          type: "negative",
+          message: `Failed to mark entry ${item.entry.id} as read: ${err}`,
+          actions: [{ icon: "close", color: "white" }],
+        });
+        entryRead.value[item.entry.id] = value;
+      }
+    };
+    tasks.push(task());
   }
+  await Promise.all(tasks);
+  refreshCount();
+  refreshFeedData();
 }
 
 /**
@@ -486,16 +502,20 @@ async function markAllAsRead() {
  */
 async function markAsRead(entryId) {
   if (entryRead.value[entryId] === "read") return;
-  const oldValue = entryRead.value[entryId];
+  const value = entryRead.value[entryId];
   try {
     entryRead.value[entryId] = "toggling";
     await $fetch(`/api/entries/${entryId}/toggle`, { method: "PUT" });
     entryRead.value[entryId] = "read";
     refreshCount();
     refreshFeedData();
-  } catch (e) {
-    console.error("Failed to mark as read", e);
-    entryRead.value[entryId] = oldValue;
+  } catch (err) {
+    $q.notify({
+      type: "negative",
+      message: `Failed to mark entry ${entryId} as read: ${err}`,
+      actions: [{ icon: "close", color: "white" }],
+    });
+    entryRead.value[entryId] = value;
   }
 }
 
@@ -548,8 +568,12 @@ async function toggleEntry(entryId, index) {
     await $fetch(`/api/entries/${entryId}/toggle`, { method: "PUT" });
     refreshCount();
     refreshFeedData();
-  } catch (e) {
-    console.error("Failed to toggle entry", e);
+  } catch (err) {
+    $q.notify({
+      type: "negative",
+      message: `Failed to toggle entry ${entryId}: ${err}`,
+      actions: [{ icon: "close", color: "white" }],
+    });
   } finally {
     entryRead.value[entryId] = value;
     collapseItem(index);

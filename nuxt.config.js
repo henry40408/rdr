@@ -13,4 +13,7 @@ export default defineNuxtConfig({
     opmlPath: "./data/feeds.opml",
     userAgent: "Mozilla/5.0 (compatible; rdr/1.0; +https://github.com/henry40408/rdr)",
   },
+  quasar: {
+    plugins: ["Notify"],
+  },
 });
