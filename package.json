@@ -9,6 +9,8 @@
     "dev": "nuxt dev",
     "lint:fix": "eslint . --fix",
     "lint": "eslint .",
+    "prettier:check": "prettier --check .",
+    "prettier": "prettier --write .",
     "start": "nuxt start",
     "test": "node --test"
   },

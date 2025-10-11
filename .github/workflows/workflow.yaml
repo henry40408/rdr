@@ -17,6 +17,7 @@ jobs:
       - run: npm ci
       - run: npx nuxi prepare
       - run: npm run lint
+      - run: npm run prettier:check
       - run: npx tsc --noEmit
       - run: npm test
   build-and-publish:
