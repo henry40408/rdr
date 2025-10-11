@@ -3,7 +3,12 @@
     <q-header elevated class="bg-primary text-white">
       <q-toolbar>
         <q-btn dense flat round icon="menu" @click="leftDrawerOpen = !leftDrawerOpen" />
-        <q-toolbar-title>rdr</q-toolbar-title>
+        <q-toolbar-title>
+          <q-avatar>
+            <q-icon name="rss_feed" />
+          </q-avatar>
+          rdr
+        </q-toolbar-title>
         <q-input dark borderless v-model="searchQuery" input-class="text-right" class="q-ml-md q-mr-sm" debounce="500">
           <template v-slot:append>
             <q-icon v-if="!searchQuery" name="search" />
@@ -16,42 +21,52 @@
     </q-header>
 
     <q-drawer show-if-above v-model="leftDrawerOpen" side="left" bordered>
-      <q-banner>
-        <div class="text-h6">Categories</div>
-      </q-banner>
-      <q-list>
+      <q-list padding>
+        <q-item>
+          <q-item-section header>
+            <q-item-label class="text-h5">Categories</q-item-label>
+          </q-item-section>
+        </q-item>
+        <q-item>
+          <q-item-section>
+            <q-toggle v-model="hideEmpty" label="Hide empty" />
+          </q-item-section>
+        </q-item>
         <template v-for="category in categories" :key="category.id">
-          <q-item clickable v-ripple @click="() => $router.push({ path: '/', query: { categoryId: category.id } })">
-            <q-item-section>
-              <q-item-label>{{ category.name }}</q-item-label>
-            </q-item-section>
-            <q-item-section side>
-              <q-badge color="primary" :outline="!categoryUnreadCount(category.id)">{{
-                categoryUnreadCount(category.id)
-              }}</q-badge>
-            </q-item-section>
-          </q-item>
-          <q-separator />
-          <q-item
-            v-for="feed in category.feeds"
-            :key="feed.id"
-            clickable
-            v-ripple
-            @click="() => $router.push({ path: '/', query: { feedId: feed.id } })"
-          >
-            <q-item-section avatar>
-              <q-avatar size="sm" square v-if="imageExists(feed.id)">
-                <img :src="`/api/feeds/${feed.id}/image`" />
-              </q-avatar>
-              <q-icon v-else name="rss_feed" />
-            </q-item-section>
-            <q-item-section>
-              <q-item-label lines="1">{{ feed.title }}</q-item-label>
-            </q-item-section>
-            <q-item-section side>
-              <q-badge color="primary" :outline="!feedUnreadCount(feed.id)">{{ feedUnreadCount(feed.id) }}</q-badge>
-            </q-item-section>
-          </q-item>
+          <template v-if="!hideEmpty || categoryUnreadCount(category.id) > 0">
+            <q-item clickable v-ripple @click="() => $router.push({ path: '/', query: { categoryId: category.id } })">
+              <q-item-section>
+                <q-item-label>{{ category.name }}</q-item-label>
+              </q-item-section>
+              <q-item-section side>
+                <q-badge color="primary" :outline="!categoryUnreadCount(category.id)">{{
+                  categoryUnreadCount(category.id)
+                }}</q-badge>
+              </q-item-section>
+            </q-item>
+            <q-separator />
+            <template v-for="feed in category.feeds" :key="feed.id">
+              <q-item
+                clickable
+                v-if="!hideEmpty || feedUnreadCount(feed.id) > 0"
+                v-ripple
+                @click="() => $router.push({ path: '/', query: { feedId: feed.id } })"
+              >
+                <q-item-section avatar>
+                  <q-avatar size="sm" square v-if="imageExists(feed.id)">
+                    <img :src="`/api/feeds/${feed.id}/image`" />
+                  </q-avatar>
+                  <q-icon v-else name="rss_feed" />
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label lines="1">{{ feed.title }}</q-item-label>
+                </q-item-section>
+                <q-item-section side>
+                  <q-badge color="primary" :outline="!feedUnreadCount(feed.id)">{{ feedUnreadCount(feed.id) }}</q-badge>
+                </q-item-section>
+              </q-item>
+            </template>
+          </template>
         </template>
       </q-list>
     </q-drawer>
@@ -88,55 +103,65 @@
 
     <q-page-container>
       <q-page>
-        <q-banner inline-actions>
-          <div class="q-my-sm q-gutter-sm row items-center">
-            <div class="text-body1">
-              <span v-if="listStatus === 'unread'">Unread</span>
-              <span v-else-if="listStatus === 'read'">Read</span>
-              <span v-else>All</span>
-            </div>
-            <q-badge class="q-mx-sm">{{ countData ? countData.count : "..." }}</q-badge>
-            <div>
-              <q-chip
-                v-if="searchQuery"
-                outline
-                removable
-                color="accent"
-                icon="search"
-                size="sm"
-                @remove="searchQuery = ''"
-                >Search: {{ searchQuery }}</q-chip
-              >
-              <q-chip
-                v-if="selectedFeedId"
-                outline
-                removable
-                color="primary"
-                icon="rss_feed"
-                size="sm"
-                @remove="selectedFeedId = undefined"
-                >Feed: {{ getFilteredFeedTitle() }}</q-chip
-              >
-              <q-chip
-                v-if="selectedCategoryId"
-                size="sm"
-                color="secondary"
-                icon="category"
-                outline
-                removable
-                @remove="selectedCategoryId = undefined"
-                >Category: {{ getFilteredCategoryName() }}</q-chip
-              >
-            </div>
-          </div>
-          <template v-slot:action>
-            <q-btn flat icon="refresh" round @click="resetThenLoad()" />
-            <q-btn flat icon="done_all" round @click="markAllAsRead()" />
-          </template>
-        </q-banner>
-        <q-banner class="text-center" v-if="loading">
-          <q-spinner color="primary" size="3em" />
-        </q-banner>
+        <q-list padding>
+          <q-item>
+            <q-item-section header>
+              <q-item-label>
+                <div class="q-gutter-sm row items-center">
+                  <div class="text-h5">
+                    <span v-if="listStatus === 'unread'">Unread</span>
+                    <span v-else-if="listStatus === 'read'">Read</span>
+                    <span v-else>All</span>
+                  </div>
+                  <q-badge>{{ countData ? countData.count : "..." }}</q-badge>
+                  <div>
+                    <q-chip
+                      v-if="selectedCategoryId"
+                      size="sm"
+                      color="secondary"
+                      icon="category"
+                      outline
+                      removable
+                      @remove="selectedCategoryId = undefined"
+                      >Category: {{ getFilteredCategoryName() }}</q-chip
+                    >
+                    <q-chip
+                      v-if="selectedFeedId"
+                      outline
+                      removable
+                      color="primary"
+                      icon="rss_feed"
+                      size="sm"
+                      @remove="selectedFeedId = undefined"
+                      >Feed: {{ getFilteredFeedTitle() }}</q-chip
+                    >
+                    <q-chip
+                      v-if="searchQuery"
+                      outline
+                      removable
+                      color="accent"
+                      icon="search"
+                      size="sm"
+                      @remove="searchQuery = ''"
+                      >Search: {{ searchQuery }}</q-chip
+                    >
+                  </div>
+                </div>
+              </q-item-label>
+            </q-item-section>
+            <q-item-section side>
+              <div>
+                <q-btn flat icon="refresh" round @click="resetThenLoad()" />
+                <q-btn flat icon="done_all" round @click="markAllAsRead()" />
+              </div>
+            </q-item-section>
+          </q-item>
+        </q-list>
+        <q-card flat v-if="loading">
+          <q-card-section class="row justify-center">
+            <q-spinner color="primary" size="3em" />
+          </q-card-section>
+        </q-card>
         <q-banner class="bg-grey-2 text-grey-8" v-if="!loading && items.length === 0">
           <template v-slot:avatar>
             <q-icon name="info" />
@@ -185,19 +210,9 @@
 
                 <q-card>
                   <q-card-section>
-                    <div class="q-my-sm text-h6">{{ item.entry.title }}</div>
+                    <div class="q-my-sm text-h5">{{ item.entry.title }}</div>
                     <div class="q-my-sm">by {{ item.entry.author }}</div>
                     <div class="q-my-sm">
-                      <q-chip
-                        size="sm"
-                        color="primary"
-                        icon="rss_feed"
-                        outline
-                        clickable
-                        @click="selectedFeedId = item.feed.id"
-                      >
-                        Feed: {{ item.feed.title }}
-                      </q-chip>
                       <q-chip
                         size="sm"
                         color="secondary"
@@ -207,6 +222,16 @@
                         @click="selectedCategoryId = item.feed.category.id"
                       >
                         Category: {{ item.feed.category.name }}
+                      </q-chip>
+                      <q-chip
+                        size="sm"
+                        color="primary"
+                        icon="rss_feed"
+                        outline
+                        clickable
+                        @click="selectedFeedId = item.feed.id"
+                      >
+                        Feed: {{ item.feed.title }}
                       </q-chip>
                       <q-chip size="sm" color="accent" icon="calendar_today" outline
                         >Date: <ClientDateTime :datetime="item.entry.date"
@@ -268,19 +293,12 @@
 
 <script setup>
 import { useRouteQuery } from "@vueuse/router";
+import { useLocalSettings } from "./local-settings";
 
 const LIMIT = 100;
 
 const itemRefs = useTemplateRef("item-list");
-
-/** @type {Ref<import('../server/api/entries.get').EntryEntityWithFeed[]>} */
-const items = ref([]);
-
-/** @type {Ref<{ [key: string]: string }> } */
-const contents = ref({});
-
-/** @type {Ref<Record<string,"read"|"toggling"|"unread">>} */
-const entryRead = ref({});
+const { hideEmpty } = useLocalSettings();
 
 const hasMore = ref(true);
 const leftDrawerOpen = ref(false);
@@ -296,6 +314,15 @@ const selectedCategoryId = useRouteQuery("categoryId", undefined);
 const selectedFeedId = useRouteQuery("feedId", undefined);
 /** @type {Ref<string>} */
 const searchQuery = useRouteQuery("q", null);
+
+/** @type {Ref<import('../server/api/entries.get').EntryEntityWithFeed[]>} */
+const items = ref([]);
+
+/** @type {Ref<{ [key: string]: string }> } */
+const contents = ref({});
+
+/** @type {Ref<Record<string,"read"|"toggling"|"unread">>} */
+const entryRead = ref({});
 
 const countQuery = computed(() => {
   const query = {};
