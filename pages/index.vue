@@ -349,7 +349,7 @@ useHead(() => ({
     ? `(${countData.value?.count || 0}) Feed: ${getFilteredFeedTitle()} - rdr`
     : selectedCategoryId.value
       ? `(${countData.value?.count || 0}) Category: ${getFilteredCategoryName()} - rdr`
-      : "rdr",
+      : `(${countData.value?.count || 0}) rdr`,
 }));
 const { data: imagePks } = await useFetch("/api/image-pks");
 const { data: feedsData, execute: refreshFeedData } = await useFetch("/api/feeds/data");
