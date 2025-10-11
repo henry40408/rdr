@@ -19,19 +19,38 @@
         </q-banner>
         <q-list>
           <template v-for="category in categories" :key="category.id">
-            <q-item>
-              <q-item-section>
-                <q-item-label>{{ category.name }}</q-item-label>
-              </q-item-section>
-              <q-item-section side top>
-                <q-item-label caption>{{ category.feeds.length }} feeds</q-item-label>
-                <div class="q-mt-xs">
-                  <q-badge color="primary" :outline="!categoryUnreadCount(category.id)">{{
-                    categoryUnreadCount(category.id)
-                  }}</q-badge>
-                </div>
-              </q-item-section>
-            </q-item>
+            <q-expansion-item group="category">
+              <template v-slot:header>
+                <q-item-section
+                  clickable
+                  v-ripple
+                  @click="() => $router.push({ path: '/', query: { categoryId: category.id } })"
+                >
+                  <q-item-label>{{ category.name }}</q-item-label>
+                </q-item-section>
+                <q-item-section side top>
+                  <q-item-label caption>{{ category.feeds.length }} feeds</q-item-label>
+                  <div class="q-mt-xs">
+                    <q-badge color="primary" :outline="!categoryUnreadCount(category.id)">{{
+                      categoryUnreadCount(category.id)
+                    }}</q-badge>
+                  </div>
+                </q-item-section>
+              </template>
+
+              <q-card>
+                <q-card-section class="row items-center q-gutter-sm">
+                  <q-btn
+                    @click="refreshCategory(category)"
+                    :loading="refreshingCategoryIds.has(category.id)"
+                    icon="refresh"
+                    color="primary"
+                    label="Refresh"
+                    size="sm"
+                  />
+                </q-card-section>
+              </q-card>
+            </q-expansion-item>
             <q-list separator>
               <q-expansion-item
                 :group="`category-${category.id}`"
