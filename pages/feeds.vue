@@ -9,7 +9,7 @@
           rdr
         </q-toolbar-title>
       </q-toolbar>
-      <Nav />
+      <NavTabs />
     </q-header>
 
     <q-page-container>
@@ -21,7 +21,7 @@
               <q-item-label caption>Manage your feed subscriptions</q-item-label>
             </q-item-section>
             <q-item-section side>
-              <q-btn flat round icon="refresh" @click="refreshAll" :disable="refreshingCategoryIds.size > 0">
+              <q-btn flat round icon="refresh" :disable="refreshingCategoryIds.size > 0" @click="refreshAll">
                 <q-tooltip anchor="center left" self="center right">Refresh all</q-tooltip>
               </q-btn>
             </q-item-section>
@@ -34,10 +34,10 @@
           <template v-for="category in categories" :key="category.id">
             <template v-if="!hideEmpty || categoryUnreadCount(category.id) > 0">
               <q-expansion-item group="category">
-                <template v-slot:header>
+                <template #header>
                   <q-item-section
-                    clickable
                     v-ripple
+                    clickable
                     @click="() => $router.push({ path: '/', query: { categoryId: category.id } })"
                   >
                     <q-item-label class="text-h6">{{ category.name }}</q-item-label>
@@ -55,12 +55,12 @@
                 <q-card>
                   <q-card-section class="row items-center q-gutter-sm">
                     <q-btn
-                      @click="refreshCategory(category)"
                       :loading="refreshingCategoryIds.has(category.id)"
                       icon="refresh"
                       color="primary"
                       label="Refresh"
                       size="sm"
+                      @click="refreshCategory(category)"
                     />
                   </q-card-section>
                 </q-card>
@@ -68,14 +68,15 @@
               <q-list separator>
                 <template v-for="feed in category.feeds" :key="feed.id">
                   <q-expansion-item
-                    :group="`category-${category.id}`"
                     v-if="!hideEmpty || feedUnreadCount(feed.id) > 0"
+                    :group="`category-${category.id}`"
                     expand-icon-toggle
                   >
-                    <template v-slot:header>
+                    <template #header>
                       <q-item-section side>
-                        <q-avatar square v-if="imageExists(feed.id)" size="xs">
-                          <img :src="`/api/images/${buildFeedImageKey(feed.id)}`" alt="Feed Image" />
+                        <q-avatar v-if="imageExists(feed.id)" square size="xs">
+                          <!-- prettier-ignore -->
+                          <img :src="`/api/images/${buildFeedImageKey(feed.id)}`" alt="Feed Image">
                         </q-avatar>
                         <q-icon v-else name="rss_feed" class="feed-image" />
                       </q-item-section>
@@ -100,12 +101,12 @@
                     <q-card>
                       <q-card-section class="row items-center q-gutter-sm">
                         <q-btn
-                          @click="refreshFeed(feed)"
                           :loading="refreshingFeedIds.has(feed.id)"
                           icon="refresh"
                           color="primary"
                           label="Refresh"
                           size="sm"
+                          @click="refreshFeed(feed)"
                         />
                         <div class="text-caption">
                           {{ formatFetchedAtToNow(feed.id) }}

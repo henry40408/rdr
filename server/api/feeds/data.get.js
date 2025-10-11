@@ -1,8 +1,6 @@
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async () => {
   const { container } = useNitroApp();
 
-  /** @type {FeedService} */
-  const feedService = container.resolve("feedService");
   /** @type {Repository} */
   const repository = container.resolve("repository");
 

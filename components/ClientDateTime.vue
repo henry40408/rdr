@@ -7,7 +7,7 @@
 
 <script setup>
 defineProps({
-  datetime: { type: String },
+  datetime: { type: String, default: null },
 });
 
 const onClient = ref(false);

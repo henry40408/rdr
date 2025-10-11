@@ -1,7 +1,6 @@
 import { Readable } from "node:stream";
 
 import FeedParser from "feedparser";
-import { FeedEntity } from "./entities";
 
 export class FeedService {
   /**
