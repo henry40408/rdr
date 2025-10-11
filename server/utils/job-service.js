@@ -53,12 +53,12 @@ export class JobService {
    * @param {object} opts
    * @param {FeedService} opts.feedService
    * @param {import('pino').Logger} opts.logger
-   * @param {OpmlService} opts.opmlService
+   * @param {Repository} opts.repository
    */
-  constructor({ feedService, logger, opmlService }) {
+  constructor({ feedService, logger, repository }) {
     this.feedService = feedService;
     this.logger = logger.child({ context: "job-service" });
-    this.opmlService = opmlService;
+    this.repository = repository;
 
     /** @type {JobWithMetadata[]} */
     this.jobs = [];
@@ -120,7 +120,7 @@ export class JobService {
     let counter = 0;
     logger.info("Starting feed refresh job");
 
-    const feeds = this.opmlService.categories.flatMap((c) => c.feeds);
+    const feeds = await this.repository.findFeeds();
     const tasks = feeds.map((feed) =>
       Promise.allSettled([this.feedService.fetchAndSaveEntries(feed), this.feedService.fetchImage(feed)]).finally(
         () => {
@@ -143,7 +143,7 @@ export class JobService {
     let counter = 0;
     logger.info("Starting feed images job");
 
-    const feeds = this.opmlService.categories.flatMap((c) => c.feeds);
+    const feeds = await this.repository.findFeeds();
     const tasks = feeds.map((feed) =>
       this.feedService.fetchImage(feed).finally(() => {
         this.logger.debug({

@@ -3,7 +3,7 @@ import sanitizeHtml from "sanitize-html";
 import { z } from "zod";
 
 const schema = z.object({
-  entryId: z.string(),
+  entryId: z.coerce.number(),
 });
 
 const defaults = sanitizeHtml.defaults;
@@ -30,7 +30,7 @@ function rewriteContent(content) {
 export default defineEventHandler(async (event) => {
   const { container } = useNitroApp();
 
-  const { entryId } = await getValidatedRouterParams(event, (query) => schema.parse(query));
+  const { entryId } = await getValidatedRouterParams(event, (params) => schema.parse(params));
 
   /** @type {Repository} */
   const repository = container.resolve("repository");

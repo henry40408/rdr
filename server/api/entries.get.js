@@ -4,23 +4,18 @@ import { z } from "zod";
  * @typedef EntryEntityWithFeed
  * @property {EntryEntity} entry
  * @property {object} feed
- * @property {string} feed.id
+ * @property {number} feed.id
  * @property {string} feed.title
  * @property {object} feed.category
- * @property {string} feed.category.id
+ * @property {number} feed.category.id
  * @property {string} feed.category.name
  */
-
-const selectedFeed = z.object({
-  type: z.literal("feed"),
-  id: z.string(),
-});
 
 const schema = z.object({
   limit: z.coerce.number().min(1).max(100).default(100),
   search: z.string().optional(),
   offset: z.coerce.number().min(0).default(0),
-  selectedId: z.string().optional(),
+  selectedId: z.coerce.number().optional(),
   selectedType: z.enum(["category", "feed"]).optional(),
   status: z.enum(["all", "read", "unread"]).default("all"),
 });
@@ -34,14 +29,12 @@ export default defineEventHandler(
       schema.parse(query),
     );
 
-    /** @type {OpmlService} */
-    const opmlService = container.resolve("opmlService");
     /** @type {Repository} */
     const repository = container.resolve("repository");
 
-    const categories = opmlService.categories;
+    const categories = await repository.findCategoriesWithFeed();
 
-    /** @type {string[]|undefined} */
+    /** @type {number[]|undefined} */
     let feedIds = undefined;
     if (selectedType === "category" && selectedId) {
       const category = categories.find((c) => c.id === selectedId);
@@ -50,7 +43,7 @@ export default defineEventHandler(
       feedIds = [selectedId];
     }
 
-    const entries = await repository.listEntries({
+    const entries = await repository.findEntries({
       feedIds,
       limit,
       offset,

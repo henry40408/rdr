@@ -1,5 +1,3 @@
-import fs from "node:fs/promises";
-import { resolve } from "node:path";
 import xml2js from "xml2js";
 
 export class OpmlService {
@@ -7,26 +5,32 @@ export class OpmlService {
    * @param {object} opts
    * @param {import('nuxt/schema').RuntimeConfig} opts.config
    * @param {import('pino').Logger} opts.logger
+   * @param {Repository} opts.repository
    */
-  constructor({ config, logger }) {
+  constructor({ config, logger, repository }) {
     this.config = config;
     this.logger = logger.child({ context: "opml-service" });
-    /** @type {CategoryEntity[]} */
-    this.categories = [];
+    this.repository = repository;
   }
 
-  async init() {
-    const content = await fs.readFile(resolve(this.config.opmlPath), "utf-8");
-    this.logger.debug({ msg: "Loading OPML", opmlPath: this.config.opmlPath });
+  /**
+   * @param {string} content
+   * @returns {Promise<CategoryEntity[]>}
+   */
+  async importOpml(content) {
+    /** @type {CategoryEntity[]} */
+    const categories = [];
 
     const parsed = await xml2js.parseStringPromise(content);
     for (const outline of parsed.opml.body[0].outline) {
       const categoryName = outline.$.text;
-      const category = new CategoryEntity({ name: categoryName });
+      const category = new CategoryEntity({ id: 0, name: categoryName });
 
       if (outline.outline) {
         for (const feedOutline of outline.outline) {
           const feed = new FeedEntity({
+            id: 0,
+            categoryId: 0,
             title: feedOutline.$.title || feedOutline.$.text,
             xmlUrl: feedOutline.$.xmlUrl,
             htmlUrl: feedOutline.$.htmlUrl,
@@ -34,49 +38,33 @@ export class OpmlService {
           category.feeds.push(feed);
         }
       }
-      this.categories.push(category);
+      categories.push(category);
     }
 
     this.logger.info({
-      msg: "Loaded categories from OPML",
-      categoriesCount: this.categories.length,
-      feedsCount: this.categories.flatMap((c) => c.feeds).length,
+      msg: "Imported categories from OPML",
+      categoriesCount: categories.length,
+      feedsCount: categories.flatMap((c) => c.feeds).length,
     });
-  }
 
-  async dispose() {
-    this.categories = [];
-    this.logger.info("Categories are cleared");
-  }
+    await this.repository.upsertCategories(categories);
 
-  /**
-   * @param {string} categoryId
-   * @returns {CategoryEntity | undefined}
-   */
-  findCategoryById(categoryId) {
-    return this.categories.find((c) => c.id === categoryId);
+    return categories;
   }
 
   /**
-   * @param {string} feedId
-   * @returns {FeedEntity | undefined}
+   * @returns {Promise<string>}
    */
-  findFeedById(feedId) {
-    return this.categories.flatMap((c) => c.feeds).find((f) => f.id === feedId);
-  }
-
-  /**
-   * @returns {string} OPML XML string
-   */
-  exportOpml() {
+  async exportOpml() {
     const now = new Date();
     const builder = new xml2js.Builder({ headless: true, rootName: "opml" });
+    const categories = await this.repository.findCategoriesWithFeed();
     const opmlObj = {
       $: { version: "2.0" },
       head: [{ title: `Exported OPML (${now.toISOString()})` }],
       body: [
         {
-          outline: this.categories.map((category) => ({
+          outline: categories.map((category) => ({
             $: { text: category.name },
             outline: category.feeds.map((feed) => ({
               $: {

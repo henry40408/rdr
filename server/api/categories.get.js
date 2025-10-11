@@ -1,8 +1,8 @@
 export default defineEventHandler(() => {
   const { container } = useNitroApp();
 
-  /** @type {OpmlService} */
-  const opmlService = container.resolve("opmlService");
+  /** @type {Repository} */
+  const repository = container.resolve("repository");
 
-  return opmlService.categories;
+  return repository.findCategoriesWithFeed();
 });

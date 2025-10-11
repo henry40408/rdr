@@ -146,9 +146,9 @@ const { data: feedData, execute: refreshFeedData } = await useFetch("/api/feeds/
 
 const feedDataByFeedId = computed(() => feedData.value?.feeds || {});
 
-/** @type {Ref<Set<string>>} */
+/** @type {Ref<Set<number>>} */
 const refreshingCategoryIds = ref(new Set());
-/** @type {Ref<Set<string>>} */
+/** @type {Ref<Set<number>>} */
 const refreshingFeedIds = ref(new Set());
 
 async function afterRefresh() {
@@ -156,11 +156,11 @@ async function afterRefresh() {
 }
 
 /**
- * @param {string} categoryId
+ * @param {number} categoryId
  * @returns {number}
  */
 function categoryUnreadCount(categoryId) {
-  const category = categories.value?.find((cat) => cat.id === categoryId);
+  const category = categories.value?.find((c) => c.id === categoryId);
   if (!category) return 0;
   return category.feeds.reduce((sum, feed) => {
     const feedData = feedDataByFeedId.value[feed.id];
@@ -169,7 +169,7 @@ function categoryUnreadCount(categoryId) {
 }
 
 /**
- * @param {string} feedId
+ * @param {number} feedId
  * @returns {number}
  */
 function feedUnreadCount(feedId) {
@@ -177,17 +177,17 @@ function feedUnreadCount(feedId) {
 }
 
 /**
- * @param {string} feedId
+ * @param {number} feedId
  * @returns {string}
  */
 function formatFetchedAtToNow(feedId) {
-  const fetchedAt = feedData.value?.feeds[feedId]?.metadata.fetchedAt;
+  const fetchedAt = feedData.value?.feeds[feedId]?.fetchedAt;
   if (!fetchedAt) return "never";
   return formatDistanceToNow(new Date(fetchedAt), { addSuffix: true });
 }
 
 /**
- * @param {string} feedId
+ * @param {number} feedId
  * @returns {boolean}
  */
 function imageExists(feedId) {
