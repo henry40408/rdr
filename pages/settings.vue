@@ -9,7 +9,7 @@
           rdr
         </q-toolbar-title>
       </q-toolbar>
-      <Nav />
+      <NavTabs />
     </q-header>
 
     <q-page-container>
@@ -23,16 +23,16 @@
           </q-item>
           <q-item>
             <q-file v-model="uploadedFile" label="Upload OPML">
-              <template v-slot:prepend>
+              <template #prepend>
                 <q-icon name="attach_file" />
               </template>
             </q-file>
             <q-btn
-              class="q-ml-sm"
-              label="Import"
-              :disabled="!uploadedFile"
-              color="primary"
               size="sm"
+              label="Import"
+              class="q-ml-sm"
+              color="primary"
+              :disabled="!uploadedFile"
               @click="importOPML"
             />
           </q-item>
@@ -55,7 +55,7 @@
               <q-item-label>{{ job.description }}</q-item-label>
               <q-item-label caption
                 >Last run:
-                <ClientDateTime :datetime="job.lastDate" v-if="job.lastDate" />
+                <ClientDateTime v-if="job.lastDate" :datetime="job.lastDate" />
                 <span v-else>Never</span>
               </q-item-label>
             </q-item-section>
@@ -67,7 +67,7 @@
                 :loading="triggeringJobs.has(job.name)"
                 @click="() => triggerJob(job.name)"
               >
-                <q-tooltip anchor="center left" self="center right">Run job</q-tooltip>
+                <q-tooltip self="center right" anchor="center left">Run job</q-tooltip>
               </q-btn>
             </q-item-section>
           </q-item>

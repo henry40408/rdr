@@ -4,7 +4,7 @@ const schema = z.object({
   search: z.string().nullable().optional(),
   selectedId: z.coerce.number().optional(),
   selectedType: z.enum(["category", "feed"]).optional(),
-  status: z.enum(["all", "read", "unread"]).default("all"),
+  status: z.enum(["all", "read", "unread", "starred"]).default("all"),
 });
 
 export default defineEventHandler(async (event) => {

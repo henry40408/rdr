@@ -2,25 +2,25 @@
   <q-layout view="hhh LpR fFf">
     <q-header elevated class="bg-primary text-white">
       <q-toolbar>
-        <q-btn dense flat round icon="menu" @click="leftDrawerOpen = !leftDrawerOpen" />
+        <q-btn flat dense round icon="menu" @click="leftDrawerOpen = !leftDrawerOpen" />
         <q-toolbar-title>
           <q-avatar>
             <q-icon name="rss_feed" />
           </q-avatar>
           rdr
         </q-toolbar-title>
-        <q-input dark borderless v-model="searchQuery" input-class="text-right" class="q-ml-md q-mr-sm" debounce="500">
-          <template v-slot:append>
+        <q-input v-model="searchQuery" dark borderless debounce="500" class="q-ml-md q-mr-sm" input-class="text-right">
+          <template #append>
             <q-icon v-if="!searchQuery" name="search" />
             <q-icon v-else name="clear" class="cursor-pointer" @click="searchQuery = ''" />
           </template>
         </q-input>
-        <q-btn dense flat round icon="menu" @click="rightDrawerOpen = !rightDrawerOpen" />
+        <q-btn flat dense round icon="menu" @click="rightDrawerOpen = !rightDrawerOpen" />
       </q-toolbar>
-      <Nav />
+      <NavTabs />
     </q-header>
 
-    <q-drawer show-if-above v-model="leftDrawerOpen" side="left" bordered>
+    <q-drawer v-model="leftDrawerOpen" bordered side="left" show-if-above>
       <q-list padding>
         <q-item>
           <q-item-section header>
@@ -38,7 +38,7 @@
         <ClientOnly>
           <template v-for="category in categories" :key="category.id">
             <template v-if="!hideEmpty || categoryUnreadCount(category.id) > 0">
-              <q-item clickable v-ripple @click="() => $router.push({ path: '/', query: { categoryId: category.id } })">
+              <q-item v-ripple clickable @click="() => $router.push({ path: '/', query: { categoryId: category.id } })">
                 <q-item-section>
                   <q-item-label>{{ category.name }}</q-item-label>
                 </q-item-section>
@@ -51,14 +51,15 @@
               <q-separator />
               <template v-for="feed in category.feeds" :key="feed.id">
                 <q-item
-                  clickable
                   v-if="!hideEmpty || feedUnreadCount(feed.id) > 0"
                   v-ripple
+                  clickable
                   @click="() => $router.push({ path: '/', query: { feedId: feed.id } })"
                 >
                   <q-item-section avatar>
-                    <q-avatar size="sm" square v-if="imageExists(feed.id)">
-                      <img :src="`/api/images/${buildFeedImageKey(feed.id)}`" />
+                    <q-avatar v-if="imageExists(feed.id)" square size="sm">
+                      <!-- prettier-ignore -->
+                      <img :src="`/api/images/${buildFeedImageKey(feed.id)}`">
                     </q-avatar>
                     <q-icon v-else name="rss_feed" />
                   </q-item-section>
@@ -87,31 +88,39 @@
       </q-list>
     </q-drawer>
 
-    <q-drawer show-if-above v-model="rightDrawerOpen" side="right" bordered>
+    <q-drawer v-model="rightDrawerOpen" bordered side="right" show-if-above>
       <q-list>
         <q-item-label header>Status</q-item-label>
-        <q-item tag="label" v-ripple>
-          <q-item-section side top>
+        <q-item v-ripple tag="label">
+          <q-item-section top side>
             <q-radio v-model="listStatus" val="unread" />
           </q-item-section>
           <q-item-section>
             <q-item-label>Unread</q-item-label>
           </q-item-section>
         </q-item>
-        <q-item tag="label" v-ripple>
-          <q-item-section side top>
+        <q-item v-ripple tag="label">
+          <q-item-section top side>
             <q-radio v-model="listStatus" val="all" />
           </q-item-section>
           <q-item-section>
             <q-item-label>All</q-item-label>
           </q-item-section>
         </q-item>
-        <q-item tag="label" v-ripple>
-          <q-item-section side top>
+        <q-item v-ripple tag="label">
+          <q-item-section top side>
             <q-radio v-model="listStatus" val="read" />
           </q-item-section>
           <q-item-section>
             <q-item-label>Read</q-item-label>
+          </q-item-section>
+        </q-item>
+        <q-item v-ripple tag="label">
+          <q-item-section top side>
+            <q-radio v-model="listStatus" val="starred" />
+          </q-item-section>
+          <q-item-section>
+            <q-item-label>Starred</q-item-label>
           </q-item-section>
         </q-item>
       </q-list>
@@ -127,17 +136,18 @@
                   <div class="text-h5">
                     <span v-if="listStatus === 'unread'">Unread</span>
                     <span v-else-if="listStatus === 'read'">Read</span>
+                    <span v-else-if="listStatus === 'starred'">Starred</span>
                     <span v-else>All</span>
                   </div>
                   <q-badge>{{ countData ? countData.count : "..." }}</q-badge>
                   <div>
                     <q-chip
                       v-if="selectedCategoryId"
-                      size="sm"
-                      color="secondary"
-                      icon="category"
                       outline
                       removable
+                      size="sm"
+                      icon="category"
+                      color="secondary"
                       @remove="selectedCategoryId = undefined"
                       >Category: {{ getFilteredCategoryName() }}</q-chip
                     >
@@ -145,9 +155,9 @@
                       v-if="selectedFeedId"
                       outline
                       removable
+                      size="sm"
                       color="primary"
                       icon="rss_feed"
-                      size="sm"
                       @remove="selectedFeedId = undefined"
                       >Feed: {{ getFilteredFeedTitle() }}</q-chip
                     >
@@ -155,9 +165,9 @@
                       v-if="searchQuery"
                       outline
                       removable
-                      color="accent"
-                      icon="search"
                       size="sm"
+                      icon="search"
+                      color="accent"
                       @remove="searchQuery = ''"
                       >Search: {{ searchQuery }}</q-chip
                     >
@@ -167,19 +177,19 @@
             </q-item-section>
             <q-item-section side>
               <div>
-                <q-btn flat icon="refresh" round @click="resetThenLoad()" />
-                <q-btn flat icon="done_all" round @click="markAllAsRead()" />
+                <q-btn flat round icon="refresh" @click="resetThenLoad()" />
+                <q-btn flat round icon="done_all" @click="markAllAsRead()" />
               </div>
             </q-item-section>
           </q-item>
         </q-list>
-        <q-card flat v-if="loading">
+        <q-card v-if="loading" flat>
           <q-card-section class="row justify-center">
-            <q-spinner color="primary" size="3em" />
+            <q-spinner size="3em" color="primary" />
           </q-card-section>
         </q-card>
-        <q-banner class="bg-grey-2 text-grey-8" v-if="!loading && items.length === 0">
-          <template v-slot:avatar>
+        <q-banner v-if="!loading && items.length === 0" class="bg-grey-2 text-grey-8">
+          <template #avatar>
             <q-icon name="info" />
           </template>
           <div>No entries found.</div>
@@ -188,39 +198,43 @@
           </div>
         </q-banner>
         <q-pull-to-refresh @refresh="resetThenLoad">
-          <q-infinite-scroll @load="onLoad" :offset="250">
+          <q-infinite-scroll :offset="250" @load="onLoad">
             <q-list separator>
               <q-expansion-item
+                v-for="(item, index) in items"
+                ref="item-list"
+                :key="item.entry.id"
                 clickable
                 group="entry"
-                v-for="(item, index) in items"
-                :key="item.entry.id"
-                ref="item-list"
-                @before-show="loadContent(item.entry.id)"
+                :class="{ 'bg-grey-3': entryRead[item.entry.id] === 'read' }"
                 @after-show="scrollToContentRef(index)"
+                @before-show="loadContent(item.entry.id)"
               >
-                <template v-slot:header>
+                <template #header>
                   <q-item-section side>
                     <q-checkbox
                       v-model="entryRead[item.entry.id]"
-                      size="sm"
+                      color="grey-6"
                       true-value="read"
-                      :disable="entryRead[item.entry.id] === 'toggling'"
                       false-value="unread"
-                      @click="toggleEntry(item.entry.id, index)"
+                      checked-icon="drafts"
+                      unchecked-icon="mail"
+                      :disable="entryRead[item.entry.id] === 'toggling'"
+                      @click="toggleReadEntry(item.entry.id, index)"
                     />
                   </q-item-section>
                   <q-item-section side>
-                    <q-avatar size="sm" square>
-                      <img :src="`/api/images/${buildFeedImageKey(item.feed.id)}`" v-if="imageExists(item.feed.id)" />
+                    <q-avatar square size="sm">
+                      <!-- prettier-ignore -->
+                      <img v-if="imageExists(item.feed.id)" :src="`/api/images/${buildFeedImageKey(item.feed.id)}`">
                       <q-icon v-else size="sm" name="rss_feed" />
                     </q-avatar>
                   </q-item-section>
                   <q-item-section>
                     <q-item-label lines="3">
-                      <MarkedText :text="item.entry.title" :keyword="searchQuery" />
+                      <MarkedText :keyword="searchQuery" :text="item.entry.title" />
                     </q-item-label>
-                    <q-item-label lines="2" caption
+                    <q-item-label caption lines="2"
                       >{{ item.feed.category.name }} &middot; {{ item.feed.title }} &middot;
                       <ClientAgo :datetime="item.entry.date"
                     /></q-item-label>
@@ -233,37 +247,48 @@
                       {{ item.entry.title }}
                       <q-btn
                         flat
-                        size="sm"
                         round
+                        size="sm"
+                        target="_blank"
                         icon="open_in_new"
                         :href="item.entry.link"
-                        target="_blank"
                         rel="noopener noreferrer"
                       />
                     </div>
                     <div class="q-my-sm">by {{ item.entry.author }}</div>
                     <div class="q-my-sm">
                       <q-chip
+                        clickable
                         size="sm"
-                        color="secondary"
-                        icon="category"
+                        :disable="entryStar[item.entry.id] === 'starring'"
+                        :outline="entryStar[item.entry.id] === 'unstarred'"
+                        :color="entryStar[item.entry.id] === 'starred' ? 'yellow' : 'grey'"
+                        :icon="entryStar[item.entry.id] === 'starred' ? 'star' : 'star_border'"
+                        @click="toggleStarEntry(item.entry.id)"
+                      >
+                        {{ entryStar[item.entry.id] === "starred" ? "Starred" : "Not starred" }}
+                      </q-chip>
+                      <q-chip
                         outline
                         clickable
+                        size="sm"
+                        icon="category"
+                        color="secondary"
                         @click="selectedCategoryId = String(item.feed.category.id)"
                       >
                         Category: {{ item.feed.category.name }}
                       </q-chip>
                       <q-chip
+                        outline
+                        clickable
                         size="sm"
                         color="primary"
                         icon="rss_feed"
-                        outline
-                        clickable
                         @click="selectedFeedId = String(item.feed.id)"
                       >
                         Feed: {{ item.feed.title }}
                       </q-chip>
-                      <q-chip size="sm" color="accent" icon="calendar_today" outline
+                      <q-chip outline size="sm" color="accent" icon="calendar_today"
                         >Date: <ClientDateTime :datetime="item.entry.date"
                       /></q-chip>
                     </div>
@@ -271,46 +296,46 @@
                   <q-card-section>
                     <MarkedText
                       v-if="getContent(item.entry.id)"
-                      class="col entry-content"
                       is-html
-                      :text="getContent(item.entry.id)"
                       :keyword="searchQuery"
+                      class="col entry-content"
+                      :text="getContent(item.entry.id)"
                     />
                   </q-card-section>
                   <q-card-actions>
                     <q-btn
-                      size="sm"
                       flat
+                      size="sm"
                       icon="check"
                       color="primary"
                       label="Mark as read"
                       @click="markAsReadAndCollapse(item.entry.id, index)"
                     />
                     <q-btn
-                      size="sm"
                       flat
+                      size="sm"
                       color="primary"
                       label="Collapse"
                       icon="unfold_less"
                       @click="collapseItem(index)"
                     />
                     <q-btn
-                      size="sm"
+                      v-if="!contents[downloadedKey(item.entry.id)]"
                       flat
+                      size="sm"
                       color="primary"
                       label="Download"
                       icon="file_download"
                       :loading="downloading"
                       @click="downloadContent(item.entry.id)"
-                      v-if="!contents[downloadedKey(item.entry.id)]"
                     />
                     <q-btn
                       v-else
-                      size="sm"
                       flat
+                      size="sm"
+                      icon="undo"
                       color="primary"
                       label="See original"
-                      icon="undo"
                       @click="contents[downloadedKey(item.entry.id)] = ''"
                     />
                   </q-card-actions>
@@ -347,7 +372,7 @@ const loading = ref(false);
 const offset = ref(0);
 const rightDrawerOpen = ref(false);
 
-/** @type {Ref<"all"|"read"|"unread">} */
+/** @type {Ref<"all"|"read"|"unread"|"starred">} */
 const listStatus = useRouteQuery("status", "unread");
 /** @type {Ref<string|undefined>} */
 const selectedCategoryId = useRouteQuery("categoryId", undefined);
@@ -364,6 +389,9 @@ const contents = ref({});
 
 /** @type {Ref<Record<string,"read"|"toggling"|"unread">>} */
 const entryRead = ref({});
+
+/** @type {Ref<Record<string,"unstarred"|"starring"|"starred">>} */
+const entryStar = ref({});
 
 const countQuery = computed(() => {
   const query = {};
@@ -452,7 +480,7 @@ function getContent(entryId) {
  * @param {number} index
  */
 function collapseItem(index) {
-  // @ts-expect-error
+  // @ts-expect-error: hide exists
   itemRefs.value?.[index]?.hide();
 }
 
@@ -500,6 +528,7 @@ async function load() {
       for (const item of newItems) {
         items.value.push(item);
         entryRead.value[item.entry.id] = item.entry.readAt ? "read" : "unread";
+        entryStar.value[item.entry.id] = item.entry.starredAt ? "starred" : "unstarred";
       }
       if (newItems.length < LIMIT) hasMore.value = false;
     }
@@ -635,7 +664,7 @@ watch([listStatus, selectedCategoryId, selectedFeedId, searchQuery], () => {
  * @param {number} index
  */
 function scrollToContentRef(index) {
-  // @ts-expect-error
+  // @ts-expect-error: scrollIntoView exists
   itemRefs.value?.[index]?.$el.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
@@ -643,7 +672,7 @@ function scrollToContentRef(index) {
  * @param {number} entryId
  * @param {number} index
  */
-async function toggleEntry(entryId, index) {
+async function toggleReadEntry(entryId, index) {
   if (entryRead.value[entryId] === "toggling") return;
 
   // status of checkbox is already changed by the time this function is called
@@ -663,6 +692,28 @@ async function toggleEntry(entryId, index) {
   } finally {
     entryRead.value[entryId] = value;
     if (value === "read") collapseItem(index);
+  }
+}
+
+/**
+ * @param {number} entryId
+ */
+async function toggleStarEntry(entryId) {
+  if (entryStar.value[entryId] === "starring") return;
+
+  const value = entryStar.value[entryId];
+  entryStar.value[entryId] = "starring";
+  try {
+    await $fetch(`/api/entries/${entryId}/star`, { method: "PUT" });
+    refreshCount();
+    refreshFeedData();
+    entryStar.value[entryId] = value === "starred" ? "unstarred" : "starred";
+  } catch (err) {
+    $q.notify({
+      type: "negative",
+      message: `Failed to toggle star for entry ${entryId}: ${err}`,
+      actions: [{ icon: "close", color: "white" }],
+    });
   }
 }
 </script>

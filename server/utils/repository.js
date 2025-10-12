@@ -25,7 +25,7 @@ export class Repository {
    * @param {object} opts
    * @param {number[]} [opts.feedIds=[]]
    * @param {string} [opts.search]
-   * @param {"all"|"read"|"unread"} [opts.status="all"]
+   * @param {"all"|"read"|"unread"|"starred"} [opts.status="all"]
    * @returns {Promise<number>}
    */
   async countEntries({ feedIds = [], search, status = "all" }) {
@@ -38,6 +38,9 @@ export class Repository {
         break;
       case "unread":
         q.whereNull("read_at");
+        break;
+      case "starred":
+        q.whereNotNull("starred_at");
         break;
     }
     if (feedIds.length > 0) q.whereIn("feed_id", feedIds);
@@ -138,7 +141,7 @@ export class Repository {
    * @param {number} [opts.limit=100]
    * @param {number} [opts.offset=0]
    * @param {string} [opts.search]
-   * @param {"all"|"read"|"unread"} [opts.status="all"]
+   * @param {"all"|"read"|"unread"|"starred"} [opts.status="all"]
    * @returns {Promise<EntryEntity[]>}
    */
   async findEntries({ feedIds = [], limit = 100, offset = 0, search, status = "all" }) {
@@ -161,6 +164,9 @@ export class Repository {
         break;
       case "unread":
         q.whereNull("read_at");
+        break;
+      case "starred":
+        q.whereNotNull("starred_at");
         break;
     }
     if (feedIds.length > 0) q.whereIn("feed_id", feedIds);
@@ -310,7 +316,7 @@ export class Repository {
    * @param {number} id
    * @returns {Promise<Date|undefined>}
    */
-  async toggleEntry(id) {
+  async toggleReadEntry(id) {
     const logger = this.logger.child({ entryId: id });
 
     const row = await this.knex("entries").where({ id }).first();
@@ -325,6 +331,29 @@ export class Repository {
     } else {
       await this.knex("entries").where({ id }).update({ read_at: isoNow, updated_at: isoNow });
       logger.info({ msg: "Marked entry as read" });
+      return now;
+    }
+  }
+
+  /**
+   * @param {number} id
+   * @returns {Promise<Date|undefined>}
+   */
+  async toggleStarEntry(id) {
+    const logger = this.logger.child({ entryId: id });
+
+    const row = await this.knex("entries").where({ id }).first();
+    if (!row) throw new Error(`Entry with id ${id} not found`);
+
+    const now = new Date();
+    const isoNow = now.toISOString();
+    if (row.starred_at) {
+      await this.knex("entries").where({ id }).update({ starred_at: null, updated_at: isoNow });
+      logger.info({ msg: "Unstarred entry" });
+      return undefined;
+    } else {
+      await this.knex("entries").where({ id }).update({ starred_at: isoNow, updated_at: isoNow });
+      logger.info({ msg: "Starred entry" });
       return now;
     }
   }
