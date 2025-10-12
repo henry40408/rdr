@@ -18,6 +18,7 @@ jobs:
       - run: npx nuxi prepare
       - run: npm run lint
       - run: npm run prettier:check
+        if: ${{ runner.os != 'Windows' }} # Prettier on Windows has some issues with line endings
       - run: npx tsc --noEmit
       - run: npm test
   build-and-publish:
