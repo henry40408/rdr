@@ -3,11 +3,18 @@ export default defineEventHandler(async () => {
 
   /** @type {JobService} */
   const jobService = container.resolve("jobService");
+  /** @type {Repository} */
+  const repository = container.resolve("repository");
 
-  return jobService.jobs.map((job) => ({
-    name: job.name,
-    description: job.description,
-    lastDate: job.lastDate?.toISOString(),
-    nextDate: job.inner.nextDate(),
-  }));
+  const entities = await repository.findJobs();
+  return jobService.jobs.map((job) => {
+    const entity = entities.find((e) => e.name === job.name);
+    return {
+      name: job.name,
+      description: job.description,
+      lastDate: entity?.lastDate || null,
+      lastDurationMs: entity?.lastDurationMs || null,
+      lastError: entity?.lastError || null,
+    };
+  });
 });

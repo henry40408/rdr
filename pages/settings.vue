@@ -52,9 +52,10 @@
           </q-item>
           <q-item v-for="job in jobsData" :key="job.name">
             <q-item-section>
-              <q-item-label>{{ job.description }}</q-item-label>
-              <q-item-label caption
-                >Last run:
+              <q-item-label>{{ job.name }}</q-item-label>
+              <q-item-label caption>{{ job.description }}</q-item-label>
+              <q-item-label caption>
+                Last run:
                 <ClientDateTime v-if="job.lastDate" :datetime="job.lastDate" />
                 <span v-else>Never</span>
               </q-item-label>

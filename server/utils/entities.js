@@ -13,6 +13,35 @@ export class CategoryEntity {
   }
 }
 
+export class EntryEntity {
+  /**
+   * @param {object} opts
+   * @param {number} opts.id
+   * @param {number} opts.feedId
+   * @param {string} opts.guid
+   * @param {string} opts.title
+   * @param {string} opts.link
+   * @param {string} opts.date
+   * @param {string} [opts.author]
+   * @param {string} [opts.readAt]
+   * @param {string} [opts.starredAt]
+   */
+  constructor({ id, feedId, guid, title, link, date, author, readAt, starredAt }) {
+    this.id = id;
+    this.feedId = feedId;
+    this.guid = guid;
+
+    this.title = title;
+    this.link = link;
+    this.date = date;
+
+    this.author = author;
+
+    this.readAt = readAt;
+    this.starredAt = starredAt;
+  }
+}
+
 export class FeedEntity {
   /**
    * @param {object} opts
@@ -59,31 +88,18 @@ export class ImageEntity {
   }
 }
 
-export class EntryEntity {
+export class JobEntity {
   /**
    * @param {object} opts
-   * @param {number} opts.id
-   * @param {number} opts.feedId
-   * @param {string} opts.guid
-   * @param {string} opts.title
-   * @param {string} opts.link
-   * @param {string} opts.date
-   * @param {string} [opts.author]
-   * @param {string} [opts.readAt]
-   * @param {string} [opts.starredAt]
+   * @param {string} opts.name
+   * @param {Date} [opts.lastDate]
+   * @param {number} [opts.lastDurationMs]
+   * @param {string} [opts.lastError]
    */
-  constructor({ id, feedId, guid, title, link, date, author, readAt, starredAt }) {
-    this.id = id;
-    this.feedId = feedId;
-    this.guid = guid;
-
-    this.title = title;
-    this.link = link;
-    this.date = date;
-
-    this.author = author;
-
-    this.readAt = readAt;
-    this.starredAt = starredAt;
+  constructor({ name, lastDate, lastDurationMs, lastError }) {
+    this.name = name;
+    this.lastDate = lastDate;
+    this.lastDurationMs = lastDurationMs;
+    this.lastError = lastError;
   }
 }
