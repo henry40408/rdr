@@ -3,6 +3,8 @@ import { createContainer, asClass, asValue } from "awilix";
 import { AwilixManager } from "awilix-manager";
 import knex from "knex";
 import { DownloadService } from "../utils/download-service";
+import { FetchEntriesJob } from "../utils/jobs/fetch-entries-job";
+import { FetchImagesJob } from "../utils/jobs/fetch-images-job";
 
 export default defineNitroPlugin(
   /** @param {import('nitropack/types').NitroApp} nitroApp */
@@ -34,7 +36,10 @@ export default defineNitroPlugin(
       knex: asValue(globalThis.__knex__),
       logger: asValue(logger),
       opmlService: asClass(OpmlService).singleton(),
-      repository: asClass(Repository, { asyncInit: "init" }).singleton(),
+      repository: asClass(Repository, { asyncInit: "init", asyncInitPriority: 0 }).singleton(),
+      // jobs
+      fetchEntriesJob: asClass(FetchEntriesJob, { asyncInit: "init", asyncDispose: "dispose" }).singleton(),
+      fetchImagesJob: asClass(FetchImagesJob, { asyncInit: "init", asyncDispose: "dispose" }).singleton(),
     });
 
     const manager = new AwilixManager({

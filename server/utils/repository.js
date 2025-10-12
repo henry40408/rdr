@@ -1,6 +1,6 @@
 import chunk from "lodash/chunk.js";
 import get from "lodash/get.js";
-import { CategoryEntity, EntryEntity, FeedEntity } from "./entities";
+import { CategoryEntity, EntryEntity, FeedEntity, JobEntity } from "./entities";
 
 export class Repository {
   /**
@@ -313,6 +313,22 @@ export class Repository {
   }
 
   /**
+   * @returns {Promise<JobEntity[]>}
+   */
+  async findJobs() {
+    const jobs = await this.knex("jobs").select();
+    return jobs.map(
+      (job) =>
+        new JobEntity({
+          name: job.name,
+          lastDate: job.last_date,
+          lastDurationMs: job.last_duration_ms,
+          lastError: job.last_error,
+        }),
+    );
+  }
+
+  /**
    * @param {number} id
    * @returns {Promise<Date|undefined>}
    */
@@ -466,6 +482,26 @@ export class Repository {
     logger.debug({ msg: "Update feed metadata", feed });
     await this.knex("feeds").where({ id: feed.id }).update(update);
     logger.info({ msg: "Updated feed metadata", feedId: feed.id });
+  }
+
+  /**
+   * @param {string} name
+   */
+  async upsertJob(name) {
+    await this.knex("jobs").insert({ name }).onConflict("name").ignore();
+  }
+
+  /**
+   * @param {string} name
+   * @param {number} duration
+   * @param {string|null} error
+   */
+  async upsertJobExecution(name, duration, error) {
+    await this.knex("jobs").where({ name }).update({
+      last_date: new Date().toISOString(),
+      last_duration_ms: duration,
+      last_error: error,
+    });
   }
 
   async _setPragmas() {

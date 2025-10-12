@@ -57,6 +57,17 @@ export function up(knex) {
       t.string("last_modified");
 
       t.timestamps(true, true);
+    })
+    .createTable("jobs", (t) => {
+      t.increments("id").primary();
+
+      t.string("name").notNullable().unique();
+
+      t.timestamp("last_date").index();
+      t.integer("last_duration_ms");
+      t.text("last_error");
+
+      t.timestamps(true, true);
     });
 }
 
@@ -64,7 +75,12 @@ export function up(knex) {
  * @param {import('knex').Knex} knex
  */
 export function down(knex) {
-  return knex.schema.dropTable("image").dropTable("entries").dropTable("feeds").dropTable("categories");
+  return knex.schema
+    .dropTable("jobs")
+    .dropTable("image")
+    .dropTable("entries")
+    .dropTable("feeds")
+    .dropTable("categories");
 }
 
 export default {
