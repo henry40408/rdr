@@ -12,9 +12,9 @@ export default defineEventHandler(async () => {
     return {
       name: job.name,
       description: job.description,
-      lastDate: entity?.lastDate || null,
-      lastDurationMs: entity?.lastDurationMs || null,
-      lastError: entity?.lastError || null,
+      lastDate: entity?.lastDate,
+      lastDurationMs: entity?.lastDurationMs,
+      lastError: entity?.lastError,
     };
   });
 });

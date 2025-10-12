@@ -498,7 +498,7 @@ export class Repository {
    */
   async upsertJobExecution(name, duration, error) {
     await this.knex("jobs").where({ name }).update({
-      last_date: new Date(),
+      last_date: new Date().toISOString(),
       last_duration_ms: duration,
       last_error: error,
     });

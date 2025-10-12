@@ -57,7 +57,8 @@
               <q-item-label caption>
                 Last run:
                 <ClientDateTime v-if="job.lastDate" :datetime="job.lastDate" />
-                <span v-else>Never</span>
+                <span v-else>Never</span>, Last duration:
+                {{ job.lastDurationMs ? `${millisecondsToSeconds(job.lastDurationMs)}s` : "-" }}
               </q-item-label>
             </q-item-section>
             <q-item-section side>
@@ -79,6 +80,7 @@
 </template>
 
 <script setup>
+import { millisecondsToSeconds } from "date-fns";
 import { useQuasar } from "quasar";
 
 const $q = useQuasar();
@@ -114,6 +116,11 @@ async function triggerJob(name) {
   triggeringJobs.value.add(name);
   try {
     await $fetch(`/api/jobs/${name}/run`, { method: "POST" });
+    $q.notify({
+      type: "positive",
+      message: `Job ${name} triggered successfully`,
+      actions: [{ label: "Close", color: "white" }],
+    });
   } catch (err) {
     $q.notify({
       type: "negative",
