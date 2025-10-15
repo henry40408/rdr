@@ -329,6 +329,31 @@ export class Repository {
   }
 
   /**
+   * @param {object} opts
+   * @param {number[]} opts.feedIds
+   * @param {string} [opts.search]
+   * @returns {Promise<void>}
+   */
+  async markEntriesAsRead({ feedIds, search }) {
+    if (feedIds.length === 0) return;
+
+    const now = new Date().toISOString();
+
+    const q = this.knex("entries").whereIn("feed_id", feedIds).whereNull("read_at");
+    if (search) {
+      const uppered = search.toUpperCase();
+      q.where((builder) =>
+        builder
+          .where(this.knex.raw(`upper(title)`), "like", `%${uppered}%`)
+          .orWhere(this.knex.raw(`upper(description)`), "like", `%${uppered}%`),
+      );
+    }
+    await q.update({ read_at: now, updated_at: now });
+
+    this.logger.info({ msg: "Marked entries as read", feedIds });
+  }
+
+  /**
    * @param {number} id
    * @returns {Promise<Date|undefined>}
    */
