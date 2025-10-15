@@ -405,10 +405,14 @@ const countQuery = computed(() => {
   return query;
 });
 
-const { data: categories } = await useFetch("/api/categories");
-const { data: countData, execute: refreshCount } = await useFetch("/api/count", {
-  query: countQuery,
-});
+const { data, refresh } = await useAsyncData("initial", async () => ({
+  categories: await $fetch("/api/categories"),
+  count: await $fetch("/api/count", { query: countQuery.value }),
+  imagePks: await $fetch("/api/images/primary-keys"),
+  feedsData: await $fetch("/api/feeds/data"),
+}));
+const categories = computed(() => data.value?.categories || []);
+const countData = computed(() => data.value?.count || { count: 0 });
 useHead(() => ({
   title: selectedFeedId.value
     ? `(${countData.value?.count || 0}) Feed: ${getFilteredFeedTitle()} - rdr`
@@ -416,8 +420,8 @@ useHead(() => ({
       ? `(${countData.value?.count || 0}) Category: ${getFilteredCategoryName()} - rdr`
       : `(${countData.value?.count || 0}) rdr`,
 }));
-const { data: imagePks } = await useFetch("/api/images/primary-keys");
-const { data: feedsData, execute: refreshFeedData } = await useFetch("/api/feeds/data");
+const feedsData = computed(() => data.value?.feedsData || null);
+const imagePks = computed(() => data.value?.imagePks || []);
 
 /**
  * @param {number} categoryId
@@ -581,7 +585,7 @@ async function onLoad(_index, done) {
  */
 function imageExists(feedId) {
   const key = buildFeedImageKey(feedId);
-  return (imagePks && imagePks.value?.includes(key)) || false;
+  return imagePks.value?.includes(key) || false;
 }
 
 async function markAllAsRead() {
@@ -606,8 +610,7 @@ async function markAllAsRead() {
     tasks.push(task());
   }
   await Promise.all(tasks);
-  refreshCount();
-  refreshFeedData();
+  refresh();
 }
 
 /**
@@ -620,8 +623,7 @@ async function markAsRead(entryId) {
     entryRead.value[entryId] = "toggling";
     await $fetch(`/api/entries/${entryId}/toggle`, { method: "PUT" });
     entryRead.value[entryId] = "read";
-    refreshCount();
-    refreshFeedData();
+    refresh();
   } catch (err) {
     $q.notify({
       type: "negative",
@@ -679,8 +681,7 @@ async function toggleReadEntry(entryId, index) {
   entryRead.value[entryId] = "toggling";
   try {
     await $fetch(`/api/entries/${entryId}/toggle`, { method: "PUT" });
-    refreshCount();
-    refreshFeedData();
+    refresh();
   } catch (err) {
     $q.notify({
       type: "negative",
@@ -703,8 +704,7 @@ async function toggleStarEntry(entryId) {
   entryStar.value[entryId] = "starring";
   try {
     await $fetch(`/api/entries/${entryId}/star`, { method: "PUT" });
-    refreshCount();
-    refreshFeedData();
+    refresh();
     entryStar.value[entryId] = value === "starred" ? "unstarred" : "starred";
   } catch (err) {
     $q.notify({
