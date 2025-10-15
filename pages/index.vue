@@ -144,7 +144,6 @@
                       v-if="selectedCategoryId"
                       outline
                       removable
-                      size="sm"
                       icon="category"
                       color="secondary"
                       @remove="selectedCategoryId = undefined"
@@ -154,7 +153,6 @@
                       v-if="selectedFeedId"
                       outline
                       removable
-                      size="sm"
                       color="primary"
                       icon="rss_feed"
                       @remove="selectedFeedId = undefined"
@@ -164,12 +162,12 @@
                       v-if="searchQuery"
                       outline
                       removable
-                      size="sm"
                       icon="search"
                       color="accent"
                       @remove="searchQuery = ''"
-                      >Search: {{ searchQuery }}</q-chip
                     >
+                      Search: {{ searchQuery }}
+                    </q-chip>
                   </div>
                 </div>
               </q-item-label>
@@ -213,6 +211,7 @@
                   <q-item-section side>
                     <q-checkbox
                       v-model="entryRead[item.entry.id]"
+                      color="grey"
                       true-value="read"
                       false-value="unread"
                       checked-icon="drafts"
@@ -242,11 +241,19 @@
                 <q-card>
                   <q-card-section>
                     <div class="q-my-sm text-h5">
+                      <q-checkbox
+                        v-model="entryStar[item.entry.id]"
+                        checked-icon="star"
+                        true-value="starred"
+                        false-value="unstarred"
+                        unchecked-icon="star_border"
+                        :disable="entryStar[item.entry.id] === 'starring'"
+                        @click="toggleStarEntry(item.entry.id)"
+                      />
                       {{ item.entry.title }}
                       <q-btn
                         flat
                         round
-                        size="sm"
                         target="_blank"
                         icon="open_in_new"
                         :href="item.entry.link"
@@ -256,20 +263,8 @@
                     <div class="q-my-sm">by {{ item.entry.author }}</div>
                     <div class="q-my-sm">
                       <q-chip
-                        clickable
-                        size="sm"
-                        :disable="entryStar[item.entry.id] === 'starring'"
-                        :outline="entryStar[item.entry.id] === 'unstarred'"
-                        :color="entryStar[item.entry.id] === 'starred' ? 'yellow' : 'grey'"
-                        :icon="entryStar[item.entry.id] === 'starred' ? 'star' : 'star_border'"
-                        @click="toggleStarEntry(item.entry.id)"
-                      >
-                        {{ entryStar[item.entry.id] === "starred" ? "Starred" : "Not starred" }}
-                      </q-chip>
-                      <q-chip
                         outline
                         clickable
-                        size="sm"
                         icon="category"
                         color="secondary"
                         @click="selectedCategoryId = String(item.feed.category.id)"
@@ -279,16 +274,15 @@
                       <q-chip
                         outline
                         clickable
-                        size="sm"
                         color="primary"
                         icon="rss_feed"
                         @click="selectedFeedId = String(item.feed.id)"
                       >
                         Feed: {{ item.feed.title }}
                       </q-chip>
-                      <q-chip outline size="sm" color="accent" icon="calendar_today"
-                        >Date: <ClientDateTime :datetime="item.entry.date"
-                      /></q-chip>
+                      <q-chip outline color="accent" icon="calendar_today">
+                        Date: <ClientDateTime :datetime="item.entry.date" />
+                      </q-chip>
                     </div>
                   </q-card-section>
                   <q-card-section>
@@ -303,24 +297,15 @@
                   <q-card-actions>
                     <q-btn
                       flat
-                      size="sm"
                       icon="check"
                       color="primary"
                       label="Mark as read"
                       @click="markAsReadAndCollapse(item.entry.id, index)"
                     />
-                    <q-btn
-                      flat
-                      size="sm"
-                      color="primary"
-                      label="Collapse"
-                      icon="unfold_less"
-                      @click="collapseItem(index)"
-                    />
+                    <q-btn flat color="primary" label="Collapse" icon="unfold_less" @click="collapseItem(index)" />
                     <q-btn
                       v-if="!contents[downloadedKey(item.entry.id)]"
                       flat
-                      size="sm"
                       color="primary"
                       label="Download"
                       icon="file_download"
@@ -330,7 +315,6 @@
                     <q-btn
                       v-else
                       flat
-                      size="sm"
                       icon="undo"
                       color="primary"
                       label="See original"
@@ -705,7 +689,7 @@ async function toggleStarEntry(entryId) {
   try {
     await $fetch(`/api/entries/${entryId}/star`, { method: "PUT" });
     refresh();
-    entryStar.value[entryId] = value === "starred" ? "unstarred" : "starred";
+    entryStar.value[entryId] = value;
   } catch (err) {
     $q.notify({
       type: "negative",
