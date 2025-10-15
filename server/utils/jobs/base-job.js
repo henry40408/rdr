@@ -14,6 +14,7 @@ export class BaseJob {
     this.job = CronJob.from({
       cronTime,
       onTick: () => this.jobService.run(this),
+      waitForCompletion: true,
     });
   }
 
