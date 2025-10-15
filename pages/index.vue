@@ -56,10 +56,9 @@
                   clickable
                   @click="() => $router.push({ path: '/', query: { feedId: feed.id } })"
                 >
-                  <q-item-section avatar>
-                    <q-avatar v-if="imageExists(feed.id)" square size="sm">
-                      <!-- prettier-ignore -->
-                      <img :src="`/api/images/${buildFeedImageKey(feed.id)}`">
+                  <q-item-section side>
+                    <q-avatar v-if="imageExists(feed.id)" square size="xs">
+                      <q-img :src="`/api/images/${buildFeedImageKey(feed.id)}`" />
                     </q-avatar>
                     <q-icon v-else name="rss_feed" />
                   </q-item-section>
@@ -123,6 +122,16 @@
             <q-item-label>Starred</q-item-label>
           </q-item-section>
         </q-item>
+        <q-separator />
+        <q-item-label header>Page size</q-item-label>
+        <q-item>
+          <q-item-section side>
+            {{ limit }}
+          </q-item-section>
+          <q-item-section>
+            <q-slider v-model.number="limit" filled markers :min="100" :max="1000" :step="100" type="number" />
+          </q-item-section>
+        </q-item>
       </q-list>
     </q-drawer>
 
@@ -145,7 +154,6 @@
                       v-if="selectedCategoryId"
                       outline
                       removable
-                      size="sm"
                       icon="category"
                       color="secondary"
                       @remove="selectedCategoryId = undefined"
@@ -155,7 +163,6 @@
                       v-if="selectedFeedId"
                       outline
                       removable
-                      size="sm"
                       color="primary"
                       icon="rss_feed"
                       @remove="selectedFeedId = undefined"
@@ -165,12 +172,12 @@
                       v-if="searchQuery"
                       outline
                       removable
-                      size="sm"
                       icon="search"
                       color="accent"
                       @remove="searchQuery = ''"
-                      >Search: {{ searchQuery }}</q-chip
                     >
+                      Search: {{ searchQuery }}
+                    </q-chip>
                   </div>
                 </div>
               </q-item-label>
@@ -214,7 +221,7 @@
                   <q-item-section side>
                     <q-checkbox
                       v-model="entryRead[item.entry.id]"
-                      color="grey-6"
+                      color="grey"
                       true-value="read"
                       false-value="unread"
                       checked-icon="drafts"
@@ -223,32 +230,40 @@
                       @click="toggleReadEntry(item.entry.id, index)"
                     />
                   </q-item-section>
-                  <q-item-section side>
-                    <q-avatar square size="sm">
-                      <!-- prettier-ignore -->
-                      <img v-if="imageExists(item.feed.id)" :src="`/api/images/${buildFeedImageKey(item.feed.id)}`">
-                      <q-icon v-else size="sm" name="rss_feed" />
-                    </q-avatar>
-                  </q-item-section>
                   <q-item-section>
                     <q-item-label lines="3">
                       <MarkedText :keyword="searchQuery" :text="item.entry.title" />
                     </q-item-label>
-                    <q-item-label caption lines="2"
-                      >{{ item.feed.category.name }} &middot; {{ item.feed.title }} &middot;
-                      <ClientAgo :datetime="item.entry.date"
-                    /></q-item-label>
+                    <q-item-label caption lines="2">
+                      <q-img
+                        v-if="imageExists(item.feed.id)"
+                        width=".75rem"
+                        class="q-mr-sm"
+                        height=".75rem"
+                        :src="`/api/images/${buildFeedImageKey(item.feed.id)}`"
+                      />
+                      {{ item.feed.category.name }} &middot; {{ item.feed.title }} &middot;
+                      <ClientAgo :datetime="item.entry.date" />
+                    </q-item-label>
                   </q-item-section>
                 </template>
 
                 <q-card>
                   <q-card-section>
                     <div class="q-my-sm text-h5">
+                      <q-checkbox
+                        v-model="entryStar[item.entry.id]"
+                        checked-icon="star"
+                        true-value="starred"
+                        false-value="unstarred"
+                        unchecked-icon="star_border"
+                        :disable="entryStar[item.entry.id] === 'starring'"
+                        @click="toggleStarEntry(item.entry.id)"
+                      />
                       {{ item.entry.title }}
                       <q-btn
                         flat
                         round
-                        size="sm"
                         target="_blank"
                         icon="open_in_new"
                         :href="item.entry.link"
@@ -258,20 +273,8 @@
                     <div class="q-my-sm">by {{ item.entry.author }}</div>
                     <div class="q-my-sm">
                       <q-chip
-                        clickable
-                        size="sm"
-                        :disable="entryStar[item.entry.id] === 'starring'"
-                        :outline="entryStar[item.entry.id] === 'unstarred'"
-                        :color="entryStar[item.entry.id] === 'starred' ? 'yellow' : 'grey'"
-                        :icon="entryStar[item.entry.id] === 'starred' ? 'star' : 'star_border'"
-                        @click="toggleStarEntry(item.entry.id)"
-                      >
-                        {{ entryStar[item.entry.id] === "starred" ? "Starred" : "Not starred" }}
-                      </q-chip>
-                      <q-chip
                         outline
                         clickable
-                        size="sm"
                         icon="category"
                         color="secondary"
                         @click="selectedCategoryId = String(item.feed.category.id)"
@@ -281,16 +284,15 @@
                       <q-chip
                         outline
                         clickable
-                        size="sm"
                         color="primary"
                         icon="rss_feed"
                         @click="selectedFeedId = String(item.feed.id)"
                       >
                         Feed: {{ item.feed.title }}
                       </q-chip>
-                      <q-chip outline size="sm" color="accent" icon="calendar_today"
-                        >Date: <ClientDateTime :datetime="item.entry.date"
-                      /></q-chip>
+                      <q-chip outline color="accent" icon="calendar_today">
+                        Date: <ClientDateTime :datetime="item.entry.date" />
+                      </q-chip>
                     </div>
                   </q-card-section>
                   <q-card-section>
@@ -305,24 +307,15 @@
                   <q-card-actions>
                     <q-btn
                       flat
-                      size="sm"
                       icon="check"
                       color="primary"
                       label="Mark as read"
                       @click="markAsReadAndCollapse(item.entry.id, index)"
                     />
-                    <q-btn
-                      flat
-                      size="sm"
-                      color="primary"
-                      label="Collapse"
-                      icon="unfold_less"
-                      @click="collapseItem(index)"
-                    />
+                    <q-btn flat color="primary" label="Collapse" icon="unfold_less" @click="collapseItem(index)" />
                     <q-btn
                       v-if="!contents[downloadedKey(item.entry.id)]"
                       flat
-                      size="sm"
                       color="primary"
                       label="Download"
                       icon="file_download"
@@ -332,7 +325,6 @@
                     <q-btn
                       v-else
                       flat
-                      size="sm"
                       icon="undo"
                       color="primary"
                       label="See original"
@@ -359,8 +351,6 @@ import { useQuasar } from "quasar";
 import { useRouteQuery } from "@vueuse/router";
 import { useLocalSettings } from "./local-settings";
 
-const LIMIT = 100;
-
 const $q = useQuasar();
 const itemRefs = useTemplateRef("item-list");
 const { hideEmpty } = useLocalSettings();
@@ -374,6 +364,8 @@ const rightDrawerOpen = ref(false);
 
 /** @type {Ref<"all"|"read"|"unread"|"starred">} */
 const listStatus = useRouteQuery("status", "unread");
+/** @type {Ref<number>} */
+const limit = useRouteQuery("limit", "100", { transform: Number });
 /** @type {Ref<string|undefined>} */
 const selectedCategoryId = useRouteQuery("categoryId", undefined);
 /** @type {Ref<string|undefined>} */
@@ -407,10 +399,14 @@ const countQuery = computed(() => {
   return query;
 });
 
-const { data: categories } = await useFetch("/api/categories");
-const { data: countData, execute: refreshCount } = await useFetch("/api/count", {
-  query: countQuery,
-});
+const { data, refresh } = await useAsyncData("initial", async () => ({
+  categories: await $fetch("/api/categories"),
+  count: await $fetch("/api/count", { query: countQuery.value }),
+  imagePks: await $fetch("/api/images/primary-keys"),
+  feedsData: await $fetch("/api/feeds/data"),
+}));
+const categories = computed(() => data.value?.categories || []);
+const countData = computed(() => data.value?.count || { count: 0 });
 useHead(() => ({
   title: selectedFeedId.value
     ? `(${countData.value?.count || 0}) Feed: ${getFilteredFeedTitle()} - rdr`
@@ -418,8 +414,8 @@ useHead(() => ({
       ? `(${countData.value?.count || 0}) Category: ${getFilteredCategoryName()} - rdr`
       : `(${countData.value?.count || 0}) rdr`,
 }));
-const { data: imagePks } = await useFetch("/api/images/primary-keys");
-const { data: feedsData, execute: refreshFeedData } = await useFetch("/api/feeds/data");
+const feedsData = computed(() => data.value?.feedsData || null);
+const imagePks = computed(() => data.value?.imagePks || []);
 
 /**
  * @param {number} categoryId
@@ -518,7 +514,7 @@ async function load() {
   }
   if (searchQuery.value) query.search = searchQuery.value;
   if (listStatus.value) query.status = listStatus.value;
-  query.limit = LIMIT;
+  query.limit = limit.value;
   query.offset = offset.value;
 
   loading.value = true;
@@ -530,7 +526,7 @@ async function load() {
         entryRead.value[item.entry.id] = item.entry.readAt ? "read" : "unread";
         entryStar.value[item.entry.id] = item.entry.starredAt ? "starred" : "unstarred";
       }
-      if (newItems.length < LIMIT) hasMore.value = false;
+      if (newItems.length < limit.value) hasMore.value = false;
     }
   } catch (err) {
     $q.notify({
@@ -572,7 +568,7 @@ async function onLoad(_index, done) {
     if (done) done(true);
     return;
   }
-  offset.value += LIMIT;
+  offset.value += limit.value;
   await load();
   if (done) done();
 }
@@ -583,7 +579,7 @@ async function onLoad(_index, done) {
  */
 function imageExists(feedId) {
   const key = buildFeedImageKey(feedId);
-  return (imagePks && imagePks.value?.includes(key)) || false;
+  return imagePks.value?.includes(key) || false;
 }
 
 async function markAllAsRead() {
@@ -608,8 +604,7 @@ async function markAllAsRead() {
     tasks.push(task());
   }
   await Promise.all(tasks);
-  refreshCount();
-  refreshFeedData();
+  refresh();
 }
 
 /**
@@ -622,8 +617,7 @@ async function markAsRead(entryId) {
     entryRead.value[entryId] = "toggling";
     await $fetch(`/api/entries/${entryId}/toggle`, { method: "PUT" });
     entryRead.value[entryId] = "read";
-    refreshCount();
-    refreshFeedData();
+    refresh();
   } catch (err) {
     $q.notify({
       type: "negative",
@@ -656,7 +650,7 @@ async function resetThenLoad(done) {
   await load();
   if (done) done();
 }
-watch([listStatus, selectedCategoryId, selectedFeedId, searchQuery], () => {
+watch([limit, listStatus, selectedCategoryId, selectedFeedId, searchQuery], () => {
   resetThenLoad();
 });
 
@@ -681,8 +675,7 @@ async function toggleReadEntry(entryId, index) {
   entryRead.value[entryId] = "toggling";
   try {
     await $fetch(`/api/entries/${entryId}/toggle`, { method: "PUT" });
-    refreshCount();
-    refreshFeedData();
+    refresh();
   } catch (err) {
     $q.notify({
       type: "negative",
@@ -705,9 +698,8 @@ async function toggleStarEntry(entryId) {
   entryStar.value[entryId] = "starring";
   try {
     await $fetch(`/api/entries/${entryId}/star`, { method: "PUT" });
-    refreshCount();
-    refreshFeedData();
-    entryStar.value[entryId] = value === "starred" ? "unstarred" : "starred";
+    refresh();
+    entryStar.value[entryId] = value;
   } catch (err) {
     $q.notify({
       type: "negative",

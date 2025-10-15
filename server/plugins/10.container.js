@@ -17,7 +17,7 @@ export default defineNitroPlugin(
     if (!globalThis.__knex__) {
       globalThis.__knex__ = knex({
         client: "sqlite3",
-        connection: { filename: config.cachePath },
+        connection: { filename: config.dbPath },
         migrations: { migrationSource: new MigrationSource() },
         useNullAsDefault: true,
       });
