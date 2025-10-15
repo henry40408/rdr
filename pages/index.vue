@@ -583,28 +583,26 @@ function imageExists(feedId) {
 }
 
 async function markAllAsRead() {
-  const tasks = [];
-  for (const item of items.value) {
-    if (entryRead.value[item.entry.id] === "read") continue;
-    const task = async () => {
-      const value = entryRead.value[item.entry.id];
-      try {
-        entryRead.value[item.entry.id] = "toggling";
-        await $fetch(`/api/entries/${item.entry.id}/toggle`, { method: "PUT" });
-        entryRead.value[item.entry.id] = "read";
-      } catch (err) {
-        $q.notify({
-          type: "negative",
-          message: `Failed to mark entry ${item.entry.id} as read: ${err}`,
-          actions: [{ icon: "close", color: "white" }],
-        });
-        entryRead.value[item.entry.id] = value;
-      }
-    };
-    tasks.push(task());
+  const body = {};
+  if (selectedFeedId.value) {
+    body.selectedType = "feed";
+    body.selectedId = selectedFeedId.value;
+  } else if (selectedCategoryId.value) {
+    body.selectedType = "category";
+    body.selectedId = selectedCategoryId.value;
   }
-  await Promise.all(tasks);
-  refresh();
+  if (searchQuery.value) body.search = searchQuery.value;
+  try {
+    await $fetch("/api/entries/mark-as-read", { method: "POST", body });
+    for (const item of items.value) entryRead.value[item.entry.id] = "read";
+    refresh();
+  } catch (err) {
+    $q.notify({
+      type: "negative",
+      message: `Failed to mark all as read: ${err}`,
+      actions: [{ icon: "close", color: "white" }],
+    });
+  }
 }
 
 /**
@@ -647,7 +645,9 @@ async function resetThenLoad(done) {
   items.value = [];
   offset.value = 0;
 
+  refresh();
   await load();
+
   if (done) done();
 }
 watch([limit, listStatus, selectedCategoryId, selectedFeedId, searchQuery], () => {
