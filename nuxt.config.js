@@ -7,7 +7,7 @@ export default defineNuxtConfig({
   },
   modules: ["@nuxt/eslint", "@vueuse/nuxt", "nuxt-quasar-ui"],
   runtimeConfig: {
-    dbPath: "./data/cache.sqlite3",
+    dbPath: "./data/db.sqlite3",
     httpTimeoutMs: 90000,
     logLevel: "",
     opmlPath: "./data/feeds.opml",
