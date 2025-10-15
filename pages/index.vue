@@ -122,6 +122,16 @@
             <q-item-label>Starred</q-item-label>
           </q-item-section>
         </q-item>
+        <q-separator />
+        <q-item-label header>Page size</q-item-label>
+        <q-item>
+          <q-item-section side>
+            {{ limit }}
+          </q-item-section>
+          <q-item-section>
+            <q-slider v-model.number="limit" filled markers :min="100" :max="1000" :step="100" type="number" />
+          </q-item-section>
+        </q-item>
       </q-list>
     </q-drawer>
 
@@ -341,8 +351,6 @@ import { useQuasar } from "quasar";
 import { useRouteQuery } from "@vueuse/router";
 import { useLocalSettings } from "./local-settings";
 
-const LIMIT = 100;
-
 const $q = useQuasar();
 const itemRefs = useTemplateRef("item-list");
 const { hideEmpty } = useLocalSettings();
@@ -356,6 +364,8 @@ const rightDrawerOpen = ref(false);
 
 /** @type {Ref<"all"|"read"|"unread"|"starred">} */
 const listStatus = useRouteQuery("status", "unread");
+/** @type {Ref<number>} */
+const limit = useRouteQuery("limit", "100", { transform: Number });
 /** @type {Ref<string|undefined>} */
 const selectedCategoryId = useRouteQuery("categoryId", undefined);
 /** @type {Ref<string|undefined>} */
@@ -504,7 +514,7 @@ async function load() {
   }
   if (searchQuery.value) query.search = searchQuery.value;
   if (listStatus.value) query.status = listStatus.value;
-  query.limit = LIMIT;
+  query.limit = limit.value;
   query.offset = offset.value;
 
   loading.value = true;
@@ -516,7 +526,7 @@ async function load() {
         entryRead.value[item.entry.id] = item.entry.readAt ? "read" : "unread";
         entryStar.value[item.entry.id] = item.entry.starredAt ? "starred" : "unstarred";
       }
-      if (newItems.length < LIMIT) hasMore.value = false;
+      if (newItems.length < limit.value) hasMore.value = false;
     }
   } catch (err) {
     $q.notify({
@@ -558,7 +568,7 @@ async function onLoad(_index, done) {
     if (done) done(true);
     return;
   }
-  offset.value += LIMIT;
+  offset.value += limit.value;
   await load();
   if (done) done();
 }
@@ -640,7 +650,7 @@ async function resetThenLoad(done) {
   await load();
   if (done) done();
 }
-watch([listStatus, selectedCategoryId, selectedFeedId, searchQuery], () => {
+watch([limit, listStatus, selectedCategoryId, selectedFeedId, searchQuery], () => {
   resetThenLoad();
 });
 
