@@ -56,10 +56,9 @@
                   clickable
                   @click="() => $router.push({ path: '/', query: { feedId: feed.id } })"
                 >
-                  <q-item-section avatar>
-                    <q-avatar v-if="imageExists(feed.id)" square size="sm">
-                      <!-- prettier-ignore -->
-                      <img :src="`/api/images/${buildFeedImageKey(feed.id)}`">
+                  <q-item-section side>
+                    <q-avatar v-if="imageExists(feed.id)" square size="xs">
+                      <q-img :src="`/api/images/${buildFeedImageKey(feed.id)}`" />
                     </q-avatar>
                     <q-icon v-else name="rss_feed" />
                   </q-item-section>
@@ -214,7 +213,6 @@
                   <q-item-section side>
                     <q-checkbox
                       v-model="entryRead[item.entry.id]"
-                      color="grey-6"
                       true-value="read"
                       false-value="unread"
                       checked-icon="drafts"
@@ -223,21 +221,21 @@
                       @click="toggleReadEntry(item.entry.id, index)"
                     />
                   </q-item-section>
-                  <q-item-section side>
-                    <q-avatar square size="sm">
-                      <!-- prettier-ignore -->
-                      <img v-if="imageExists(item.feed.id)" :src="`/api/images/${buildFeedImageKey(item.feed.id)}`">
-                      <q-icon v-else size="sm" name="rss_feed" />
-                    </q-avatar>
-                  </q-item-section>
                   <q-item-section>
                     <q-item-label lines="3">
                       <MarkedText :keyword="searchQuery" :text="item.entry.title" />
                     </q-item-label>
-                    <q-item-label caption lines="2"
-                      >{{ item.feed.category.name }} &middot; {{ item.feed.title }} &middot;
-                      <ClientAgo :datetime="item.entry.date"
-                    /></q-item-label>
+                    <q-item-label caption lines="2">
+                      <q-img
+                        v-if="imageExists(item.feed.id)"
+                        width=".75rem"
+                        class="q-mr-sm"
+                        height=".75rem"
+                        :src="`/api/images/${buildFeedImageKey(item.feed.id)}`"
+                      />
+                      {{ item.feed.category.name }} &middot; {{ item.feed.title }} &middot;
+                      <ClientAgo :datetime="item.entry.date" />
+                    </q-item-label>
                   </q-item-section>
                 </template>
 

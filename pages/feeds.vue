@@ -75,8 +75,7 @@
                     <template #header>
                       <q-item-section side>
                         <q-avatar v-if="imageExists(feed.id)" square size="xs">
-                          <!-- prettier-ignore -->
-                          <img alt="Feed Image" :src="`/api/images/${buildFeedImageKey(feed.id)}`">
+                          <q-img alt="Feed Image" :src="`/api/images/${buildFeedImageKey(feed.id)}`" />
                         </q-avatar>
                         <q-icon v-else name="rss_feed" class="feed-image" />
                       </q-item-section>
