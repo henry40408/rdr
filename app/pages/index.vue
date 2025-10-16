@@ -652,6 +652,7 @@ async function markAllAsRead(olderThan) {
     message: olderThan
       ? `Are you sure you want to mark all entries older than ${olderThan} as read?`
       : "Are you sure you want to mark all entries as read?",
+    ok: { color: "negative" },
     cancel: true,
     persistent: true,
   }).onOk(async () => {
