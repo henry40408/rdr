@@ -67,7 +67,7 @@
                     <q-avatar v-if="imageExists(feed.id)" square size="xs">
                       <q-img :src="`/api/images/${buildFeedImageKey(feed.id)}`" />
                     </q-avatar>
-                    <q-icon v-else name="rss_feed" />
+                    <q-icon v-else size="xs" name="rss_feed" />
                   </q-item-section>
                   <q-item-section>
                     <q-item-label lines="1">{{ feed.title }}</q-item-label>
@@ -220,8 +220,12 @@
             </q-item-section>
             <q-item-section side>
               <div>
-                <q-btn flat round icon="refresh" @click="resetThenLoad()" />
-                <q-btn flat round icon="done_all" @click="markAllAsRead()" />
+                <q-btn flat round icon="refresh" @click="resetThenLoad()">
+                  <q-tooltip self="center right" anchor="center left">Refresh</q-tooltip>
+                </q-btn>
+                <q-btn flat round icon="done_all" @click="markAllAsRead()">
+                  <q-tooltip self="center right" anchor="center left">Mark all as read</q-tooltip>
+                </q-btn>
               </div>
             </q-item-section>
           </q-item>
