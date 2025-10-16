@@ -185,47 +185,65 @@
                     <span v-else>All</span>
                   </div>
                   <q-badge>{{ countData ? countData.count : "..." }}</q-badge>
-                  <div>
-                    <q-chip
-                      v-if="selectedCategoryId"
-                      outline
-                      removable
-                      icon="category"
-                      color="secondary"
-                      @remove="selectedCategoryId = undefined"
-                      >Category: {{ getFilteredCategoryName() }}</q-chip
-                    >
-                    <q-chip
-                      v-if="selectedFeedId"
-                      outline
-                      removable
-                      color="primary"
-                      icon="rss_feed"
-                      @remove="selectedFeedId = undefined"
-                      >Feed: {{ getFilteredFeedTitle() }}</q-chip
-                    >
-                    <q-chip
-                      v-if="searchQuery"
-                      outline
-                      removable
-                      icon="search"
-                      color="accent"
-                      @remove="searchQuery = ''"
-                    >
-                      Search: {{ searchQuery }}
-                    </q-chip>
-                  </div>
                 </div>
               </q-item-label>
             </q-item-section>
             <q-item-section side>
               <div>
-                <q-btn flat round icon="refresh" @click="resetThenLoad()">
+                <q-btn flat icon="refresh" @click="resetThenLoad()">
                   <q-tooltip self="center right" anchor="center left">Refresh</q-tooltip>
                 </q-btn>
-                <q-btn flat round icon="done_all" @click="markAllAsRead()">
-                  <q-tooltip self="center right" anchor="center left">Mark all as read</q-tooltip>
-                </q-btn>
+                <q-btn-dropdown flat split icon="done_all" @click="markAllAsRead()">
+                  <q-list>
+                    <q-item clickable @click="markAllAsRead('day')">
+                      <q-item-section>
+                        <q-item-label>Older than 1 day</q-item-label>
+                      </q-item-section>
+                    </q-item>
+                    <q-item clickable @click="markAllAsRead('week')">
+                      <q-item-section>
+                        <q-item-label>Older than 1 week</q-item-label>
+                      </q-item-section>
+                    </q-item>
+                    <q-item clickable @click="markAllAsRead('month')">
+                      <q-item-section>
+                        <q-item-label>Older than 1 month</q-item-label>
+                      </q-item-section>
+                    </q-item>
+                    <q-item clickable @click="markAllAsRead('year')">
+                      <q-item-section>
+                        <q-item-label>Older than 1 year</q-item-label>
+                      </q-item-section>
+                    </q-item>
+                  </q-list>
+                </q-btn-dropdown>
+              </div>
+            </q-item-section>
+          </q-item>
+          <q-item v-if="!!selectedCategoryId || !!selectedFeedId || !!searchQuery">
+            <q-item-section>
+              <div>
+                <q-chip
+                  v-if="selectedCategoryId"
+                  outline
+                  removable
+                  icon="category"
+                  color="secondary"
+                  @remove="selectedCategoryId = undefined"
+                  >Category: {{ getFilteredCategoryName() }}</q-chip
+                >
+                <q-chip
+                  v-if="selectedFeedId"
+                  outline
+                  removable
+                  color="primary"
+                  icon="rss_feed"
+                  @remove="selectedFeedId = undefined"
+                  >Feed: {{ getFilteredFeedTitle() }}</q-chip
+                >
+                <q-chip v-if="searchQuery" outline removable icon="search" color="accent" @remove="searchQuery = ''">
+                  Search: {{ searchQuery }}
+                </q-chip>
               </div>
             </q-item-section>
           </q-item>
@@ -381,8 +399,9 @@
 </template>
 
 <script setup>
-import { useQuasar } from "quasar";
 import { useRouteQuery } from "@vueuse/router";
+import { add } from "date-fns";
+import { useQuasar } from "quasar";
 import { useLocalSettings } from "./local-settings";
 
 const $q = useQuasar();
@@ -624,8 +643,14 @@ function imageExists(feedId) {
   return imagePks.value?.includes(key) || false;
 }
 
-async function markAllAsRead() {
+/**
+ * @param {"day"|"week"|"month"|"year"} [olderThan]
+ */
+async function markAllAsRead(olderThan) {
+  const now = new Date();
+
   const body = {};
+  if (olderThan) body.olderThan = olderThan;
   if (selectedFeedId.value) {
     body.selectedType = "feed";
     body.selectedId = selectedFeedId.value;
@@ -636,7 +661,8 @@ async function markAllAsRead() {
   if (searchQuery.value) body.search = searchQuery.value;
   try {
     await $fetch("/api/entries/mark-as-read", { method: "POST", body });
-    for (const item of items.value) entryRead.value[item.entry.id] = "read";
+    for (const item of items.value)
+      if (shouldMarkAsRead(now, item.entry.id, olderThan)) entryRead.value[item.entry.id] = "read";
     refresh();
   } catch (err) {
     $q.notify({
@@ -702,6 +728,33 @@ watch([listDirection, listLimit, listOrder, listStatus, selectedCategoryId, sele
 function scrollToContentRef(index) {
   // @ts-expect-error: scrollIntoView exists
   itemRefs.value?.[index]?.$el.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+/**
+ * @param {Date} now
+ * @param {number} entryId
+ * @param {"day"|"week"|"month"|"year"} [olderThan]
+ */
+function shouldMarkAsRead(now, entryId, olderThan) {
+  if (entryRead.value[entryId] === "read") return true;
+  if (!olderThan) return true; // mark all as read
+
+  const item = items.value.find((i) => i.entry.id === entryId);
+  if (!item) return false;
+
+  const entryDate = new Date(item.entry.date);
+  switch (olderThan) {
+    case "day":
+      return entryDate <= add(now, { days: -1 });
+    case "week":
+      return entryDate <= add(now, { days: -7 });
+    case "month":
+      return entryDate <= add(now, { months: -1 });
+    case "year":
+      return entryDate <= add(now, { years: -1 });
+    default:
+      return false;
+  }
 }
 
 /**

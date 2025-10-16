@@ -1,6 +1,7 @@
 import z from "zod";
 
 const schema = z.object({
+  olderThan: z.enum(["day", "week", "month", "year"]).optional(),
   search: z.string().optional(),
   selectedId: z.coerce.number(),
   selectedType: z.enum(["feed", "category"]),
@@ -9,7 +10,7 @@ const schema = z.object({
 export default defineEventHandler(async (event) => {
   const { container } = useNitroApp();
 
-  const { search, selectedType, selectedId } = await readValidatedBody(event, (body) => schema.parse(body));
+  const { olderThan, search, selectedType, selectedId } = await readValidatedBody(event, (body) => schema.parse(body));
 
   /** @type {Repository} */
   const repository = container.resolve("repository");
@@ -24,7 +25,7 @@ export default defineEventHandler(async (event) => {
   } else if (selectedType === "feed" && selectedId) {
     feedIds = [selectedId];
   }
-  await repository.markEntriesAsRead({ feedIds, search });
+  await repository.markEntriesAsRead({ feedIds, olderThan, search });
 
   return {};
 });

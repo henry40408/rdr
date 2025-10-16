@@ -1,6 +1,7 @@
 import chunk from "lodash/chunk.js";
 import get from "lodash/get.js";
 import { CategoryEntity, EntryEntity, FeedEntity, JobEntity } from "./entities";
+import { add } from "date-fns";
 
 export class Repository {
   /**
@@ -349,15 +350,31 @@ export class Repository {
   /**
    * @param {object} opts
    * @param {number[]} opts.feedIds
+   * @param {"day"|"week"|"month"|"year"} [opts.olderThan]
    * @param {string} [opts.search]
    * @returns {Promise<void>}
    */
-  async markEntriesAsRead({ feedIds, search }) {
+  async markEntriesAsRead({ feedIds, olderThan, search }) {
     if (feedIds.length === 0) return;
 
-    const now = new Date().toISOString();
+    const now = new Date();
+    const nowISO = now.toISOString();
 
     const q = this.knex("entries").whereIn("feed_id", feedIds).whereNull("read_at");
+    switch (olderThan) {
+      case "day":
+        q.where("date", "<", add(now, { days: -1 }).toISOString());
+        break;
+      case "week":
+        q.where("date", "<", add(now, { days: -7 }).toISOString());
+        break;
+      case "month":
+        q.where("date", "<", add(now, { months: -1 }).toISOString());
+        break;
+      case "year":
+        q.where("date", "<", add(now, { years: -1 }).toISOString());
+        break;
+    }
     if (search) {
       const uppered = search.toUpperCase();
       q.where((builder) =>
@@ -366,7 +383,7 @@ export class Repository {
           .orWhere(this.knex.raw(`upper(description)`), "like", `%${uppered}%`),
       );
     }
-    await q.update({ read_at: now, updated_at: now });
+    await q.update({ read_at: nowISO, updated_at: nowISO });
 
     this.logger.info({ msg: "Marked entries as read", feedIds });
   }
