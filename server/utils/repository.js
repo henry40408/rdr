@@ -137,14 +137,24 @@ export class Repository {
 
   /**
    * @param {object} opts
+   * @param {"asc"|"desc"} [opts.direction="desc"]
    * @param {number[]} [opts.feedIds]
    * @param {number} [opts.limit=100]
    * @param {number} [opts.offset=0]
+   * @param {"date"} [opts.order="date"]
    * @param {string} [opts.search]
    * @param {"all"|"read"|"unread"|"starred"} [opts.status="all"]
    * @returns {Promise<EntryEntity[]>}
    */
-  async findEntries({ feedIds = [], limit = 100, offset = 0, search, status = "all" }) {
+  async findEntries({
+    direction = "desc",
+    feedIds = [],
+    limit = 100,
+    offset = 0,
+    order = "date",
+    search,
+    status = "all",
+  }) {
     let q = this.knex("entries").select([
       "id",
       "feed_id",
@@ -179,7 +189,15 @@ export class Repository {
       );
     }
 
-    const rows = await q.orderBy("date", "desc").limit(limit).offset(offset);
+    switch (order) {
+      case "date":
+        q = q.orderBy("date", direction);
+        break;
+      default:
+        q = q.orderBy("date", direction);
+    }
+
+    const rows = await q.limit(limit).offset(offset);
     return rows.map(
       (row) =>
         new EntryEntity({

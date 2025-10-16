@@ -8,9 +8,11 @@ import { z } from "zod";
  */
 
 const schema = z.object({
+  direction: z.enum(["asc", "desc"]).default("desc"),
   limit: z.coerce.number().min(1).max(1000).default(100),
   search: z.string().optional(),
   offset: z.coerce.number().min(0).default(0),
+  order: z.enum(["date"]).default("date"),
   selectedId: z.coerce.number().optional(),
   selectedType: z.enum(["category", "feed"]).optional(),
   status: z.enum(["all", "read", "unread", "starred"]).default("all"),
@@ -21,8 +23,9 @@ export default defineEventHandler(
   async (event) => {
     const { container } = useNitroApp();
 
-    const { limit, offset, search, selectedId, selectedType, status } = await getValidatedQuery(event, (query) =>
-      schema.parse(query),
+    const { direction, limit, offset, order, search, selectedId, selectedType, status } = await getValidatedQuery(
+      event,
+      (query) => schema.parse(query),
     );
 
     /** @type {Repository} */
@@ -40,9 +43,11 @@ export default defineEventHandler(
     }
 
     const entries = await repository.findEntries({
+      direction,
       feedIds,
       limit,
       offset,
+      order,
       search,
       status,
     });

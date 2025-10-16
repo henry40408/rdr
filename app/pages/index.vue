@@ -38,7 +38,14 @@
         <ClientOnly>
           <template v-for="category in categories" :key="category.id">
             <template v-if="!hideEmpty || categoryUnreadCount(category.id) > 0">
-              <q-item v-ripple clickable @click="() => $router.push({ path: '/', query: { categoryId: category.id } })">
+              <q-item
+                v-ripple
+                clickable
+                @click="
+                  selectedCategoryId = String(category.id);
+                  selectedFeedId = undefined;
+                "
+              >
                 <q-item-section>
                   <q-item-label>{{ category.name }}</q-item-label>
                 </q-item-section>
@@ -54,7 +61,7 @@
                   v-if="!hideEmpty || feedUnreadCount(feed.id) > 0"
                   v-ripple
                   clickable
-                  @click="() => $router.push({ path: '/', query: { feedId: feed.id } })"
+                  @click="selectedFeedId = String(feed.id)"
                 >
                   <q-item-section side>
                     <q-avatar v-if="imageExists(feed.id)" square size="xs">
@@ -88,8 +95,13 @@
     </q-drawer>
 
     <q-drawer v-model="rightDrawerOpen" bordered side="right" show-if-above>
-      <q-list>
-        <q-item-label header>Status</q-item-label>
+      <q-list padding>
+        <q-item>
+          <q-item-section header>
+            <q-item-label class="text-h6">Filters</q-item-label>
+            <q-item-label caption>Adjust your feed display options</q-item-label>
+          </q-item-section>
+        </q-item>
         <q-item v-ripple tag="label">
           <q-item-section top side>
             <q-radio v-model="listStatus" val="unread" />
@@ -126,10 +138,34 @@
         <q-item-label header>Page size</q-item-label>
         <q-item>
           <q-item-section side>
-            {{ limit }}
+            {{ listLimit }}
           </q-item-section>
           <q-item-section>
-            <q-slider v-model.number="limit" filled markers :min="100" :max="1000" :step="100" type="number" />
+            <q-slider v-model.number="listLimit" filled markers :min="100" :max="1000" :step="100" type="number" />
+          </q-item-section>
+        </q-item>
+        <q-separator />
+        <q-item-label header>Sort options</q-item-label>
+        <q-item>
+          <q-item-section>
+            <q-select
+              v-model="listOrder"
+              filled
+              outlined
+              map-options
+              label="Sort by"
+              :options="[{ label: 'Date', value: 'date' }]"
+            />
+          </q-item-section>
+        </q-item>
+        <q-item>
+          <q-item-section>
+            <q-radio v-model="listDirection" val="desc" label="Descending" />
+          </q-item-section>
+        </q-item>
+        <q-item>
+          <q-item-section>
+            <q-radio v-model="listDirection" val="asc" label="Ascending" />
           </q-item-section>
         </q-item>
       </q-list>
@@ -142,7 +178,7 @@
             <q-item-section header>
               <q-item-label>
                 <div class="q-gutter-sm row items-center">
-                  <div class="text-h5">
+                  <div class="text-h6">
                     <span v-if="listStatus === 'unread'">Unread</span>
                     <span v-else-if="listStatus === 'read'">Read</span>
                     <span v-else-if="listStatus === 'starred'">Starred</span>
@@ -250,7 +286,7 @@
 
                 <q-card>
                   <q-card-section>
-                    <div class="q-my-sm text-h5">
+                    <div class="q-my-sm text-h6">
                       <q-checkbox
                         v-model="entryStar[item.entry.id]"
                         checked-icon="star"
@@ -356,10 +392,14 @@ const loading = ref(false);
 const offset = ref(0);
 const rightDrawerOpen = ref(false);
 
+/** @type {Ref<"asc"|"desc">} */
+const listDirection = useRouteQuery("direction", "desc");
+/** @type {Ref<number>} */
+const listLimit = useRouteQuery("limit", "100", { transform: Number });
+/** @type {Ref<"date">} */
+const listOrder = useRouteQuery("order", "date");
 /** @type {Ref<"all"|"read"|"unread"|"starred">} */
 const listStatus = useRouteQuery("status", "unread");
-/** @type {Ref<number>} */
-const limit = useRouteQuery("limit", "100", { transform: Number });
 /** @type {Ref<string|undefined>} */
 const selectedCategoryId = useRouteQuery("categoryId", undefined);
 /** @type {Ref<string|undefined>} */
@@ -501,6 +541,9 @@ function getFilteredFeedTitle() {
 
 async function load() {
   const query = {};
+  if (listDirection.value) query.direction = listDirection.value;
+  if (listOrder.value) query.order = listOrder.value;
+  if (listStatus.value) query.status = listStatus.value;
   if (selectedFeedId.value) {
     query.selectedType = "feed";
     query.selectedId = selectedFeedId.value;
@@ -509,8 +552,7 @@ async function load() {
     query.selectedId = selectedCategoryId.value;
   }
   if (searchQuery.value) query.search = searchQuery.value;
-  if (listStatus.value) query.status = listStatus.value;
-  query.limit = limit.value;
+  query.limit = listLimit.value;
   query.offset = offset.value;
 
   loading.value = true;
@@ -522,7 +564,7 @@ async function load() {
         entryRead.value[item.entry.id] = item.entry.readAt ? "read" : "unread";
         entryStar.value[item.entry.id] = item.entry.starredAt ? "starred" : "unstarred";
       }
-      if (newItems.length < limit.value) hasMore.value = false;
+      if (newItems.length < listLimit.value) hasMore.value = false;
     }
   } catch (err) {
     $q.notify({
@@ -564,7 +606,7 @@ async function onLoad(_index, done) {
     if (done) done(true);
     return;
   }
-  offset.value += limit.value;
+  offset.value += listLimit.value;
   await load();
   if (done) done();
 }
@@ -646,7 +688,7 @@ async function resetThenLoad(done) {
 
   if (done) done();
 }
-watch([limit, listStatus, selectedCategoryId, selectedFeedId, searchQuery], () => {
+watch([listDirection, listLimit, listOrder, listStatus, selectedCategoryId, selectedFeedId, searchQuery], () => {
   resetThenLoad();
 });
 
