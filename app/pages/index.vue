@@ -134,7 +134,7 @@
             <q-item-label>Starred</q-item-label>
           </q-item-section>
         </q-item>
-        <q-separator />
+        <q-separator spaced />
         <q-item-label header>Page size</q-item-label>
         <q-item>
           <q-item-section side>
@@ -144,7 +144,7 @@
             <q-slider v-model.number="listLimit" filled markers :min="100" :max="1000" :step="100" type="number" />
           </q-item-section>
         </q-item>
-        <q-separator />
+        <q-separator spaced />
         <q-item-label header>Sort options</q-item-label>
         <q-item>
           <q-item-section>
