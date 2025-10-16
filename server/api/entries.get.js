@@ -2,13 +2,9 @@ import { z } from "zod";
 
 /**
  * @typedef EntryEntityWithFeed
+ * @property {CategoryEntity} category
  * @property {EntryEntity} entry
- * @property {object} feed
- * @property {number} feed.id
- * @property {string} feed.title
- * @property {object} feed.category
- * @property {number} feed.category.id
- * @property {string} feed.category.name
+ * @property {FeedEntity} feed
  */
 
 const schema = z.object({
@@ -55,17 +51,7 @@ export default defineEventHandler(
         const category = categories.find((c) => c.feeds.some((f) => f.id === entry.feedId));
         const feed = categories.flatMap((c) => c.feeds).find((f) => f.id === entry.feedId);
         if (!category || !feed) return undefined;
-        return {
-          entry,
-          feed: {
-            id: feed.id,
-            title: feed.title.trim(),
-            category: {
-              id: category.id,
-              name: category.name.trim(),
-            },
-          },
-        };
+        return { category, entry, feed };
       })
       .filter((e) => !!e);
   },

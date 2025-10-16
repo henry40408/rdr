@@ -242,7 +242,7 @@
                         height=".75rem"
                         :src="`/api/images/${buildFeedImageKey(item.feed.id)}`"
                       />
-                      {{ item.feed.category.name }} &middot; {{ item.feed.title }} &middot;
+                      {{ item.category.name }} &middot; {{ item.feed.title }} &middot;
                       <ClientAgo :datetime="item.entry.date" />
                     </q-item-label>
                   </q-item-section>
@@ -260,15 +260,9 @@
                         :disable="entryStar[item.entry.id] === 'starring'"
                         @click="toggleStarEntry(item.entry.id)"
                       />
-                      {{ item.entry.title }}
-                      <q-btn
-                        flat
-                        round
-                        target="_blank"
-                        icon="open_in_new"
-                        :href="item.entry.link"
-                        rel="noopener noreferrer"
-                      />
+                      <a target="_blank" :href="item.entry.link" rel="noopener noreferrer">
+                        <MarkedText :keyword="searchQuery" :text="item.entry.title" />
+                      </a>
                     </div>
                     <div class="q-my-sm">by {{ item.entry.author }}</div>
                     <div class="q-my-sm">
@@ -277,9 +271,9 @@
                         clickable
                         icon="category"
                         color="secondary"
-                        @click="selectedCategoryId = String(item.feed.category.id)"
+                        @click="selectedCategoryId = String(item.category.id)"
                       >
-                        Category: {{ item.feed.category.name }}
+                        Category: {{ item.category.name }}
                       </q-chip>
                       <q-chip
                         outline
@@ -373,7 +367,7 @@ const selectedFeedId = useRouteQuery("feedId", undefined);
 /** @type {Ref<string>} */
 const searchQuery = useRouteQuery("q", null);
 
-/** @type {Ref<import('../server/api/entries.get').EntryEntityWithFeed[]>} */
+/** @type {Ref<import('../../server/api/entries.get').EntryEntityWithFeed[]>} */
 const items = ref([]);
 
 /** @type {Ref<{ [key: string]: string }> } */

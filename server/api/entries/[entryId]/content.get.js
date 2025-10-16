@@ -36,10 +36,13 @@ export default defineEventHandler(async (event) => {
   const repository = container.resolve("repository");
 
   const content = await repository.findEntryContentById(entryId);
-  if (!content) throw createError({ statusCode: 404, message: "Entry not found" });
+  if (!content && content !== "") throw createError({ statusCode: 404, message: "Entry not found" });
+
+  const trimmed = content.trim();
+  if (trimmed === "") return { content: "" };
 
   return {
-    content: sanitizeHtml(rewriteContent(content), {
+    content: sanitizeHtml(rewriteContent(trimmed), {
       allowedAttributes,
       allowedTags,
     }),
