@@ -189,11 +189,11 @@
               </q-item-label>
             </q-item-section>
             <q-item-section side>
-              <div>
-                <q-btn flat icon="refresh" @click="resetThenLoad()">
+              <q-btn-group flat>
+                <q-btn icon="refresh" @click="resetThenLoad()">
                   <q-tooltip self="center right" anchor="center left">Refresh</q-tooltip>
                 </q-btn>
-                <q-btn-dropdown flat split icon="done_all" @click="markAllAsRead()">
+                <q-btn-dropdown split auto-close icon="done_all" @click="markAllAsRead()">
                   <q-list>
                     <q-item clickable @click="markAllAsRead('day')">
                       <q-item-section>
@@ -217,7 +217,7 @@
                     </q-item>
                   </q-list>
                 </q-btn-dropdown>
-              </div>
+              </q-btn-group>
             </q-item-section>
           </q-item>
           <q-item v-if="!!selectedCategoryId || !!selectedFeedId || !!searchQuery">
@@ -647,30 +647,44 @@ function imageExists(feedId) {
  * @param {"day"|"week"|"month"|"year"} [olderThan]
  */
 async function markAllAsRead(olderThan) {
-  const now = new Date();
+  $q.dialog({
+    title: "Mark all as read",
+    message: olderThan
+      ? `Are you sure you want to mark all entries older than ${olderThan} as read?`
+      : "Are you sure you want to mark all entries as read?",
+    cancel: true,
+    persistent: true,
+  }).onOk(async () => {
+    const now = new Date();
 
-  const body = {};
-  if (olderThan) body.olderThan = olderThan;
-  if (selectedFeedId.value) {
-    body.selectedType = "feed";
-    body.selectedId = selectedFeedId.value;
-  } else if (selectedCategoryId.value) {
-    body.selectedType = "category";
-    body.selectedId = selectedCategoryId.value;
-  }
-  if (searchQuery.value) body.search = searchQuery.value;
-  try {
-    await $fetch("/api/entries/mark-as-read", { method: "POST", body });
-    for (const item of items.value)
-      if (shouldMarkAsRead(now, item.entry.id, olderThan)) entryRead.value[item.entry.id] = "read";
-    refresh();
-  } catch (err) {
-    $q.notify({
-      type: "negative",
-      message: `Failed to mark all as read: ${err}`,
-      actions: [{ icon: "close", color: "white" }],
-    });
-  }
+    const body = {};
+    if (olderThan) body.olderThan = olderThan;
+    if (selectedFeedId.value) {
+      body.selectedType = "feed";
+      body.selectedId = selectedFeedId.value;
+    } else if (selectedCategoryId.value) {
+      body.selectedType = "category";
+      body.selectedId = selectedCategoryId.value;
+    }
+    if (searchQuery.value) body.search = searchQuery.value;
+    try {
+      const { updated } = await $fetch("/api/entries/mark-as-read", { method: "POST", body });
+      for (const item of items.value)
+        if (shouldMarkAsRead(now, item.entry.id, olderThan)) entryRead.value[item.entry.id] = "read";
+      refresh();
+      $q.notify({
+        type: "positive",
+        message: `Marked ${updated} entries as read.`,
+        actions: [{ icon: "close", color: "white" }],
+      });
+    } catch (err) {
+      $q.notify({
+        type: "negative",
+        message: `Failed to mark all as read: ${err}`,
+        actions: [{ icon: "close", color: "white" }],
+      });
+    }
+  });
 }
 
 /**
