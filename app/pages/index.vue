@@ -284,6 +284,7 @@
 
                 <q-expansion-item
                   ref="item-list"
+                  v-model="expanded[index]"
                   clickable
                   @after-show="scrollToContentRef(index)"
                   @before-show="loadContent(item.entry.id)"
@@ -408,16 +409,12 @@
           </q-infinite-scroll>
         </q-pull-to-refresh>
 
+        <q-page-sticky v-if="anyExpanded" :offset="[18, 18]" position="top-right">
+          <q-fab icon="close" padding="sm" color="primary" @click="expanded = []" />
+        </q-page-sticky>
+
         <q-page-sticky class="lt-sm" :offset="[18, 18]" position="bottom-right">
           <q-fab direction="up" color="primary" icon="keyboard_arrow_up">
-            <q-fab-action
-              external-label
-              color="secondary"
-              icon="unfold_less"
-              label="Collapse all"
-              label-position="left"
-              @click="collapseAll()"
-            />
             <q-fab-action
               external-label
               icon="refresh"
@@ -517,6 +514,9 @@ const selectedFeedId = useRouteQuery("feedId", undefined);
 /** @type {Ref<string>} */
 const searchQuery = useRouteQuery("q", null);
 
+/** @type {Ref<boolean[]>} */
+const expanded = ref([]);
+
 /** @type {Ref<import('../../server/api/entries.get').EntryEntityWithFeed[]>} */
 const items = ref([]);
 
@@ -529,6 +529,7 @@ const entryRead = ref({});
 /** @type {Ref<Record<string,"unstarred"|"starring"|"starred">>} */
 const entryStar = ref({});
 
+const anyExpanded = computed(() => expanded.value.some((v) => v));
 const countQuery = computed(() => {
   const query = {};
   if (selectedFeedId.value) {
@@ -573,19 +574,11 @@ function categoryUnreadCount(categoryId) {
   return feedIds.reduce((sum, feedId) => sum + (feedsData.value?.feeds[feedId]?.unreadCount || 0), 0);
 }
 
-function collapseAll() {
-  itemRefs.value?.forEach((ref) => {
-    // @ts-expect-error: hide exists
-    ref?.hide();
-  });
-}
-
 /**
  * @param {number} index
  */
 function collapseItem(index) {
-  // @ts-expect-error: hide exists
-  itemRefs.value?.[index]?.hide();
+  expanded.value[index] = false;
 }
 
 /**
