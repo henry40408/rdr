@@ -266,7 +266,6 @@
               <q-slide-item
                 v-for="(item, index) in items"
                 :key="item.entry.id"
-                group="entry"
                 right-color="primary"
                 left-color="secondary"
                 :class="{ 'bg-grey-3': entryRead[item.entry.id] === 'read' }"
@@ -286,6 +285,7 @@
                   ref="item-list"
                   v-model="expanded[index]"
                   clickable
+                  group="entry"
                   @after-show="scrollToContentRef(index)"
                   @before-show="loadContent(item.entry.id)"
                 >
