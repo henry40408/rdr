@@ -189,11 +189,9 @@
               </q-item-label>
             </q-item-section>
             <q-item-section side>
-              <div>
-                <q-btn flat icon="refresh" @click="resetThenLoad()">
-                  <q-tooltip self="center right" anchor="center left">Refresh</q-tooltip>
-                </q-btn>
-                <q-btn-dropdown flat split icon="done_all" @click="markAllAsRead()">
+              <q-btn-group flat class="gt-xs">
+                <q-btn icon="refresh" label="Refresh" @click="resetThenLoad()" />
+                <q-btn-dropdown split auto-close icon="done_all" label="Mark all as read" @click="markAllAsRead()">
                   <q-list>
                     <q-item clickable @click="markAllAsRead('day')">
                       <q-item-section>
@@ -217,7 +215,7 @@
                     </q-item>
                   </q-list>
                 </q-btn-dropdown>
-              </div>
+              </q-btn-group>
             </q-item-section>
           </q-item>
           <q-item v-if="!!selectedCategoryId || !!selectedFeedId || !!searchQuery">
@@ -265,126 +263,142 @@
         <q-pull-to-refresh @refresh="resetThenLoad">
           <q-infinite-scroll :offset="250" @load="onLoad">
             <q-list separator>
-              <q-expansion-item
+              <q-slide-item
                 v-for="(item, index) in items"
-                ref="item-list"
                 :key="item.entry.id"
-                clickable
                 group="entry"
+                right-color="primary"
+                left-color="secondary"
                 :class="{ 'bg-grey-3': entryRead[item.entry.id] === 'read' }"
-                @after-show="scrollToContentRef(index)"
-                @before-show="loadContent(item.entry.id)"
+                @left="({ reset }) => slideLeft(reset, item.entry.id)"
+                @right="({ reset }) => slideRight(reset, item.entry.id, index)"
               >
-                <template #header>
-                  <q-item-section side>
-                    <q-checkbox
-                      v-model="entryRead[item.entry.id]"
-                      color="grey"
-                      true-value="read"
-                      false-value="unread"
-                      checked-icon="drafts"
-                      unchecked-icon="mail"
-                      :disable="entryRead[item.entry.id] === 'toggling'"
-                      @click="toggleReadEntry(item.entry.id, index)"
-                    />
-                  </q-item-section>
-                  <q-item-section>
-                    <q-item-label lines="3">
-                      <MarkedText :keyword="searchQuery" :text="item.entry.title" />
-                    </q-item-label>
-                    <q-item-label caption lines="2">
-                      <q-img
-                        v-if="imageExists(item.feed.id)"
-                        width=".75rem"
-                        class="q-mr-sm"
-                        height=".75rem"
-                        :src="`/api/images/${buildFeedImageKey(item.feed.id)}`"
-                      />
-                      {{ item.category.name }} &middot; {{ item.feed.title }} &middot;
-                      <ClientAgo :datetime="item.entry.date" />
-                    </q-item-label>
-                  </q-item-section>
+                <template #left>
+                  <q-icon name="star" class="q-mr-sm" />
+                  {{ entryStar[item.entry.id] === "starred" ? "Unstar" : "Star" }}
+                </template>
+                <template #right>
+                  <q-icon name="done" class="q-mr-sm" />
+                  Mark as {{ entryRead[item.entry.id] === "read" ? "unread" : "read" }}
                 </template>
 
-                <q-card>
-                  <q-card-section>
-                    <div class="q-my-sm text-h6">
+                <q-expansion-item
+                  ref="item-list"
+                  clickable
+                  @after-show="scrollToContentRef(index)"
+                  @before-show="loadContent(item.entry.id)"
+                >
+                  <template #header>
+                    <q-item-section side>
                       <q-checkbox
-                        v-model="entryStar[item.entry.id]"
-                        checked-icon="star"
-                        true-value="starred"
-                        false-value="unstarred"
-                        unchecked-icon="star_border"
-                        :disable="entryStar[item.entry.id] === 'starring'"
-                        @click="toggleStarEntry(item.entry.id)"
+                        v-model="entryRead[item.entry.id]"
+                        color="grey"
+                        true-value="read"
+                        false-value="unread"
+                        checked-icon="drafts"
+                        unchecked-icon="mail"
+                        :disable="entryRead[item.entry.id] === 'toggling'"
+                        @click="toggleReadEntry(item.entry.id, index)"
                       />
-                      <a target="_blank" :href="item.entry.link" rel="noopener noreferrer">
+                    </q-item-section>
+                    <q-item-section>
+                      <q-item-label lines="3">
                         <MarkedText :keyword="searchQuery" :text="item.entry.title" />
-                      </a>
-                    </div>
-                    <div class="q-my-sm">by {{ item.entry.author }}</div>
-                    <div class="q-my-sm">
-                      <q-chip
-                        outline
-                        clickable
-                        icon="category"
-                        color="secondary"
-                        @click="selectedCategoryId = String(item.category.id)"
-                      >
-                        Category: {{ item.category.name }}
-                      </q-chip>
-                      <q-chip
-                        outline
-                        clickable
+                      </q-item-label>
+                      <q-item-label caption lines="2">
+                        <q-img
+                          v-if="imageExists(item.feed.id)"
+                          width=".75rem"
+                          class="q-mr-sm"
+                          height=".75rem"
+                          :src="`/api/images/${buildFeedImageKey(item.feed.id)}`"
+                        />
+                        {{ item.category.name }} &middot; {{ item.feed.title }} &middot;
+                        <ClientAgo :datetime="item.entry.date" />
+                      </q-item-label>
+                    </q-item-section>
+                  </template>
+
+                  <q-card>
+                    <q-card-section>
+                      <div class="q-my-sm text-h6">
+                        <q-checkbox
+                          v-model="entryStar[item.entry.id]"
+                          checked-icon="star"
+                          true-value="starred"
+                          false-value="unstarred"
+                          unchecked-icon="star_border"
+                          :disable="entryStar[item.entry.id] === 'starring'"
+                          @click="toggleStarEntry(item.entry.id)"
+                        />
+                        <a target="_blank" :href="item.entry.link" rel="noopener noreferrer">
+                          <MarkedText :keyword="searchQuery" :text="item.entry.title" />
+                        </a>
+                      </div>
+                      <div class="q-my-sm">by {{ item.entry.author }}</div>
+                      <div class="q-my-sm">
+                        <q-chip
+                          outline
+                          clickable
+                          icon="category"
+                          color="secondary"
+                          @click="selectedCategoryId = String(item.category.id)"
+                        >
+                          Category: {{ item.category.name }}
+                        </q-chip>
+                        <q-chip
+                          outline
+                          clickable
+                          color="primary"
+                          icon="rss_feed"
+                          @click="selectedFeedId = String(item.feed.id)"
+                        >
+                          Feed: {{ item.feed.title }}
+                        </q-chip>
+                        <q-chip outline color="accent" icon="calendar_today">
+                          Date: <ClientDateTime :datetime="item.entry.date" />
+                        </q-chip>
+                      </div>
+                    </q-card-section>
+                    <q-card-section>
+                      <MarkedText
+                        v-if="getContent(item.entry.id)"
+                        is-html
+                        :keyword="searchQuery"
+                        class="col entry-content"
+                        :text="getContent(item.entry.id)"
+                      />
+                    </q-card-section>
+                    <q-card-actions>
+                      <q-btn
+                        flat
+                        icon="check"
                         color="primary"
-                        icon="rss_feed"
-                        @click="selectedFeedId = String(item.feed.id)"
-                      >
-                        Feed: {{ item.feed.title }}
-                      </q-chip>
-                      <q-chip outline color="accent" icon="calendar_today">
-                        Date: <ClientDateTime :datetime="item.entry.date" />
-                      </q-chip>
-                    </div>
-                  </q-card-section>
-                  <q-card-section>
-                    <MarkedText
-                      v-if="getContent(item.entry.id)"
-                      is-html
-                      :keyword="searchQuery"
-                      class="col entry-content"
-                      :text="getContent(item.entry.id)"
-                    />
-                  </q-card-section>
-                  <q-card-actions>
-                    <q-btn
-                      flat
-                      icon="check"
-                      color="primary"
-                      label="Mark as read"
-                      @click="markAsReadAndCollapse(item.entry.id, index)"
-                    />
-                    <q-btn flat color="primary" label="Collapse" icon="unfold_less" @click="collapseItem(index)" />
-                    <q-btn
-                      v-if="!contents[downloadedKey(item.entry.id)]"
-                      flat
-                      color="primary"
-                      label="Download"
-                      icon="file_download"
-                      :loading="downloading"
-                      @click="downloadContent(item.entry.id)"
-                    />
-                    <q-btn
-                      v-else
-                      flat
-                      icon="undo"
-                      color="primary"
-                      label="See original"
-                      @click="contents[downloadedKey(item.entry.id)] = ''"
-                    />
-                  </q-card-actions>
-                </q-card>
-              </q-expansion-item>
+                        label="Mark as read"
+                        @click="markAsReadAndCollapse(item.entry.id, index)"
+                      />
+                      <q-btn flat color="primary" label="Collapse" icon="unfold_less" @click="collapseItem(index)" />
+                      <q-btn
+                        v-if="!contents[downloadedKey(item.entry.id)]"
+                        flat
+                        color="primary"
+                        label="Download"
+                        icon="file_download"
+                        :loading="downloading"
+                        @click="downloadContent(item.entry.id)"
+                      />
+                      <q-btn
+                        v-else
+                        flat
+                        icon="undo"
+                        color="primary"
+                        label="See original"
+                        @click="contents[downloadedKey(item.entry.id)] = ''"
+                      />
+                    </q-card-actions>
+                  </q-card>
+                </q-expansion-item>
+              </q-slide-item>
               <q-item v-if="!hasMore && items.length > 0">
                 <q-item-section>
                   <q-item-label class="text-center text-grey-8">End of list</q-item-label>
@@ -393,6 +407,79 @@
             </q-list>
           </q-infinite-scroll>
         </q-pull-to-refresh>
+
+        <q-page-sticky class="lt-sm" :offset="[18, 18]" position="bottom-right">
+          <q-fab direction="up" color="primary" icon="keyboard_arrow_up">
+            <q-fab-action
+              external-label
+              color="secondary"
+              icon="unfold_less"
+              label="Collapse all"
+              label-position="left"
+              @click="collapseAll()"
+            />
+            <q-fab-action
+              external-label
+              icon="refresh"
+              label="Refresh"
+              color="secondary"
+              label-position="left"
+              @click="resetThenLoad()"
+            />
+            <q-fab-action
+              external-label
+              color="secondary"
+              icon="filter_list"
+              label="Reset filters"
+              label-position="left"
+              @click="
+                selectedCategoryId = undefined;
+                selectedFeedId = undefined;
+                searchQuery = '';
+              "
+            />
+            <q-fab-action
+              color="accent"
+              external-label
+              icon="done_all"
+              label-position="left"
+              label="Mark older than a day as read"
+              @click="markAllAsRead('day')"
+            />
+            <q-fab-action
+              color="accent"
+              external-label
+              icon="done_all"
+              label-position="left"
+              label="Mark older than a week as read"
+              @click="markAllAsRead('week')"
+            />
+            <q-fab-action
+              color="accent"
+              external-label
+              icon="done_all"
+              label-position="left"
+              label="Mark older than a month as read"
+              @click="markAllAsRead('month')"
+            />
+            <q-fab-action
+              color="accent"
+              external-label
+              icon="done_all"
+              label-position="left"
+              label="Mark older than a year as read"
+              @click="markAllAsRead('year')"
+            />
+            <q-fab-action
+              color="accent"
+              external-label
+              icon="done_all"
+              label-position="left"
+              label="Mark all as read"
+              @click="markAllAsRead()"
+            />
+          </q-fab>
+        </q-page-sticky>
       </q-page>
     </q-page-container>
   </q-layout>
@@ -486,6 +573,21 @@ function categoryUnreadCount(categoryId) {
   return feedIds.reduce((sum, feedId) => sum + (feedsData.value?.feeds[feedId]?.unreadCount || 0), 0);
 }
 
+function collapseAll() {
+  itemRefs.value?.forEach((ref) => {
+    // @ts-expect-error: hide exists
+    ref?.hide();
+  });
+}
+
+/**
+ * @param {number} index
+ */
+function collapseItem(index) {
+  // @ts-expect-error: hide exists
+  itemRefs.value?.[index]?.hide();
+}
+
 /**
  * @param {number} entryId
  * @returns {string}
@@ -529,14 +631,6 @@ async function downloadContent(entryId) {
  */
 function getContent(entryId) {
   return contents.value[downloadedKey(entryId)] || contents.value[contentKey(entryId)] || "";
-}
-
-/**
- * @param {number} index
- */
-function collapseItem(index) {
-  // @ts-expect-error: hide exists
-  itemRefs.value?.[index]?.hide();
 }
 
 /**
@@ -647,30 +741,45 @@ function imageExists(feedId) {
  * @param {"day"|"week"|"month"|"year"} [olderThan]
  */
 async function markAllAsRead(olderThan) {
-  const now = new Date();
+  $q.dialog({
+    title: "Mark all as read",
+    message: olderThan
+      ? `Are you sure you want to mark all entries older than ${olderThan} as read?`
+      : "Are you sure you want to mark all entries as read?",
+    ok: { color: "negative" },
+    cancel: true,
+    persistent: true,
+  }).onOk(async () => {
+    const now = new Date();
 
-  const body = {};
-  if (olderThan) body.olderThan = olderThan;
-  if (selectedFeedId.value) {
-    body.selectedType = "feed";
-    body.selectedId = selectedFeedId.value;
-  } else if (selectedCategoryId.value) {
-    body.selectedType = "category";
-    body.selectedId = selectedCategoryId.value;
-  }
-  if (searchQuery.value) body.search = searchQuery.value;
-  try {
-    await $fetch("/api/entries/mark-as-read", { method: "POST", body });
-    for (const item of items.value)
-      if (shouldMarkAsRead(now, item.entry.id, olderThan)) entryRead.value[item.entry.id] = "read";
-    refresh();
-  } catch (err) {
-    $q.notify({
-      type: "negative",
-      message: `Failed to mark all as read: ${err}`,
-      actions: [{ icon: "close", color: "white" }],
-    });
-  }
+    const body = {};
+    if (olderThan) body.olderThan = olderThan;
+    if (selectedFeedId.value) {
+      body.selectedType = "feed";
+      body.selectedId = selectedFeedId.value;
+    } else if (selectedCategoryId.value) {
+      body.selectedType = "category";
+      body.selectedId = selectedCategoryId.value;
+    }
+    if (searchQuery.value) body.search = searchQuery.value;
+    try {
+      const { updated } = await $fetch("/api/entries/mark-as-read", { method: "POST", body });
+      for (const item of items.value)
+        if (shouldMarkAsRead(now, item.entry.id, olderThan)) entryRead.value[item.entry.id] = "read";
+      refresh();
+      $q.notify({
+        type: "positive",
+        message: `Marked ${updated} entries as read.`,
+        actions: [{ icon: "close", color: "white" }],
+      });
+    } catch (err) {
+      $q.notify({
+        type: "negative",
+        message: `Failed to mark all as read: ${err}`,
+        actions: [{ icon: "close", color: "white" }],
+      });
+    }
+  });
 }
 
 /**
@@ -755,6 +864,33 @@ function shouldMarkAsRead(now, entryId, olderThan) {
     default:
       return false;
   }
+}
+
+/**
+ * @param {() => void} reset
+ * @param {number} entryId
+ */
+function slideLeft(reset, entryId) {
+  // toggleStarEntry doesn't change state for checkbox,
+  // so we set it to "starred" here
+  entryStar.value[entryId] = entryStar.value[entryId] === "unstarred" ? "starred" : "unstarred";
+
+  toggleStarEntry(entryId);
+  reset();
+}
+
+/**
+ * @param {() => void} reset
+ * @param {number} entryId
+ * @param {number} index
+ */
+function slideRight(reset, entryId, index) {
+  // toggleReadEntry doesn't change state for checkbox,
+  // so we set it to "read" here
+  entryRead.value[entryId] = entryRead.value[entryId] === "unread" ? "read" : "unread";
+
+  toggleReadEntry(entryId, index);
+  reset();
 }
 
 /**

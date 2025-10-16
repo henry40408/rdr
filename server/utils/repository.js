@@ -349,18 +349,17 @@ export class Repository {
 
   /**
    * @param {object} opts
-   * @param {number[]} opts.feedIds
+   * @param {number[]} [opts.feedIds]
    * @param {"day"|"week"|"month"|"year"} [opts.olderThan]
    * @param {string} [opts.search]
-   * @returns {Promise<void>}
+   * @returns {Promise<number>}
    */
   async markEntriesAsRead({ feedIds, olderThan, search }) {
-    if (feedIds.length === 0) return;
-
     const now = new Date();
     const nowISO = now.toISOString();
 
-    const q = this.knex("entries").whereIn("feed_id", feedIds).whereNull("read_at");
+    const q = this.knex("entries").whereNull("read_at");
+    if (feedIds && feedIds.length > 0) q.whereIn("feed_id", feedIds);
     switch (olderThan) {
       case "day":
         q.where("date", "<", add(now, { days: -1 }).toISOString());
@@ -383,9 +382,11 @@ export class Repository {
           .orWhere(this.knex.raw(`upper(description)`), "like", `%${uppered}%`),
       );
     }
-    await q.update({ read_at: nowISO, updated_at: nowISO });
 
-    this.logger.info({ msg: "Marked entries as read", feedIds });
+    const updated = await q.update({ read_at: nowISO, updated_at: nowISO });
+    this.logger.info({ msg: "Marked entries as read", updated });
+
+    return updated;
   }
 
   /**

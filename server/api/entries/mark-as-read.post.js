@@ -3,8 +3,8 @@ import z from "zod";
 const schema = z.object({
   olderThan: z.enum(["day", "week", "month", "year"]).optional(),
   search: z.string().optional(),
-  selectedId: z.coerce.number(),
-  selectedType: z.enum(["feed", "category"]),
+  selectedId: z.coerce.number().optional(),
+  selectedType: z.enum(["feed", "category"]).optional(),
 });
 
 export default defineEventHandler(async (event) => {
@@ -25,7 +25,7 @@ export default defineEventHandler(async (event) => {
   } else if (selectedType === "feed" && selectedId) {
     feedIds = [selectedId];
   }
-  await repository.markEntriesAsRead({ feedIds, olderThan, search });
 
-  return {};
+  const updated = await repository.markEntriesAsRead({ feedIds, olderThan, search });
+  return { updated };
 });
