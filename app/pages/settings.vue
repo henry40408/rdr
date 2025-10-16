@@ -22,19 +22,23 @@
             </q-item-section>
           </q-item>
           <q-item>
-            <q-file v-model="uploadedFile" label="Upload OPML">
-              <template #prepend>
-                <q-icon name="attach_file" />
-              </template>
-            </q-file>
-            <q-btn
-              size="sm"
-              label="Import"
-              class="q-ml-sm"
-              color="primary"
-              :disabled="!uploadedFile"
-              @click="importOPML"
-            />
+            <q-item-section>
+              <q-file v-model="uploadedFile" label="Upload OPML">
+                <template #prepend>
+                  <q-icon name="attach_file" />
+                </template>
+              </q-file>
+            </q-item-section>
+            <q-item-section side>
+              <q-btn
+                size="sm"
+                label="Import"
+                class="q-ml-sm"
+                color="primary"
+                :disabled="!uploadedFile"
+                @click="importOPML"
+              />
+            </q-item-section>
           </q-item>
           <q-item href="/api/opml">
             <q-item-section>
