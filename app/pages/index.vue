@@ -189,11 +189,9 @@
               </q-item-label>
             </q-item-section>
             <q-item-section side>
-              <q-btn-group flat>
-                <q-btn icon="refresh" @click="resetThenLoad()">
-                  <q-tooltip self="center right" anchor="center left">Refresh</q-tooltip>
-                </q-btn>
-                <q-btn-dropdown split auto-close icon="done_all" @click="markAllAsRead()">
+              <q-btn-group flat class="gt-xs">
+                <q-btn icon="refresh" label="Refresh" @click="resetThenLoad()" />
+                <q-btn-dropdown split auto-close icon="done_all" label="Mark all as read" @click="markAllAsRead()">
                   <q-list>
                     <q-item clickable @click="markAllAsRead('day')">
                       <q-item-section>
@@ -393,6 +391,27 @@
             </q-list>
           </q-infinite-scroll>
         </q-pull-to-refresh>
+
+        <q-page-sticky class="lt-sm" :offset="[18, 18]" position="bottom-right">
+          <q-fab direction="up" color="primary" icon="keyboard_arrow_up">
+            <q-fab-action
+              external-label
+              icon="refresh"
+              label="Refresh"
+              color="secondary"
+              label-position="left"
+              @click="resetThenLoad()"
+            />
+            <q-fab-action
+              external-label
+              icon="done_all"
+              color="secondary"
+              label-position="left"
+              label="Mark all as read"
+              @click="markAllAsRead()"
+            />
+          </q-fab>
+        </q-page-sticky>
       </q-page>
     </q-page-container>
   </q-layout>
