@@ -399,14 +399,16 @@ const countQuery = computed(() => {
   return query;
 });
 
-const { data, refresh } = await useAsyncData("initial", async () => ({
-  categories: await $fetch("/api/categories"),
-  count: await $fetch("/api/count", { query: countQuery.value }),
-  imagePks: await $fetch("/api/images/primary-keys"),
-  feedsData: await $fetch("/api/feeds/data"),
-}));
-const categories = computed(() => data.value?.categories || []);
-const countData = computed(() => data.value?.count || { count: 0 });
+const { data, refresh } = await useAsyncData("initial", async () =>
+  Promise.all([
+    $fetch("/api/categories"),
+    $fetch("/api/count", { query: countQuery.value }),
+    $fetch("/api/images/primary-keys"),
+    $fetch("/api/feeds/data"),
+  ]),
+);
+const categories = computed(() => data.value?.[0] || []);
+const countData = computed(() => data.value?.[1] || { count: 0 });
 useHead(() => ({
   title: selectedFeedId.value
     ? `(${countData.value?.count || 0}) Feed: ${getFilteredFeedTitle()} - rdr`
@@ -414,8 +416,8 @@ useHead(() => ({
       ? `(${countData.value?.count || 0}) Category: ${getFilteredCategoryName()} - rdr`
       : `(${countData.value?.count || 0}) rdr`,
 }));
-const feedsData = computed(() => data.value?.feedsData || null);
-const imagePks = computed(() => data.value?.imagePks || []);
+const feedsData = computed(() => data.value?.[3] || null);
+const imagePks = computed(() => data.value?.[2] || []);
 
 /**
  * @param {number} categoryId
