@@ -811,6 +811,7 @@ async function markAsReadAndCollapse(entryId, index) {
  */
 async function resetThenLoad(done) {
   contents.value = {};
+  expanded.value = [];
   hasMore.value = true;
   items.value = [];
   offset.value = 0;
