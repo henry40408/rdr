@@ -301,7 +301,7 @@
                       <MarkedText
                         :keyword="searchQuery"
                         :text="item.entry.title"
-                        :class="isDark ? 'text-white' : 'text-primary'"
+                        :class="{ 'text-dark': !isDark, 'text-white': isDark }"
                       />
                     </q-item-label>
                     <q-item-label caption lines="2">
