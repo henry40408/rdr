@@ -289,6 +289,7 @@
                   v-model="expanded[index]"
                   clickable
                   group="entry"
+                  @after-hide="scrollToContentRef(index)"
                   @after-show="scrollToContentRef(index)"
                   @before-show="loadContent(item.entry.id)"
                 >
@@ -381,14 +382,20 @@
                         label="Mark as read"
                         @click="markAsReadAndCollapse(item.entry.id, index)"
                       />
-                      <q-btn flat color="primary" label="Collapse" icon="unfold_less" @click="collapseItem(index)" />
                       <q-btn
-                        v-if="!contents[downloadedKey(item.entry.id)]"
+                        flat
+                        color="primary"
+                        label="Collapse"
+                        icon="unfold_less"
+                        @click="expanded[index] = false"
+                      />
+                      <q-btn
+                        v-if="!downloadedContents[item.entry.id]"
                         flat
                         color="primary"
                         label="Download"
                         icon="file_download"
-                        :loading="downloading"
+                        :loading="downloading[item.entry.id]"
                         @click="downloadContent(item.entry.id)"
                       />
                       <q-btn
@@ -397,7 +404,7 @@
                         icon="undo"
                         color="primary"
                         label="See original"
-                        @click="contents[downloadedKey(item.entry.id)] = ''"
+                        @click="downloadedContents[item.entry.id] = ''"
                       />
                     </q-card-actions>
                   </q-card>
@@ -413,7 +420,7 @@
         </q-pull-to-refresh>
 
         <q-page-sticky v-if="anyExpanded" :offset="[18, 18]" position="top-right">
-          <q-fab icon="close" padding="sm" color="primary" @click="expanded = []" />
+          <q-fab icon="close" padding="sm" color="secondary" @click="expanded = []" />
         </q-page-sticky>
 
         <q-page-sticky class="lt-sm" :offset="[18, 18]" position="bottom-right">
@@ -495,8 +502,21 @@ const $q = useQuasar();
 const itemRefs = useTemplateRef("item-list");
 const { hideEmpty } = useLocalSettings();
 
-const downloading = ref(false);
+/** @type {Ref<{ [key: string]: string }> } */
+const contents = ref({});
+/** @type {Ref<{ [key: string]: string }> } */
+const downloadedContents = ref({});
+/** @type {Ref<Record<string,boolean>>} */
+const downloading = ref({});
+/** @type {Ref<Record<string,"read"|"toggling"|"unread">>} */
+const entryRead = ref({});
+/** @type {Ref<Record<string,"unstarred"|"starring"|"starred">>} */
+const entryStar = ref({});
+/** @type {Ref<boolean[]>} */
+const expanded = ref([]);
 const hasMore = ref(true);
+/** @type {Ref<import('../../server/api/entries.get').EntryEntityWithFeed[]>} */
+const items = ref([]);
 const leftDrawerOpen = ref(false);
 const loading = ref(false);
 const offset = ref(0);
@@ -516,21 +536,6 @@ const selectedCategoryId = useRouteQuery("categoryId", undefined);
 const selectedFeedId = useRouteQuery("feedId", undefined);
 /** @type {Ref<string>} */
 const searchQuery = useRouteQuery("q", null);
-
-/** @type {Ref<boolean[]>} */
-const expanded = ref([]);
-
-/** @type {Ref<import('../../server/api/entries.get').EntryEntityWithFeed[]>} */
-const items = ref([]);
-
-/** @type {Ref<{ [key: string]: string }> } */
-const contents = ref({});
-
-/** @type {Ref<Record<string,"read"|"toggling"|"unread">>} */
-const entryRead = ref({});
-
-/** @type {Ref<Record<string,"unstarred"|"starring"|"starred">>} */
-const entryStar = ref({});
 
 const anyExpanded = computed(() => expanded.value.some((v) => v));
 const countQuery = computed(() => {
@@ -578,38 +583,14 @@ function categoryUnreadCount(categoryId) {
 }
 
 /**
- * @param {number} index
- */
-function collapseItem(index) {
-  expanded.value[index] = false;
-}
-
-/**
- * @param {number} entryId
- * @returns {string}
- */
-function contentKey(entryId) {
-  return `content:${entryId}`;
-}
-
-/**
- * @param {number} entryId
- * @returns {string}
- */
-function downloadedKey(entryId) {
-  return `downloaded:${entryId}`;
-}
-
-/**
  * @param {number} entryId
  */
 async function downloadContent(entryId) {
-  const key = downloadedKey(entryId);
   try {
-    if (contents.value[key]) return;
-    downloading.value = true;
+    if (downloadedContents.value[entryId]) return;
+    downloading.value[entryId] = true;
     const parsed = await $fetch(`/api/entries/${entryId}/download`);
-    if (parsed && parsed.content) contents.value[key] = parsed.content;
+    if (parsed && parsed.content) downloadedContents.value[entryId] = parsed.content;
   } catch (err) {
     $q.notify({
       type: "negative",
@@ -617,7 +598,7 @@ async function downloadContent(entryId) {
       actions: [{ icon: "close", color: "white" }],
     });
   } finally {
-    downloading.value = false;
+    downloading.value[entryId] = false;
   }
 }
 
@@ -626,7 +607,7 @@ async function downloadContent(entryId) {
  * @returns {string}
  */
 function getContent(entryId) {
-  return contents.value[downloadedKey(entryId)] || contents.value[contentKey(entryId)] || "";
+  return downloadedContents.value[entryId] || contents.value[entryId] || "";
 }
 
 /**
@@ -696,11 +677,10 @@ await load();
  * @param {number} entryId
  */
 async function loadContent(entryId) {
-  const key = contentKey(entryId);
   try {
-    if (contents.value[key]) return contents.value[key];
+    if (contents.value[entryId]) return;
     const { content } = await $fetch(`/api/entries/${entryId}/content`);
-    contents.value[key] = content;
+    contents.value[entryId] = content;
   } catch (err) {
     $q.notify({
       type: "negative",
@@ -805,8 +785,7 @@ async function markAsRead(entryId) {
  */
 async function markAsReadAndCollapse(entryId, index) {
   await markAsRead(entryId);
-  collapseItem(index);
-  scrollToContentRef(index);
+  expanded.value[index] = false;
 }
 
 /**
@@ -814,6 +793,7 @@ async function markAsReadAndCollapse(entryId, index) {
  */
 async function resetThenLoad(done) {
   contents.value = {};
+  downloadedContents.value = {};
   expanded.value = [];
   hasMore.value = true;
   items.value = [];
@@ -912,7 +892,7 @@ async function toggleReadEntry(entryId, index) {
     });
   } finally {
     entryRead.value[entryId] = value;
-    if (value === "read") collapseItem(index);
+    if (value === "read") expanded.value[index] = false;
   }
 }
 
