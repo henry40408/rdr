@@ -144,7 +144,7 @@
             {{ listLimit }}
           </q-item-section>
           <q-item-section>
-            <q-slider v-model.number="listLimit" filled markers :min="100" :max="1000" :step="100" type="number" />
+            <q-slider v-model.number="listLimit" filled markers :min="30" :max="300" :step="30" type="number" />
           </q-item-section>
         </q-item>
         <q-separator spaced />
@@ -280,7 +280,6 @@
                 v-model="expanded[index]"
                 group="entry"
                 :class="{ 'bg-grey-3': !isDark && isRead(item.entry.id), 'bg-grey-9': isDark && isRead(item.entry.id) }"
-                @after-hide="scrollToContentRef(index)"
                 @after-show="scrollToContentRef(index)"
                 @before-show="loadContent(item.entry.id)"
               >
@@ -332,7 +331,7 @@
                         target="_blank"
                         :href="item.entry.link"
                         rel="noopener noreferrer"
-                        :class="{ 'text-white': isDark, 'text-black': !isDark }"
+                        :class="{ 'text-white': isDark, 'text-primary': !isDark }"
                       >
                         <MarkedText :keyword="searchQuery" :text="item.entry.title" />
                       </a>
@@ -376,17 +375,23 @@
                     <q-btn
                       flat
                       icon="check"
-                      color="primary"
                       label="Mark as read"
+                      :color="isDark ? 'white' : 'primary'"
                       @click="markAsReadAndCollapse(item.entry.id, index)"
                     />
-                    <q-btn flat color="primary" label="Collapse" icon="unfold_less" @click="expanded[index] = false" />
+                    <q-btn
+                      flat
+                      label="Collapse"
+                      icon="unfold_less"
+                      :color="isDark ? 'white' : 'primary'"
+                      @click="expanded[index] = false"
+                    />
                     <q-btn
                       v-if="!downloadedContents[item.entry.id]"
                       flat
-                      color="primary"
                       label="Download"
                       icon="file_download"
+                      :color="isDark ? 'white' : 'primary'"
                       :loading="downloading[item.entry.id]"
                       @click="downloadContent(item.entry.id)"
                     />
@@ -394,8 +399,8 @@
                       v-else
                       flat
                       icon="undo"
-                      color="primary"
                       label="See original"
+                      :color="isDark ? 'white' : 'primary'"
                       @click="downloadedContents[item.entry.id] = ''"
                     />
                   </q-card-actions>
@@ -419,8 +424,8 @@
               :icon="isOpenEntryStarred() ? 'star' : 'star_border'"
               @click="toggleStarOpenEntry()"
             />
-            <q-btn fab icon="done" padding="sm" color="secondary" @click="markOpenAsReadAndCollapse()" />
             <q-btn fab icon="close" padding="sm" color="primary" @click="expanded = []" />
+            <q-btn fab icon="done" padding="sm" color="secondary" @click="markOpenAsReadAndCollapse()" />
           </div>
         </q-page-sticky>
 
@@ -501,7 +506,7 @@ const rightDrawerOpen = ref(false);
 /** @type {Ref<"asc"|"desc">} */
 const listDirection = useRouteQuery("direction", "desc");
 /** @type {Ref<number>} */
-const listLimit = useRouteQuery("limit", "100", { transform: Number });
+const listLimit = useRouteQuery("limit", "30", { transform: Number });
 /** @type {Ref<"date">} */
 const listOrder = useRouteQuery("order", "date");
 /** @type {Ref<"all"|"read"|"unread"|"starred">} */
@@ -763,13 +768,13 @@ function markAllAsReadDialog() {
     message: "Are you sure you want to mark all entries as read?",
     options: {
       type: "radio",
-      model: "day",
+      model: "all",
       items: [
+        { label: "All entries", value: "all" },
         { label: "Older than 1 day", value: "day" },
         { label: "Older than 1 week", value: "week" },
         { label: "Older than 1 month", value: "month" },
         { label: "Older than 1 year", value: "year" },
-        { label: "All entries", value: "all" },
       ],
     },
     ok: { color: "negative" },
@@ -940,6 +945,10 @@ async function toggleStarOpenEntry() {
 </script>
 
 <style>
+.body--dark .entry-content a {
+  color: white;
+}
+
 .entry-content img {
   max-width: 100%;
   height: auto;
