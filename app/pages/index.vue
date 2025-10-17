@@ -298,7 +298,11 @@
                   </q-item-section>
                   <q-item-section>
                     <q-item-label lines="3">
-                      <MarkedText :keyword="searchQuery" :text="item.entry.title" />
+                      <MarkedText
+                        :keyword="searchQuery"
+                        :text="item.entry.title"
+                        :class="isDark ? 'text-white' : 'text-primary'"
+                      />
                     </q-item-label>
                     <q-item-label caption lines="2">
                       <q-img
