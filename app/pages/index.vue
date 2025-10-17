@@ -50,9 +50,9 @@
                   <q-item-label>{{ category.name }}</q-item-label>
                 </q-item-section>
                 <q-item-section side>
-                  <q-badge color="primary" :outline="!categoryUnreadCount(category.id)">{{
-                    categoryUnreadCount(category.id)
-                  }}</q-badge>
+                  <q-badge color="primary" :outline="!categoryUnreadCount(category.id)">
+                    {{ categoryUnreadCount(category.id) }}
+                  </q-badge>
                 </q-item-section>
               </q-item>
               <q-separator />
@@ -66,7 +66,7 @@
                     selectedFeedId = String(feed.id);
                   "
                 >
-                  <q-item-section side>
+                  <q-item-section avatar>
                     <q-avatar v-if="imageExists(feed.id)" square>
                       <q-img :src="`/api/images/${buildFeedImageKey(feed.id)}`" />
                     </q-avatar>
@@ -76,9 +76,9 @@
                     <q-item-label lines="1">{{ feed.title }}</q-item-label>
                   </q-item-section>
                   <q-item-section side>
-                    <q-badge color="primary" :outline="!feedUnreadCount(feed.id)">{{
-                      feedUnreadCount(feed.id)
-                    }}</q-badge>
+                    <q-badge color="primary" :outline="!feedUnreadCount(feed.id)">
+                      {{ feedUnreadCount(feed.id) }}
+                    </q-badge>
                   </q-item-section>
                 </q-item>
               </template>
