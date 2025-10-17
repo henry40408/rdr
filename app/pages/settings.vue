@@ -81,6 +81,13 @@ import { millisecondsToSeconds } from "date-fns";
 import { useQuasar } from "quasar";
 
 const $q = useQuasar();
+const isDark = useDark();
+onMounted(() => {
+  $q.dark.set(isDark.value);
+});
+watch(isDark, (val) => {
+  $q.dark.set(val);
+});
 
 const triggeringJobs = ref(new Set());
 const uploadedFile = ref(null);

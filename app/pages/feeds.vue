@@ -152,6 +152,10 @@ const isDark = useDark();
 onMounted(() => {
   $q.dark.set(isDark.value);
 });
+watch(isDark, (val) => {
+  $q.dark.set(val);
+});
+
 const { hideEmpty } = useLocalSettings();
 
 /** @type {Ref<Set<number>>} */

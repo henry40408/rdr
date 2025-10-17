@@ -278,7 +278,7 @@
                 :key="item.entry.id"
                 right-color="primary"
                 left-color="secondary"
-                :class="{ 'bg-grey-3': entryRead[item.entry.id] === 'read' }"
+                :class="{ 'bg-grey-3': !isDark && isRead(item.entry.id), 'bg-grey-9': isDark && isRead(item.entry.id) }"
                 @left="({ reset }) => slideLeft(reset, item.entry.id)"
                 @right="({ reset }) => slideRight(reset, item.entry.id, index)"
               >
@@ -515,6 +515,9 @@ const isDark = useDark();
 onMounted(() => {
   $q.dark.set(isDark.value);
 });
+watch(isDark, (val) => {
+  $q.dark.set(val);
+});
 
 const itemRefs = useTemplateRef("item-list");
 const { hideEmpty } = useLocalSettings();
@@ -728,6 +731,14 @@ async function onLoad(_index, done) {
 function imageExists(feedId) {
   const key = buildFeedImageKey(feedId);
   return imagePks.value?.includes(key) || false;
+}
+
+/**
+ * @param {number} entryId
+ * @returns {boolean}
+ */
+function isRead(entryId) {
+  return entryRead.value[entryId] === "read";
 }
 
 /**
