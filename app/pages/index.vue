@@ -273,156 +273,134 @@
         <q-pull-to-refresh @refresh="resetThenLoad">
           <q-infinite-scroll :offset="250" @load="onLoad">
             <q-list separator>
-              <q-slide-item
+              <q-expansion-item
                 v-for="(item, index) in items"
+                ref="item-list"
                 :key="item.entry.id"
-                right-color="primary"
-                left-color="secondary"
+                v-model="expanded[index]"
+                group="entry"
                 :class="{ 'bg-grey-3': !isDark && isRead(item.entry.id), 'bg-grey-9': isDark && isRead(item.entry.id) }"
-                @left="({ reset }) => slideLeft(reset, item.entry.id)"
-                @right="({ reset }) => slideRight(reset, item.entry.id, index)"
+                @after-hide="scrollToContentRef(index)"
+                @after-show="scrollToContentRef(index)"
+                @before-show="loadContent(item.entry.id)"
               >
-                <template #left>
-                  <q-icon name="star" class="q-mr-sm" />
-                  {{ entryStar[item.entry.id] === "starred" ? "Unstar" : "Star" }}
-                </template>
-                <template #right>
-                  <q-icon name="done" class="q-mr-sm" />
-                  Mark as {{ entryRead[item.entry.id] === "read" ? "unread" : "read" }}
+                <template #header>
+                  <q-item-section side>
+                    <q-checkbox
+                      v-model="entryRead[item.entry.id]"
+                      color="grey"
+                      true-value="read"
+                      false-value="unread"
+                      checked-icon="drafts"
+                      unchecked-icon="mail"
+                      :disable="entryRead[item.entry.id] === 'toggling'"
+                      @click="toggleReadEntry(item.entry.id, index)"
+                    />
+                  </q-item-section>
+                  <q-item-section>
+                    <q-item-label lines="3">
+                      <MarkedText :keyword="searchQuery" :text="item.entry.title" />
+                    </q-item-label>
+                    <q-item-label caption lines="2">
+                      <q-img
+                        v-if="imageExists(item.feed.id)"
+                        width=".75rem"
+                        class="q-mr-sm"
+                        height=".75rem"
+                        :class="{ 'bg-white': isDark }"
+                        :src="`/api/images/${buildFeedImageKey(item.feed.id)}`"
+                      />
+                      {{ item.category.name }} &middot; {{ item.feed.title }} &middot;
+                      <ClientAgo :datetime="item.entry.date" />
+                    </q-item-label>
+                  </q-item-section>
                 </template>
 
-                <q-expansion-item
-                  ref="item-list"
-                  v-model="expanded[index]"
-                  clickable
-                  group="entry"
-                  @after-hide="scrollToContentRef(index)"
-                  @after-show="scrollToContentRef(index)"
-                  @before-show="loadContent(item.entry.id)"
-                >
-                  <template #header>
-                    <q-item-section side>
+                <q-card>
+                  <q-card-section>
+                    <div class="q-my-sm text-h6">
                       <q-checkbox
-                        v-model="entryRead[item.entry.id]"
-                        color="grey"
-                        true-value="read"
-                        false-value="unread"
-                        checked-icon="drafts"
-                        unchecked-icon="mail"
-                        :disable="entryRead[item.entry.id] === 'toggling'"
-                        @click="toggleReadEntry(item.entry.id, index)"
+                        v-model="entryStar[item.entry.id]"
+                        checked-icon="star"
+                        true-value="starred"
+                        false-value="unstarred"
+                        unchecked-icon="star_border"
+                        :disable="entryStar[item.entry.id] === 'starring'"
+                        @click="toggleStarEntry(item.entry.id)"
                       />
-                    </q-item-section>
-                    <q-item-section>
-                      <q-item-label lines="3">
+                      <a
+                        target="_blank"
+                        :href="item.entry.link"
+                        rel="noopener noreferrer"
+                        :class="{ 'text-white': isDark, 'text-black': !isDark }"
+                      >
                         <MarkedText :keyword="searchQuery" :text="item.entry.title" />
-                      </q-item-label>
-                      <q-item-label caption lines="2">
-                        <q-img
-                          v-if="imageExists(item.feed.id)"
-                          width=".75rem"
-                          class="q-mr-sm"
-                          height=".75rem"
-                          :class="{ 'bg-white': isDark }"
-                          :src="`/api/images/${buildFeedImageKey(item.feed.id)}`"
-                        />
-                        {{ item.category.name }} &middot; {{ item.feed.title }} &middot;
-                        <ClientAgo :datetime="item.entry.date" />
-                      </q-item-label>
-                    </q-item-section>
-                  </template>
-
-                  <q-card>
-                    <q-card-section>
-                      <div class="q-my-sm text-h6">
-                        <q-checkbox
-                          v-model="entryStar[item.entry.id]"
-                          checked-icon="star"
-                          true-value="starred"
-                          false-value="unstarred"
-                          unchecked-icon="star_border"
-                          :disable="entryStar[item.entry.id] === 'starring'"
-                          @click="toggleStarEntry(item.entry.id)"
-                        />
-                        <a
-                          target="_blank"
-                          :href="item.entry.link"
-                          rel="noopener noreferrer"
-                          :class="{ 'text-white': isDark, 'text-black': !isDark }"
-                        >
-                          <MarkedText :keyword="searchQuery" :text="item.entry.title" />
-                        </a>
-                      </div>
-                      <div class="q-my-sm">by {{ item.entry.author }}</div>
-                      <div class="q-my-sm">
-                        <q-chip
-                          clickable
-                          icon="category"
-                          color="secondary"
-                          :outline="!isDark"
-                          @click="selectedCategoryId = String(item.category.id)"
-                        >
-                          Category: {{ item.category.name }}
-                        </q-chip>
-                        <q-chip
-                          clickable
-                          color="primary"
-                          icon="rss_feed"
-                          :outline="!isDark"
-                          @click="selectedFeedId = String(item.feed.id)"
-                        >
-                          Feed: {{ item.feed.title }}
-                        </q-chip>
-                        <q-chip color="accent" :outline="!isDark" icon="calendar_today">
-                          Date: <ClientDateTime :datetime="item.entry.date" />
-                        </q-chip>
-                      </div>
-                    </q-card-section>
-                    <q-card-section>
-                      <MarkedText
-                        v-if="getContent(item.entry.id)"
-                        is-html
-                        :keyword="searchQuery"
-                        class="col entry-content"
-                        :text="getContent(item.entry.id)"
-                      />
-                    </q-card-section>
-                    <q-card-actions>
-                      <q-btn
-                        flat
-                        icon="check"
+                      </a>
+                    </div>
+                    <div class="q-my-sm">by {{ item.entry.author }}</div>
+                    <div class="q-my-sm">
+                      <q-chip
+                        clickable
+                        icon="category"
+                        color="secondary"
+                        :outline="!isDark"
+                        @click="selectedCategoryId = String(item.category.id)"
+                      >
+                        Category: {{ item.category.name }}
+                      </q-chip>
+                      <q-chip
+                        clickable
                         color="primary"
-                        label="Mark as read"
-                        @click="markAsReadAndCollapse(item.entry.id, index)"
-                      />
-                      <q-btn
-                        flat
-                        color="primary"
-                        label="Collapse"
-                        icon="unfold_less"
-                        @click="expanded[index] = false"
-                      />
-                      <q-btn
-                        v-if="!downloadedContents[item.entry.id]"
-                        flat
-                        color="primary"
-                        label="Download"
-                        icon="file_download"
-                        :loading="downloading[item.entry.id]"
-                        @click="downloadContent(item.entry.id)"
-                      />
-                      <q-btn
-                        v-else
-                        flat
-                        icon="undo"
-                        color="primary"
-                        label="See original"
-                        @click="downloadedContents[item.entry.id] = ''"
-                      />
-                    </q-card-actions>
-                  </q-card>
-                </q-expansion-item>
-              </q-slide-item>
+                        icon="rss_feed"
+                        :outline="!isDark"
+                        @click="selectedFeedId = String(item.feed.id)"
+                      >
+                        Feed: {{ item.feed.title }}
+                      </q-chip>
+                      <q-chip color="accent" :outline="!isDark" icon="calendar_today">
+                        Date: <ClientDateTime :datetime="item.entry.date" />
+                      </q-chip>
+                    </div>
+                  </q-card-section>
+                  <q-card-section>
+                    <MarkedText
+                      v-if="getContent(item.entry.id)"
+                      is-html
+                      :keyword="searchQuery"
+                      class="col entry-content"
+                      style="max-width: 1000vw"
+                      :text="getContent(item.entry.id)"
+                    />
+                  </q-card-section>
+                  <q-card-actions>
+                    <q-btn
+                      flat
+                      icon="check"
+                      color="primary"
+                      label="Mark as read"
+                      @click="markAsReadAndCollapse(item.entry.id, index)"
+                    />
+                    <q-btn flat color="primary" label="Collapse" icon="unfold_less" @click="expanded[index] = false" />
+                    <q-btn
+                      v-if="!downloadedContents[item.entry.id]"
+                      flat
+                      color="primary"
+                      label="Download"
+                      icon="file_download"
+                      :loading="downloading[item.entry.id]"
+                      @click="downloadContent(item.entry.id)"
+                    />
+                    <q-btn
+                      v-else
+                      flat
+                      icon="undo"
+                      color="primary"
+                      label="See original"
+                      @click="downloadedContents[item.entry.id] = ''"
+                    />
+                  </q-card-actions>
+                </q-card>
+              </q-expansion-item>
               <q-item v-if="!hasMore && items.length > 0">
                 <q-item-section>
                   <q-item-label class="text-center text-grey-8">End of list</q-item-label>
@@ -432,8 +410,18 @@
           </q-infinite-scroll>
         </q-pull-to-refresh>
 
-        <q-page-sticky v-if="anyExpanded" position="bottom" :offset="[18, 18]">
-          <q-fab icon="close" padding="sm" label="Close" color="secondary" @click="expanded = []" />
+        <q-page-sticky v-if="anyExpanded" :offset="[0, 18]" position="bottom">
+          <div class="q-gutter-md">
+            <q-btn
+              fab
+              padding="sm"
+              color="secondary"
+              :icon="isOpenEntryStarred() ? 'star' : 'star_border'"
+              @click="toggleStarOpenEntry()"
+            />
+            <q-btn fab icon="done" padding="sm" color="secondary" @click="markOpenAsReadAndCollapse()" />
+            <q-btn fab icon="close" padding="sm" color="primary" @click="expanded = []" />
+          </div>
         </q-page-sticky>
 
         <q-page-sticky class="lt-sm" :offset="[18, 18]" position="bottom-right">
@@ -744,6 +732,14 @@ function isRead(entryId) {
   return entryRead.value[entryId] === "read";
 }
 
+function isOpenEntryStarred() {
+  const index = expanded.value.findIndex((v) => v);
+  if (index === -1) return false;
+
+  const item = items.value[index];
+  return entryStar.value[item.entry.id] === "starred";
+}
+
 /**
  * @param {"day"|"week"|"month"|"year"} [olderThan]
  */
@@ -818,6 +814,14 @@ async function markAsReadAndCollapse(entryId, index) {
   expanded.value[index] = false;
 }
 
+function markOpenAsReadAndCollapse() {
+  const index = expanded.value.findIndex((v) => v);
+  if (index === -1) return;
+
+  const entryId = items.value[index]?.entry.id;
+  if (entryId) markAsReadAndCollapse(entryId, index);
+}
+
 /**
  * @param {(stop?:boolean) => void} [done]
  */
@@ -874,33 +878,6 @@ function shouldMarkAsRead(now, entryId, olderThan) {
 }
 
 /**
- * @param {() => void} reset
- * @param {number} entryId
- */
-function slideLeft(reset, entryId) {
-  // toggleStarEntry doesn't change state for checkbox,
-  // so we set it to "starred" here
-  entryStar.value[entryId] = entryStar.value[entryId] === "unstarred" ? "starred" : "unstarred";
-
-  toggleStarEntry(entryId);
-  reset();
-}
-
-/**
- * @param {() => void} reset
- * @param {number} entryId
- * @param {number} index
- */
-function slideRight(reset, entryId, index) {
-  // toggleReadEntry doesn't change state for checkbox,
-  // so we set it to "read" here
-  entryRead.value[entryId] = entryRead.value[entryId] === "unread" ? "read" : "unread";
-
-  toggleReadEntry(entryId, index);
-  reset();
-}
-
-/**
  * @param {number} entryId
  * @param {number} index
  */
@@ -932,7 +909,9 @@ async function toggleReadEntry(entryId, index) {
 async function toggleStarEntry(entryId) {
   if (entryStar.value[entryId] === "starring") return;
 
+  // status of checkbox is already changed by the time this function is called
   const value = entryStar.value[entryId];
+
   entryStar.value[entryId] = "starring";
   try {
     await $fetch(`/api/entries/${entryId}/star`, { method: "PUT" });
@@ -946,6 +925,18 @@ async function toggleStarEntry(entryId) {
     });
   }
 }
+
+async function toggleStarOpenEntry() {
+  const index = expanded.value.findIndex((v) => v);
+  if (index === -1) return;
+
+  const entryId = items.value[index]?.entry.id;
+  if (entryId) {
+    // manually toggle the value first because the checkbox is not used here
+    entryStar.value[entryId] = entryStar.value[entryId] === "starred" ? "unstarred" : "starred";
+    await toggleStarEntry(entryId);
+  }
+}
 </script>
 
 <style>
@@ -957,5 +948,9 @@ async function toggleStarEntry(entryId) {
 .entry-content mark {
   background-color: yellow;
   color: black;
+}
+
+.entry-content pre {
+  overflow-x: auto;
 }
 </style>
