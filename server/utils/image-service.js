@@ -20,13 +20,6 @@ export class ImageService {
     const logger = this.logger.child({ externalId });
     try {
       const existing = await this.repository.findImageByExternalId(externalId);
-
-      /** @type {Record<string, string>} */
-      const headers = {};
-      if (existing) {
-        if (existing.etag) headers["If-None-Match"] = existing.etag;
-        if (existing.lastModified) headers["If-Modified-Since"] = existing.lastModified;
-      }
       const res = await this.downloadService.downloadBinary({
         url,
         etag: existing?.etag,
