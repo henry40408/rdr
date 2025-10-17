@@ -61,13 +61,16 @@
                   v-if="!hideEmpty || feedUnreadCount(feed.id) > 0"
                   v-ripple
                   clickable
-                  @click="selectedFeedId = String(feed.id)"
+                  @click="
+                    selectedCategoryId = String(category.id);
+                    selectedFeedId = String(feed.id);
+                  "
                 >
                   <q-item-section side>
-                    <q-avatar v-if="imageExists(feed.id)" square size="xs">
+                    <q-avatar v-if="imageExists(feed.id)" square>
                       <q-img :src="`/api/images/${buildFeedImageKey(feed.id)}`" />
                     </q-avatar>
-                    <q-icon v-else size="xs" name="rss_feed" />
+                    <q-icon v-else name="rss_feed" />
                   </q-item-section>
                   <q-item-section>
                     <q-item-label lines="1">{{ feed.title }}</q-item-label>
@@ -248,7 +251,7 @@
         </q-list>
         <q-card v-if="loading" flat>
           <q-card-section class="row justify-center">
-            <q-spinner size="3em" color="primary" />
+            <q-spinner color="primary" />
           </q-card-section>
         </q-card>
         <q-banner v-if="!loading && items.length === 0" class="bg-grey-2 text-grey-8">
