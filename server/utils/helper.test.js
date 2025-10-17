@@ -1,7 +1,7 @@
 import assert from "node:assert";
 import { describe, it } from "node:test";
 
-import { generateId, normalizeDatetime } from "./helper.js";
+import { generateId, normalizeDatetime, parseDataURL } from "./helper.js";
 
 describe("generateId", () => {
   it("should generate an 8 character hex string", () => {
@@ -33,5 +33,23 @@ describe("normalizeDatetime", () => {
     const date = new Date("2025-09-26T06:29:00Z");
     const normalized = normalizeDatetime("週五, 26 九月 2025 06:29:00 +0000");
     assert.strictEqual(normalized?.toISOString(), date.toISOString());
+  });
+});
+
+describe("parseDataURL", () => {
+  it("should parse a base64-encoded data URL", () => {
+    const url = "data:text/plain;base64,SGVsbG8sIFdvcmxkIQ==";
+    const result = parseDataURL(url);
+    assert.strictEqual(result.mediaType, "text/plain");
+    assert.strictEqual(result.encoding, "base64");
+    assert.strictEqual(result.data.toString("utf-8"), "Hello, World!");
+  });
+
+  it("should parse a percent-encoded data URL", () => {
+    const url = "data:text/plain,Hello%2C%20World!";
+    const result = parseDataURL(url);
+    assert.strictEqual(result.mediaType, "text/plain");
+    assert.strictEqual(result.encoding, "utf8");
+    assert.strictEqual(result.data.toString("utf-8"), "Hello, World!");
   });
 });

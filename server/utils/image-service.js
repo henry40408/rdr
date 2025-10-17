@@ -19,6 +19,21 @@ export class ImageService {
   async download(externalId, url) {
     const logger = this.logger.child({ externalId });
     try {
+      const parsed = new URL(url);
+      if (parsed.protocol === "data:") {
+        const parsedData = parseDataURL(url);
+        const newImage = new ImageEntity({
+          externalId,
+          url,
+          blob: parsedData.data,
+          contentType: parsedData.mediaType,
+          etag: undefined,
+          lastModified: undefined,
+        });
+        await this.repository.upsertImage(newImage);
+        return newImage;
+      }
+
       const existing = await this.repository.findImageByExternalId(externalId);
       const res = await this.downloadService.downloadBinary({
         url,
@@ -56,6 +71,7 @@ export class ImageService {
       return newImage;
     } catch (err) {
       this.logger.error(err);
+      this.logger.error({ msg: "Failed to download image", externalId, url });
       return undefined;
     }
   }

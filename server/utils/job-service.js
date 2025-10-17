@@ -65,10 +65,14 @@ export class JobService {
     try {
       await job.run();
       const elapsed = Date.now() - now.valueOf();
-      await this.repository.upsertJobExecution(name, elapsed, null);
+      await this.repository.upsertJobExecution(name, elapsed, null).catch((error) => {
+        this.logger.error({ msg: "Failed to record job execution", name, error });
+      });
     } catch (err) {
       const elapsed = Date.now() - now.valueOf();
-      await this.repository.upsertJobExecution(name, elapsed, `${err}`);
+      await this.repository.upsertJobExecution(name, elapsed, `${err}`).catch((error) => {
+        this.logger.error({ msg: "Failed to record job execution failure", name, error });
+      });
     }
   }
 }

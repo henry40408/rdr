@@ -42,3 +42,50 @@ export function normalizeDatetime(dt) {
   const date = new Date(normalized);
   return isNaN(date.valueOf()) ? undefined : date;
 }
+
+/**
+ * @typedef {object} ParseDataURLResult
+ * @property {string} mediaType
+ * @property {string} encoding
+ * @property {Buffer} data
+ *
+ * Parse a Data URL and return its media type, encoding, and binary data.
+ *
+ * @param {string} url A complete `data:` URL
+ * @returns {ParseDataURLResult} The parsed components of the Data URL
+ * @throws {Error} If the URL does not start with `data:` or is malformed
+ *
+ * The function follows the syntax defined in RFC 2397 and handles both
+ * Base64‑encoded and percent‑encoded data.
+ */
+export function parseDataURL(url) {
+  if (!url.startsWith("data:")) {
+    throw new Error("Invalid Data URL");
+  }
+
+  const withoutPrefix = url.slice(5); // remove "data:"
+  const commaIndex = withoutPrefix.indexOf(",");
+  if (commaIndex === -1) {
+    throw new Error("Malformed Data URL");
+  }
+
+  const meta = withoutPrefix.slice(0, commaIndex);
+  const dataPart = withoutPrefix.slice(commaIndex + 1);
+
+  let mediaType = "text/plain;charset=US-ASCII";
+  let encoding = "utf8";
+
+  if (meta) {
+    const parts = meta.split(";");
+    if (parts[0] && parts[0] !== "base64" && !parts[0].includes("=")) {
+      let shifted = parts.shift(); // explicit MIME type
+      if (shifted) mediaType = shifted;
+    }
+    if (parts.includes("base64")) encoding = "base64";
+  }
+
+  const buffer =
+    encoding === "base64" ? Buffer.from(dataPart, "base64") : Buffer.from(decodeURIComponent(dataPart), "utf8");
+
+  return { mediaType, encoding, data: buffer };
+}

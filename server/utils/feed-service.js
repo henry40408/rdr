@@ -82,6 +82,7 @@ export class FeedService {
       return { type: "ok", items, meta, feed: cloned };
     } catch (err) {
       logger.error(err);
+      logger.error({ msg: "Failed to fetch entries", xmlUrl: feed.xmlUrl });
       throw err;
     }
   }
@@ -113,6 +114,7 @@ export class FeedService {
       return undefined;
     } catch (err) {
       this.logger.error(err);
+      this.logger.error({ msg: "Failed to fetch feed image", feedId: feed.id });
       throw err;
     }
   }
