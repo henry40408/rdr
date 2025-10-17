@@ -375,7 +375,7 @@
                     <q-btn
                       flat
                       icon="check"
-                      label="Mark as read"
+                      label="Read"
                       :color="isDark ? 'white' : 'primary'"
                       @click="markAsReadAndCollapse(item.entry.id, index)"
                     />
@@ -442,9 +442,9 @@
             <q-fab-action
               external-label
               color="secondary"
-              icon="filter_list"
               label="Reset filters"
               label-position="left"
+              icon="filter_list_off"
               @click="
                 selectedCategoryId = undefined;
                 selectedFeedId = undefined;
@@ -454,8 +454,8 @@
             <q-fab-action
               external-label
               icon="done_all"
+              label="Read all"
               color="secondary"
-              label="Mark as read"
               label-position="left"
               @click="markAllAsReadDialog()"
             />
@@ -668,13 +668,33 @@ async function load() {
   loading.value = true;
   try {
     const newItems = await $fetch("/api/entries", { query });
-    if (newItems) {
-      for (const item of newItems) {
-        items.value.push(item);
-        entryRead.value[item.entry.id] = item.entry.readAt ? "read" : "unread";
-        entryStar.value[item.entry.id] = item.entry.starredAt ? "starred" : "unstarred";
+    for (const item of newItems) {
+      items.value.push(item);
+      entryRead.value[item.entry.id] = item.entry.readAt ? "read" : "unread";
+      entryStar.value[item.entry.id] = item.entry.starredAt ? "starred" : "unstarred";
+    }
+    if (newItems.length < listLimit.value) hasMore.value = false;
+
+    if (offset.value === 0 && items.value.length === 0) {
+      if (selectedFeedId.value) {
+        $q.notify({
+          type: "info",
+          icon: "search_off",
+          message: `No entries found for the selected ${getFilteredFeedTitle()}.`,
+          progress: true,
+          actions: [{ icon: "close", color: "white" }],
+        });
+        selectedFeedId.value = undefined;
+      } else if (selectedCategoryId.value) {
+        $q.notify({
+          type: "info",
+          icon: "search_off",
+          message: `No entries found for the selected ${getFilteredCategoryName()}.`,
+          progress: true,
+          actions: [{ icon: "close", color: "white" }],
+        });
+        selectedCategoryId.value = undefined;
       }
-      if (newItems.length < listLimit.value) hasMore.value = false;
     }
   } catch (err) {
     $q.notify({
