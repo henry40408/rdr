@@ -55,7 +55,6 @@
                 <q-card>
                   <q-card-section class="row items-center q-gutter-sm">
                     <q-btn
-                      size="sm"
                       icon="refresh"
                       color="primary"
                       label="Refresh"
@@ -74,7 +73,7 @@
                   >
                     <template #header>
                       <q-item-section side>
-                        <q-avatar v-if="imageExists(feed.id)" square size="xs">
+                        <q-avatar v-if="imageExists(feed.id)" square>
                           <q-img alt="Feed Image" :src="`/api/images/${buildFeedImageKey(feed.id)}`" />
                         </q-avatar>
                         <q-icon v-else name="rss_feed" class="feed-image" />
@@ -100,7 +99,6 @@
                     <q-card>
                       <q-card-section class="row items-center q-gutter-sm">
                         <q-btn
-                          size="sm"
                           icon="refresh"
                           color="primary"
                           label="Refresh"
@@ -112,7 +110,6 @@
                         </div>
                         <q-btn
                           flat
-                          size="sm"
                           color="primary"
                           target="_blank"
                           icon="open_in_new"
