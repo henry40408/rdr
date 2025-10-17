@@ -9,7 +9,7 @@
           </q-avatar>
           rdr
         </q-toolbar-title>
-        <q-input v-model="searchQuery" dark borderless debounce="500" class="q-ml-md q-mr-sm" input-class="text-right">
+        <q-input v-model="searchQuery" dark dense standout debounce="500" placeholder="Search" input-class="text-right">
           <template #append>
             <q-icon v-if="!searchQuery" name="search" />
             <q-icon v-else name="clear" class="cursor-pointer" @click="searchQuery = ''" />
@@ -261,7 +261,7 @@
             <q-spinner color="primary" />
           </q-card-section>
         </q-card>
-        <q-banner v-if="!loading && items.length === 0" class="bg-grey-2 text-grey-8">
+        <q-banner v-if="!loading && items.length === 0" class="bg-grey-2 text-grey-7">
           <template #avatar>
             <q-icon name="info" />
           </template>
