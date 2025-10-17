@@ -432,8 +432,8 @@
           </q-infinite-scroll>
         </q-pull-to-refresh>
 
-        <q-page-sticky v-if="anyExpanded" :offset="[18, 18]" position="top-right">
-          <q-fab icon="close" padding="sm" color="secondary" @click="expanded = []" />
+        <q-page-sticky v-if="anyExpanded" position="bottom" :offset="[18, 18]">
+          <q-fab icon="close" padding="sm" label="Close" color="secondary" @click="expanded = []" />
         </q-page-sticky>
 
         <q-page-sticky class="lt-sm" :offset="[18, 18]" position="bottom-right">
@@ -459,44 +459,12 @@
               "
             />
             <q-fab-action
-              color="accent"
               external-label
               icon="done_all"
+              color="secondary"
+              label="Mark as read"
               label-position="left"
-              label="Mark older than a day as read"
-              @click="markAllAsRead('day')"
-            />
-            <q-fab-action
-              color="accent"
-              external-label
-              icon="done_all"
-              label-position="left"
-              label="Mark older than a week as read"
-              @click="markAllAsRead('week')"
-            />
-            <q-fab-action
-              color="accent"
-              external-label
-              icon="done_all"
-              label-position="left"
-              label="Mark older than a month as read"
-              @click="markAllAsRead('month')"
-            />
-            <q-fab-action
-              color="accent"
-              external-label
-              icon="done_all"
-              label-position="left"
-              label="Mark older than a year as read"
-              @click="markAllAsRead('year')"
-            />
-            <q-fab-action
-              color="accent"
-              external-label
-              icon="done_all"
-              label-position="left"
-              label="Mark all as read"
-              @click="markAllAsRead()"
+              @click="markAllAsReadDialog()"
             />
           </q-fab>
         </q-page-sticky>
@@ -619,6 +587,41 @@ async function downloadContent(entryId) {
     });
   } finally {
     downloading.value[entryId] = false;
+  }
+}
+
+/**
+ * @param {"day"|"week"|"month"|"year"} [olderThan]
+ */
+async function doMarkAllAsRead(olderThan) {
+  const now = new Date();
+
+  const body = {};
+  if (olderThan) body.olderThan = olderThan;
+  if (selectedFeedId.value) {
+    body.selectedType = "feed";
+    body.selectedId = selectedFeedId.value;
+  } else if (selectedCategoryId.value) {
+    body.selectedType = "category";
+    body.selectedId = selectedCategoryId.value;
+  }
+  if (searchQuery.value) body.search = searchQuery.value;
+  try {
+    const { updated } = await $fetch("/api/entries/mark-as-read", { method: "POST", body });
+    for (const item of items.value)
+      if (shouldMarkAsRead(now, item.entry.id, olderThan)) entryRead.value[item.entry.id] = "read";
+    refresh();
+    $q.notify({
+      type: "positive",
+      message: `Marked ${updated} entries as read.`,
+      actions: [{ icon: "close", color: "white" }],
+    });
+  } catch (err) {
+    $q.notify({
+      type: "negative",
+      message: `Failed to mark all as read: ${err}`,
+      actions: [{ icon: "close", color: "white" }],
+    });
   }
 }
 
@@ -754,36 +757,35 @@ async function markAllAsRead(olderThan) {
     cancel: true,
     persistent: true,
   }).onOk(async () => {
-    const now = new Date();
-
-    const body = {};
-    if (olderThan) body.olderThan = olderThan;
-    if (selectedFeedId.value) {
-      body.selectedType = "feed";
-      body.selectedId = selectedFeedId.value;
-    } else if (selectedCategoryId.value) {
-      body.selectedType = "category";
-      body.selectedId = selectedCategoryId.value;
-    }
-    if (searchQuery.value) body.search = searchQuery.value;
-    try {
-      const { updated } = await $fetch("/api/entries/mark-as-read", { method: "POST", body });
-      for (const item of items.value)
-        if (shouldMarkAsRead(now, item.entry.id, olderThan)) entryRead.value[item.entry.id] = "read";
-      refresh();
-      $q.notify({
-        type: "positive",
-        message: `Marked ${updated} entries as read.`,
-        actions: [{ icon: "close", color: "white" }],
-      });
-    } catch (err) {
-      $q.notify({
-        type: "negative",
-        message: `Failed to mark all as read: ${err}`,
-        actions: [{ icon: "close", color: "white" }],
-      });
-    }
+    await doMarkAllAsRead(olderThan);
   });
+}
+
+function markAllAsReadDialog() {
+  $q.dialog({
+    title: "Mark all as read",
+    message: "Are you sure you want to mark all entries as read?",
+    options: {
+      type: "radio",
+      model: "day",
+      items: [
+        { label: "Older than 1 day", value: "day" },
+        { label: "Older than 1 week", value: "week" },
+        { label: "Older than 1 month", value: "month" },
+        { label: "Older than 1 year", value: "year" },
+        { label: "All entries", value: "all" },
+      ],
+    },
+    ok: { color: "negative" },
+    cancel: true,
+    persistent: true,
+  }).onOk(
+    /** @param {"day"|"week"|"month"|"year"|"all"} data */
+    async (data) => {
+      if (data === "all") await doMarkAllAsRead();
+      else await doMarkAllAsRead(data);
+    },
+  );
 }
 
 /**
