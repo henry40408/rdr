@@ -68,7 +68,7 @@
                 >
                   <q-item-section avatar>
                     <q-avatar v-if="imageExists(feed.id)" square>
-                      <q-img :src="`/api/images/${buildFeedImageKey(feed.id)}`" />
+                      <q-img :class="{ 'bg-white': isDark }" :src="`/api/images/${buildFeedImageKey(feed.id)}`" />
                     </q-avatar>
                     <q-icon v-else name="rss_feed" />
                   </q-item-section>
@@ -226,23 +226,30 @@
               <div>
                 <q-chip
                   v-if="selectedCategoryId"
-                  outline
                   removable
                   icon="category"
                   color="secondary"
+                  :outline="!isDark"
                   @remove="selectedCategoryId = undefined"
                   >Category: {{ getFilteredCategoryName() }}</q-chip
                 >
                 <q-chip
                   v-if="selectedFeedId"
-                  outline
                   removable
                   color="primary"
                   icon="rss_feed"
+                  :outline="!isDark"
                   @remove="selectedFeedId = undefined"
                   >Feed: {{ getFilteredFeedTitle() }}</q-chip
                 >
-                <q-chip v-if="searchQuery" outline removable icon="search" color="accent" @remove="searchQuery = ''">
+                <q-chip
+                  v-if="searchQuery"
+                  removable
+                  icon="search"
+                  color="accent"
+                  :outline="!isDark"
+                  @remove="searchQuery = ''"
+                >
                   Search: {{ searchQuery }}
                 </q-chip>
               </div>
@@ -316,6 +323,7 @@
                           width=".75rem"
                           class="q-mr-sm"
                           height=".75rem"
+                          :class="{ 'bg-white': isDark }"
                           :src="`/api/images/${buildFeedImageKey(item.feed.id)}`"
                         />
                         {{ item.category.name }} &middot; {{ item.feed.title }} &middot;
@@ -336,31 +344,36 @@
                           :disable="entryStar[item.entry.id] === 'starring'"
                           @click="toggleStarEntry(item.entry.id)"
                         />
-                        <a target="_blank" :href="item.entry.link" rel="noopener noreferrer">
+                        <a
+                          target="_blank"
+                          :href="item.entry.link"
+                          rel="noopener noreferrer"
+                          :class="{ 'text-white': isDark, 'text-black': !isDark }"
+                        >
                           <MarkedText :keyword="searchQuery" :text="item.entry.title" />
                         </a>
                       </div>
                       <div class="q-my-sm">by {{ item.entry.author }}</div>
                       <div class="q-my-sm">
                         <q-chip
-                          outline
                           clickable
                           icon="category"
                           color="secondary"
+                          :outline="!isDark"
                           @click="selectedCategoryId = String(item.category.id)"
                         >
                           Category: {{ item.category.name }}
                         </q-chip>
                         <q-chip
-                          outline
                           clickable
                           color="primary"
                           icon="rss_feed"
+                          :outline="!isDark"
                           @click="selectedFeedId = String(item.feed.id)"
                         >
                           Feed: {{ item.feed.title }}
                         </q-chip>
-                        <q-chip outline color="accent" icon="calendar_today">
+                        <q-chip color="accent" :outline="!isDark" icon="calendar_today">
                           Date: <ClientDateTime :datetime="item.entry.date" />
                         </q-chip>
                       </div>
@@ -496,9 +509,13 @@
 import { useRouteQuery } from "@vueuse/router";
 import { add } from "date-fns";
 import { useQuasar } from "quasar";
-import { useLocalSettings } from "./local-settings";
 
 const $q = useQuasar();
+const isDark = useDark();
+onMounted(() => {
+  $q.dark.set(isDark.value);
+});
+
 const itemRefs = useTemplateRef("item-list");
 const { hideEmpty } = useLocalSettings();
 

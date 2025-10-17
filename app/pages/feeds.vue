@@ -74,7 +74,11 @@
                     <template #header>
                       <q-item-section side>
                         <q-avatar v-if="imageExists(feed.id)" square>
-                          <q-img alt="Feed Image" :src="`/api/images/${buildFeedImageKey(feed.id)}`" />
+                          <q-img
+                            alt="Feed Image"
+                            :class="{ 'bg-white': isDark }"
+                            :src="`/api/images/${buildFeedImageKey(feed.id)}`"
+                          />
                         </q-avatar>
                         <q-icon v-else name="rss_feed" class="feed-image" />
                       </q-item-section>
@@ -109,10 +113,10 @@
                           {{ formatFetchedAtToNow(feed.id) }}
                         </div>
                         <q-btn
-                          flat
                           color="primary"
                           target="_blank"
                           icon="open_in_new"
+                          :outline="!isDark"
                           :href="feed.htmlUrl"
                           label="Go to website"
                           rel="noopener noreferrer"
@@ -142,20 +146,22 @@
 <script setup>
 import { formatDistanceToNow } from "date-fns";
 import { useQuasar } from "quasar";
-import { useLocalSettings } from "./local-settings";
 
 const $q = useQuasar();
+const isDark = useDark();
+onMounted(() => {
+  $q.dark.set(isDark.value);
+});
 const { hideEmpty } = useLocalSettings();
-
-const { data: categories, execute: refreshCategories } = await useFetch("/api/categories");
-const { data: feedData, execute: refreshFeedData } = await useFetch("/api/feeds/data");
-
-const feedDataByFeedId = computed(() => feedData.value?.feeds || {});
 
 /** @type {Ref<Set<number>>} */
 const refreshingCategoryIds = ref(new Set());
 /** @type {Ref<Set<number>>} */
 const refreshingFeedIds = ref(new Set());
+
+const { data: categories, execute: refreshCategories } = await useFetch("/api/categories");
+const { data: feedData, execute: refreshFeedData } = await useFetch("/api/feeds/data");
+const feedDataByFeedId = computed(() => feedData.value?.feeds || {});
 
 async function afterRefresh() {
   await Promise.all([refreshCategories(), refreshFeedData()]);
