@@ -1,7 +1,9 @@
 export default defineEventHandler(async (event) => {
   const { container } = useNitroApp();
 
-  const userId = getUserIdOrThrow(event);
+  const session = await requireUserSession(event);
+  const userId = session.user.id;
+
   const body = await readMultipartFormData(event);
 
   /** @type {OpmlService} */

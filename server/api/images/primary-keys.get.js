@@ -1,7 +1,8 @@
 export default defineEventHandler(async (event) => {
   const { container } = useNitroApp();
 
-  const userId = getUserIdOrThrow(event);
+  const session = await requireUserSession(event);
+  const userId = session.user.id;
 
   /** @type {Repository} */
   const repository = container.resolve("repository");

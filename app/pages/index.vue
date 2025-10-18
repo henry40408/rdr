@@ -1,5 +1,5 @@
 <template>
-  <q-layout view="hhh LpR fFf">
+  <q-layout v-if="loggedIn" view="hhh LpR fFf">
     <q-header elevated class="bg-primary text-white">
       <q-toolbar>
         <q-btn flat dense round icon="menu" @click="leftDrawerOpen = !leftDrawerOpen" />
@@ -468,12 +468,15 @@
       </q-page>
     </q-page-container>
   </q-layout>
+  <LoginPage v-else />
 </template>
 
 <script setup>
 import { add } from "date-fns";
 import { useQuasar } from "quasar";
 import { useRouteQuery } from "@vueuse/router";
+
+const { loggedIn } = useUserSession();
 
 const $q = useQuasar();
 const isDark = useDark();
@@ -539,10 +542,10 @@ const countQuery = computed(() => {
 
 const { data, refresh } = await useAsyncData("initial", async () =>
   Promise.all([
-    $fetch("/api/categories"),
-    $fetch("/api/count", { query: countQuery.value }),
-    $fetch("/api/images/primary-keys"),
-    $fetch("/api/feeds/data"),
+    useRequestFetch()("/api/categories"),
+    useRequestFetch()("/api/count", { query: countQuery.value }),
+    useRequestFetch()("/api/images/primary-keys"),
+    useRequestFetch()("/api/feeds/data"),
   ]),
 );
 const categories = computed(() => data.value?.[0] || []);
@@ -574,7 +577,7 @@ async function downloadContent(entryId) {
   try {
     if (downloadedContents.value[entryId]) return;
     downloading.value[entryId] = true;
-    const parsed = await $fetch(`/api/entries/${entryId}/download`);
+    const parsed = await useRequestFetch()(`/api/entries/${entryId}/download`);
     if (parsed && parsed.content) downloadedContents.value[entryId] = parsed.content;
   } catch (err) {
     $q.notify({
@@ -604,7 +607,7 @@ async function doMarkAllAsRead(olderThan) {
   }
   if (searchQuery.value) body.search = searchQuery.value;
   try {
-    const { updated } = await $fetch("/api/entries/mark-as-read", { method: "POST", body });
+    const { updated } = await useRequestFetch()("/api/entries/mark-as-read", { method: "POST", body });
     for (const item of items.value)
       if (shouldMarkAsRead(now, item.entry.id, olderThan)) entryRead.value[item.entry.id] = "read";
     refresh();
@@ -671,7 +674,7 @@ async function load() {
 
   loading.value = true;
   try {
-    const newItems = await $fetch("/api/entries", { query });
+    const newItems = await useRequestFetch()("/api/entries", { query });
     for (const item of newItems) {
       items.value.push(item);
       entryRead.value[item.entry.id] = item.entry.readAt ? "read" : "unread";
@@ -711,7 +714,7 @@ async function load() {
     loading.value = false;
   }
 }
-await load();
+if (loggedIn.value) await load();
 
 /**
  * @param {number} entryId
@@ -719,7 +722,7 @@ await load();
 async function loadContent(entryId) {
   try {
     if (contents.value[entryId]) return;
-    const { content } = await $fetch(`/api/entries/${entryId}/content`);
+    const { content } = await useRequestFetch()(`/api/entries/${entryId}/content`);
     contents.value[entryId] = content;
   } catch (err) {
     $q.notify({
@@ -821,7 +824,7 @@ async function markAsRead(entryId) {
   const value = entryRead.value[entryId];
   try {
     entryRead.value[entryId] = "toggling";
-    await $fetch(`/api/entries/${entryId}/read`, { method: "PUT" });
+    await useRequestFetch()(`/api/entries/${entryId}/read`, { method: "PUT" });
     entryRead.value[entryId] = "read";
     refresh();
   } catch (err) {
@@ -918,7 +921,7 @@ async function toggleReadEntry(entryId, index) {
 
   entryRead.value[entryId] = "toggling";
   try {
-    await $fetch(`/api/entries/${entryId}/read`, { method: "PUT" });
+    await useRequestFetch()(`/api/entries/${entryId}/read`, { method: "PUT" });
     refresh();
   } catch (err) {
     $q.notify({
@@ -943,7 +946,7 @@ async function toggleStarEntry(entryId) {
 
   entryStar.value[entryId] = "starring";
   try {
-    await $fetch(`/api/entries/${entryId}/star`, { method: "PUT" });
+    await useRequestFetch()(`/api/entries/${entryId}/star`, { method: "PUT" });
     refresh();
     entryStar.value[entryId] = value;
   } catch (err) {

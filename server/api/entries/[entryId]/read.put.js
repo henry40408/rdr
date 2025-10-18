@@ -7,7 +7,9 @@ const schema = z.object({
 export default defineEventHandler(async (event) => {
   const { container } = useNitroApp();
 
-  const userId = getUserIdOrThrow(event);
+  const session = await requireUserSession(event);
+  const userId = session.user.id;
+
   const { entryId } = await getValidatedRouterParams(event, (params) => schema.parse(params));
 
   /** @type {Repository} */

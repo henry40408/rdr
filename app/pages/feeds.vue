@@ -1,5 +1,5 @@
 <template>
-  <q-layout view="hhh LpR fFf">
+  <q-layout v-if="loggedIn" view="hhh LpR fFf">
     <q-header elevated class="bg-primary text-white">
       <q-toolbar>
         <q-toolbar-title>
@@ -141,11 +141,14 @@
       </q-page>
     </q-page-container>
   </q-layout>
+  <LoginPage v-else />
 </template>
 
 <script setup>
 import { formatDistanceToNow } from "date-fns";
 import { useQuasar } from "quasar";
+
+const { loggedIn } = useUserSession();
 
 const $q = useQuasar();
 const isDark = useDark();
@@ -230,7 +233,7 @@ async function refreshCategory(category) {
 
   try {
     const tasks = [];
-    for (const feedId of feedIds) tasks.push($fetch(`/api/feeds/${feedId}/refresh`, { method: "POST" }));
+    for (const feedId of feedIds) tasks.push(useRequestFetch()(`/api/feeds/${feedId}/refresh`, { method: "POST" }));
     await Promise.all(tasks);
     await afterRefresh();
   } catch (err) {
@@ -253,7 +256,7 @@ async function refreshFeed(feed) {
   if (refreshingFeedIds.value.has(feed.id)) return;
   refreshingFeedIds.value.add(feed.id);
   try {
-    await $fetch(`/api/feeds/${feed.id}/refresh`, { method: "POST" });
+    await useRequestFetch()(`/api/feeds/${feed.id}/refresh`, { method: "POST" });
     await afterRefresh();
   } catch (err) {
     $q.notify({

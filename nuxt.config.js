@@ -13,7 +13,7 @@ export default defineNuxtConfig({
       ],
     },
   },
-  modules: ["@nuxt/eslint", "@vueuse/nuxt", "nuxt-quasar-ui"],
+  modules: ["@nuxt/eslint", "@vueuse/nuxt", "nuxt-auth-utils", "nuxt-quasar-ui"],
   runtimeConfig: {
     dbPath: "./data/db.sqlite3",
     disableSignUp: false,
