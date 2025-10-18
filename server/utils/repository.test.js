@@ -161,6 +161,22 @@ describe("Repository", () => {
       }
     });
 
+    it("should return user count", async () => {
+      const count1 = await repository.countUsers();
+      assert.strictEqual(count1, 0);
+
+      await createUser("user1", "password1");
+
+      const count2 = await repository.countUsers();
+      assert.strictEqual(count2, 1);
+
+      await createUser("user2", "password2");
+      await createUser("user3", "password3");
+
+      const count3 = await repository.countUsers();
+      assert.strictEqual(count3, 3);
+    });
+
     it("should return categories with feed", async () => {
       const alice = await createUser("feeduser", "feedpassword");
       const eve = await createUser("nofeeduser", "nofeedpassword");

@@ -120,6 +120,12 @@ export class Repository {
     return counts;
   }
 
+  /** @returns {Promise<number>} */
+  async countUsers() {
+    const result = await this.knex("users").count({ count: "*" }).first();
+    return result ? Number(result.count) : 0;
+  }
+
   /**
    * @param {UserEntity} user
    * @param {string} password
