@@ -49,10 +49,10 @@ export function up(knex) {
       t.string("title").notNullable();
       t.string("link").notNullable();
       t.timestamp("date").notNullable().index();
-      t.string("summary").notNullable();
-
-      t.string("description");
       t.string("author");
+
+      t.string("summary").notNullable();
+      t.string("description");
 
       t.timestamp("read_at").index();
       t.timestamp("starred_at").index();
@@ -61,7 +61,7 @@ export function up(knex) {
 
       t.unique(["feed_id", "guid"]);
     })
-    .createTable("image", (t) => {
+    .createTable("images", (t) => {
       t.string("external_id").notNullable();
       t.integer("user_id").notNullable();
 

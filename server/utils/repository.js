@@ -311,7 +311,7 @@ export class Repository {
    * @returns {Promise<ImageEntity|undefined>}
    */
   async findImageByExternalId(externalId) {
-    const row = await this.knex("image").where({ external_id: externalId }).first();
+    const row = await this.knex("images").where({ external_id: externalId }).first();
     if (!row) return undefined;
     return new ImageEntity({
       externalId: row.external_id,
@@ -327,7 +327,7 @@ export class Repository {
    * @returns {Promise<string[]>}
    */
   async findImagePks() {
-    const rows = await this.knex("image").select();
+    const rows = await this.knex("images").select();
     return rows.map((row) => row.external_id);
   }
 
@@ -512,7 +512,7 @@ export class Repository {
     const logger = this.logger.child({ externalId: image.externalId });
 
     logger.debug("Upserting image");
-    await this.knex("image")
+    await this.knex("images")
       .insert({
         external_id: image.externalId,
         url: image.url,
