@@ -707,7 +707,6 @@ async function load() {
     loading.value = false;
   }
 }
-if (loggedIn.value) await load();
 
 /**
  * @param {number} entryId
@@ -863,9 +862,12 @@ async function resetThenLoad(done) {
 
   if (done) done();
 }
-watchEffect(() => {
-  resetThenLoad();
-});
+watchEffect(
+  () => {
+    if (loggedIn.value) resetThenLoad();
+  },
+  { flush: "post" },
+);
 
 /**
  * @param {number} index
