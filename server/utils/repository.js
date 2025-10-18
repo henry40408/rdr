@@ -1,6 +1,6 @@
 import chunk from "lodash/chunk.js";
 import get from "lodash/get.js";
-import { CategoryEntity, EntryEntity, FeedEntity, JobEntity } from "./entities";
+import { CategoryEntity, EntryEntity, FeedEntity, JobEntity } from "./entities.js";
 import { add } from "date-fns";
 
 export class Repository {
