@@ -105,6 +105,7 @@
                         <q-btn
                           icon="refresh"
                           color="primary"
+                          :flat="!isDark"
                           label="Refresh"
                           :loading="refreshingFeedIds.has(feed.id)"
                           @click="refreshFeed(feed)"
@@ -114,9 +115,9 @@
                         </div>
                         <q-btn
                           color="primary"
+                          :flat="!isDark"
                           target="_blank"
                           icon="open_in_new"
-                          :outline="!isDark"
                           :href="feed.htmlUrl"
                           label="Go to website"
                           rel="noopener noreferrer"
@@ -156,7 +157,7 @@ onMounted(() => {
   $q.dark.set(isDark.value);
 });
 watch(isDark, (val) => {
-  $q.dark.set(val);
+  if (val !== $q.dark.isActive) $q.dark.set(val);
 });
 
 const { hideEmpty } = useLocalSettings();

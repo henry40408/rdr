@@ -72,16 +72,13 @@
           </q-item>
           <q-item>
             <q-item-section header>
-              <q-item-label class="text-h5">Account</q-item-label>
+              <q-item-label class="text-h5">Change Password</q-item-label>
+              <q-item-label caption>Update your account password</q-item-label>
             </q-item-section>
           </q-item>
           <q-item>
-            <q-item-section side>Username</q-item-section>
-            <q-item-section>{{ session.user.username }} </q-item-section>
-          </q-item>
-          <q-item>
             <q-item-section>
-              <q-btn label="Log Out" color="negative" @click="logout()" />
+              <ChangePasswordForm />
             </q-item-section>
           </q-item>
         </q-list>
@@ -95,7 +92,7 @@
 import { millisecondsToSeconds } from "date-fns";
 import { useQuasar } from "quasar";
 
-const { loggedIn, session, clear: logout } = useUserSession();
+const { loggedIn } = useUserSession();
 
 const $q = useQuasar();
 const isDark = useDark();
@@ -103,7 +100,7 @@ onMounted(() => {
   $q.dark.set(isDark.value);
 });
 watch(isDark, (val) => {
-  $q.dark.set(val);
+  if (val !== $q.dark.isActive) $q.dark.set(val);
 });
 
 const triggeringJobs = ref(new Set());

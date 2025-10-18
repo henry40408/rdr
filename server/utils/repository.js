@@ -5,6 +5,8 @@ import chunk from "lodash/chunk.js";
 import get from "lodash/get.js";
 import { normalizeDatetime } from "./helper.js";
 
+export const HASH_ROUNDS = 12;
+
 /**
  * @typedef {Pick<import('feedparser').Item, 'guid'|'title'|'link'|'date'|'summary'|'description'|'author'|'pubdate'> & { 'rss:pubdate'?: { '#': string } }} FeedItem
  */
@@ -133,7 +135,7 @@ export class Repository {
    */
   async createUser(user, password) {
     return await this.knex.transaction(async (tx) => {
-      const passwordHash = await hash(password, 12);
+      const passwordHash = await hash(password, HASH_ROUNDS);
       const userCount = await tx("users").count({ count: "*" }).first();
       const isFirstUser = userCount ? Number(userCount.count) === 0 : true;
 
@@ -623,6 +625,22 @@ export class Repository {
       .where({ id: feed.id })
       .update(update);
     logger.info({ msg: "Updated feed metadata", feedId: feed.id, updated });
+    return updated;
+  }
+
+  /**
+   * @param {string} username
+   * @param {string} password
+   * @param {string} newPassword
+   * @returns {Promise<number>}
+   */
+  async updateUserPassword(username, password, newPassword) {
+    const authenticated = await this.authenticate(username, password);
+    if (!authenticated) return 0;
+
+    const passwordHash = await hash(newPassword, HASH_ROUNDS);
+    const updated = await this.knex("users").where({ username }).update({ password_hash: passwordHash });
+    this.logger.info({ msg: "Updated user password", username });
     return updated;
   }
 

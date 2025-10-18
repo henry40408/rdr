@@ -100,6 +100,19 @@
     <q-drawer v-model="rightDrawerOpen" bordered side="right" show-if-above>
       <q-list padding>
         <q-item>
+          <q-item-section side>Username</q-item-section>
+          <q-item-section>{{ session.user.username }} </q-item-section>
+        </q-item>
+        <q-item>
+          <q-item-section side>Logged in at</q-item-section>
+          <q-item-section><ClientDateTime :datetime="session.loggedInAt" /></q-item-section>
+        </q-item>
+        <q-item>
+          <q-item-section>
+            <q-btn label="Log Out" color="negative" @click="logout()" />
+          </q-item-section>
+        </q-item>
+        <q-item>
           <q-item-section header>
             <q-item-label class="text-h6">Filters</q-item-label>
             <q-item-label caption>Adjust your feed display options</q-item-label>
@@ -229,7 +242,6 @@
                   removable
                   icon="category"
                   color="secondary"
-                  :outline="!isDark"
                   @remove="selectedCategoryId = undefined"
                   >Category: {{ getFilteredCategoryName() }}</q-chip
                 >
@@ -238,18 +250,10 @@
                   removable
                   color="primary"
                   icon="rss_feed"
-                  :outline="!isDark"
                   @remove="selectedFeedId = undefined"
                   >Feed: {{ getFilteredFeedTitle() }}</q-chip
                 >
-                <q-chip
-                  v-if="searchQuery"
-                  removable
-                  icon="search"
-                  color="accent"
-                  :outline="!isDark"
-                  @remove="searchQuery = ''"
-                >
+                <q-chip v-if="searchQuery" removable icon="search" color="accent" @remove="searchQuery = ''">
                   Search: {{ searchQuery }}
                 </q-chip>
               </div>
@@ -279,7 +283,7 @@
                 :key="item.entry.id"
                 v-model="expanded[index]"
                 group="entry"
-                :class="{ 'bg-grey-3': !isDark && isRead(item.entry.id), 'bg-grey-9': isDark && isRead(item.entry.id) }"
+                :class="{ 'bg-grey-9': isRead(item.entry.id) }"
                 @after-show="scrollToContentRef(index)"
                 @before-show="loadContent(item.entry.id)"
               >
@@ -298,11 +302,7 @@
                   </q-item-section>
                   <q-item-section>
                     <q-item-label lines="3">
-                      <MarkedText
-                        :keyword="searchQuery"
-                        :text="item.entry.title"
-                        :class="{ 'text-dark': !isDark, 'text-white': isDark }"
-                      />
+                      <MarkedText :keyword="searchQuery" :text="item.entry.title" />
                     </q-item-label>
                     <q-item-label caption lines="2">
                       <q-img
@@ -331,12 +331,7 @@
                         :disable="entryStar[item.entry.id] === 'starring'"
                         @click="toggleStarEntry(item.entry.id)"
                       />
-                      <a
-                        target="_blank"
-                        :href="item.entry.link"
-                        rel="noopener noreferrer"
-                        :class="{ 'text-white': isDark, 'text-primary': !isDark }"
-                      >
+                      <a target="_blank" :href="item.entry.link" rel="noopener noreferrer">
                         <MarkedText :keyword="searchQuery" :text="item.entry.title" />
                       </a>
                     </div>
@@ -346,21 +341,14 @@
                         clickable
                         icon="category"
                         color="secondary"
-                        :outline="!isDark"
                         @click="selectedCategoryId = String(item.category.id)"
                       >
                         Category: {{ item.category.name }}
                       </q-chip>
-                      <q-chip
-                        clickable
-                        color="primary"
-                        icon="rss_feed"
-                        :outline="!isDark"
-                        @click="selectedFeedId = String(item.feed.id)"
-                      >
+                      <q-chip clickable color="primary" icon="rss_feed" @click="selectedFeedId = String(item.feed.id)">
                         Feed: {{ item.feed.title }}
                       </q-chip>
-                      <q-chip color="accent" :outline="!isDark" icon="calendar_today">
+                      <q-chip color="accent" icon="calendar_today">
                         Date: <ClientDateTime :datetime="item.entry.date" />
                       </q-chip>
                     </div>
@@ -376,26 +364,13 @@
                     />
                   </q-card-section>
                   <q-card-actions>
-                    <q-btn
-                      flat
-                      icon="check"
-                      label="Read"
-                      :color="isDark ? 'white' : 'primary'"
-                      @click="markAsReadAndCollapse(item.entry.id, index)"
-                    />
-                    <q-btn
-                      flat
-                      label="Collapse"
-                      icon="unfold_less"
-                      :color="isDark ? 'white' : 'primary'"
-                      @click="expanded[index] = false"
-                    />
+                    <q-btn flat icon="check" label="Read" @click="markAsReadAndCollapse(item.entry.id, index)" />
+                    <q-btn flat label="Collapse" icon="unfold_less" @click="expanded[index] = false" />
                     <q-btn
                       v-if="!downloadedContents[item.entry.id]"
                       flat
                       label="Download"
                       icon="file_download"
-                      :color="isDark ? 'white' : 'primary'"
                       :loading="downloading[item.entry.id]"
                       @click="downloadContent(item.entry.id)"
                     />
@@ -404,7 +379,6 @@
                       flat
                       icon="undo"
                       label="See original"
-                      :color="isDark ? 'white' : 'primary'"
                       @click="downloadedContents[item.entry.id] = ''"
                     />
                   </q-card-actions>
@@ -476,7 +450,7 @@ import { add } from "date-fns";
 import { useQuasar } from "quasar";
 import { useRouteQuery } from "@vueuse/router";
 
-const { loggedIn } = useUserSession();
+const { loggedIn, session, clear: logout } = useUserSession();
 
 const $q = useQuasar();
 const isDark = useDark();
@@ -484,7 +458,7 @@ onMounted(() => {
   $q.dark.set(isDark.value);
 });
 watch(isDark, (val) => {
-  $q.dark.set(val);
+  if (val !== $q.dark.isActive) $q.dark.set(val);
 });
 
 const itemRefs = useTemplateRef("item-list");
@@ -972,6 +946,10 @@ async function toggleStarOpenEntry() {
 </script>
 
 <style>
+.body--dark a {
+  color: white;
+}
+
 .body--dark .entry-content a {
   color: white;
 }
