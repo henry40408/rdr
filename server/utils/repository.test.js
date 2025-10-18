@@ -1,5 +1,5 @@
 import { CategoryEntity, EntryEntity, FeedEntity, ImageEntity, UserEntity } from "./entities.js";
-import { afterEach, beforeEach, describe, it } from "node:test";
+import { afterEach, beforeEach, describe, it } from "vitest";
 import { MigrationSource } from "./migration-source.js";
 import { Repository } from "./repository.js";
 import assert from "node:assert";
@@ -199,6 +199,30 @@ describe("Repository", () => {
         assert.strictEqual(entry.readAt, null);
       }
 
+      {
+        const readEntries = await repository.findEntries({
+          userId: alice.id,
+          feedIds: [feedId],
+          status: "read",
+          limit: 10,
+          offset: 0,
+        });
+        assert.strictEqual(readEntries.length, 1);
+        assert.strictEqual(typeof readEntries[0].readAt, "string");
+      }
+
+      {
+        const starredEntries = await repository.findEntries({
+          userId: alice.id,
+          feedIds: [feedId],
+          status: "starred",
+          limit: 10,
+          offset: 0,
+        });
+        assert.strictEqual(starredEntries.length, 1);
+        assert.strictEqual(typeof starredEntries[0].starredAt, "string");
+      }
+
       const entry = await repository.findEntryById(alice.id, entries[0].id);
       assert.ok(entry instanceof EntryEntity);
       assert.strictEqual(entry.id, entries[0].id);
@@ -225,6 +249,11 @@ describe("Repository", () => {
       const eve = await createUser("nofeeduser", "nofeedpassword");
 
       const { categoryId, feedId } = await createEntries(repository, alice);
+
+      {
+        const feeds = await repository.findFeeds();
+        assert.strictEqual(feeds.length, 1);
+      }
 
       const feed = await repository.findFeedById(alice.id, feedId);
       assert.ok(feed instanceof FeedEntity);
@@ -304,6 +333,89 @@ describe("Repository", () => {
 
       const updated = await repository.markEntriesAsRead({ userId: alice.id, feedIds: [feedId] });
       assert.strictEqual(updated, 2);
+
+      const unreadBefore = await repository.countEntries({ userId: alice.id, status: "unread" });
+      assert.strictEqual(unreadBefore, 0);
+
+      // Test marking entries older than one day
+      {
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 2);
+        await repository
+          .knex("entries")
+          .where({ feed_id: feedId, guid: "entry-1" })
+          .update({ date: yesterday.toISOString(), read_at: null });
+
+        const updated = await repository.markEntriesAsRead({
+          userId: alice.id,
+          feedIds: [feedId],
+          olderThan: "day",
+        });
+        assert.strictEqual(updated, 1);
+      }
+
+      // Test marking entries older than one week
+      {
+        const lastWeek = new Date();
+        lastWeek.setDate(lastWeek.getDate() - 8);
+        await repository
+          .knex("entries")
+          .where({ feed_id: feedId, guid: "entry-3" })
+          .update({ date: lastWeek.toISOString(), read_at: null });
+
+        const updated = await repository.markEntriesAsRead({
+          userId: alice.id,
+          feedIds: [feedId],
+          olderThan: "week",
+        });
+        assert.strictEqual(updated, 1);
+      }
+
+      // Test marking entries older than one month
+      {
+        const lastMonth = new Date();
+        lastMonth.setMonth(lastMonth.getMonth() - 2);
+        await repository
+          .knex("entries")
+          .where({ feed_id: feedId, guid: "entry-1" })
+          .update({ date: lastMonth.toISOString(), read_at: null });
+
+        const updated = await repository.markEntriesAsRead({
+          userId: alice.id,
+          feedIds: [feedId],
+          olderThan: "month",
+        });
+        assert.strictEqual(updated, 1);
+      }
+
+      // Test marking entries older than one year
+      {
+        const lastYear = new Date();
+        lastYear.setFullYear(lastYear.getFullYear() - 2);
+        await repository
+          .knex("entries")
+          .where({ feed_id: feedId, guid: "entry-3" })
+          .update({ date: lastYear.toISOString(), read_at: null });
+
+        const updated = await repository.markEntriesAsRead({
+          userId: alice.id,
+          feedIds: [feedId],
+          olderThan: "year",
+        });
+        assert.strictEqual(updated, 1);
+      }
+
+      // Test with search parameter
+      {
+        await repository.knex("entries").where({ feed_id: feedId }).update({ read_at: null });
+
+        const updated = await repository.markEntriesAsRead({
+          userId: alice.id,
+          feedIds: [feedId],
+          search: "Entry 1",
+        });
+        assert.strictEqual(updated, 1);
+      }
     });
 
     it("should toggle read entry", async () => {
@@ -398,12 +510,14 @@ describe("Repository", () => {
     });
 
     it("should upsert entries", async () => {
-      const user = await createUser("entryupsertuser", "entryupsertpassword");
-      const { feedId } = await createEntries(repository, user);
+      const alice = await createUser("entryupsertuser", "entryupsertpassword");
+      const eve = await createUser("noentryupsertuser", "noentryupsertpassword");
+
+      const { feedId } = await createEntries(repository, alice);
 
       const now = new Date();
 
-      /** @type {Pick<import('feedparser').Item, 'guid'|'title'|'link'|'date'|'summary'|'description'|'author'|'pubdate'>[]} */
+      /** @type {import('./repository.js').FeedItem[]} */
       const items = [
         {
           guid: "new-entry-1",
@@ -417,11 +531,16 @@ describe("Repository", () => {
         },
       ];
 
-      const feed = await repository.findFeedById(user.id, feedId);
+      const feed = await repository.findFeedById(alice.id, feedId);
       assert.ok(feed);
-      await repository.upsertEntries(user.id, feed, items);
 
-      const entries = await repository.findEntries({ userId: user.id, feedIds: [feedId] });
+      // empty list is a no-op
+      await repository.upsertEntries(alice.id, feed, []);
+
+      // upsert new entries
+      await repository.upsertEntries(alice.id, feed, items);
+
+      const entries = await repository.findEntries({ userId: alice.id, feedIds: [feedId] });
       assert.strictEqual(entries.length, 4); // 3 existing + 1 new
 
       const newEntry = entries.find((e) => e.guid === "new-entry-1");
@@ -433,6 +552,72 @@ describe("Repository", () => {
       assert.strictEqual(newEntry.author, "New Author");
       assert.strictEqual(newEntry.readAt, null);
       assert.strictEqual(newEntry.starredAt, null);
+
+      // other user
+      {
+        await assert.rejects(
+          async () => {
+            await repository.upsertEntries(eve.id, feed, items);
+          },
+          {
+            name: "Error",
+            message: `Feed ${feedId} not found for user ${eve.id}`,
+          },
+        );
+      }
+
+      // upsert entries with date instead of pubdate
+      {
+        /** @type {import('./repository.js').FeedItem[]} */
+        const itemsWithDateOnly = [
+          {
+            guid: "new-entry-2",
+            title: "New Entry 2",
+            link: "http://example.com/new-entry-2",
+            date: now,
+            summary: "This is another new entry",
+            description: "This is another new entry",
+            author: "Another Author",
+            pubdate: null,
+          },
+        ];
+
+        await repository.upsertEntries(alice.id, feed, itemsWithDateOnly);
+
+        const entriesAfterSecondUpsert = await repository.findEntries({ userId: alice.id, feedIds: [feedId] });
+        assert.strictEqual(entriesAfterSecondUpsert.length, 5); // 4 existing + 1 new
+
+        const newEntry = entriesAfterSecondUpsert.find((e) => e.guid === "new-entry-2");
+        assert.ok(newEntry);
+        assert.strictEqual(newEntry.date, now.toISOString());
+      }
+
+      // upsert entries with weird date formats
+      {
+        /** @type {import('./repository.js').FeedItem[]} */
+        const itemsWithWeirdDates = [
+          {
+            guid: "new-entry-3",
+            title: "New Entry 3",
+            link: "http://example.com/new-entry-3",
+            date: null,
+            summary: "This is yet another new entry",
+            description: "This is yet another new entry",
+            author: "Yet Another Author",
+            pubdate: null,
+            "rss:pubdate": { "#": "週五, 26 九月 2025 06:29:00 +0000" },
+          },
+        ];
+
+        await repository.upsertEntries(alice.id, feed, itemsWithWeirdDates);
+
+        const entriesAfterThirdUpsert = await repository.findEntries({ userId: alice.id, feedIds: [feedId] });
+        assert.strictEqual(entriesAfterThirdUpsert.length, 6); // 5 existing + 1 new
+
+        const newEntry = entriesAfterThirdUpsert.find((e) => e.guid === "new-entry-3");
+        assert.ok(newEntry);
+        assert.strictEqual(newEntry.date, "2025-09-26T06:29:00.000Z");
+      }
     });
 
     it("should upsert image", async () => {
@@ -488,6 +673,13 @@ describe("Repository", () => {
 
       const feed = await repository.findFeedById(user.id, feedId);
       assert.ok(feed);
+
+      // no-op
+      {
+        const updated = await repository.updateFeedMetadata(feedId, feed);
+        assert.strictEqual(updated, 0);
+      }
+
       feed.etag = "new-etag-456";
       feed.lastModified = "Fri, 23 Oct 2015 09:31:00 GMT";
 

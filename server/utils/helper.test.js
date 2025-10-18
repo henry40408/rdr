@@ -1,4 +1,4 @@
-import { describe, it } from "node:test";
+import { describe, it } from "vitest";
 import { normalizeDatetime, parseDataURL } from "./helper.js";
 import assert from "node:assert";
 

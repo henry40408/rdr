@@ -3,6 +3,11 @@ import { compare, hash } from "bcrypt";
 import { add } from "date-fns";
 import chunk from "lodash/chunk.js";
 import get from "lodash/get.js";
+import { normalizeDatetime } from "./helper.js";
+
+/**
+ * @typedef {Pick<import('feedparser').Item, 'guid'|'title'|'link'|'date'|'summary'|'description'|'author'|'pubdate'> & { 'rss:pubdate'?: { '#': string } }} FeedItem
+ */
 
 export class Repository {
   /**
@@ -253,8 +258,6 @@ export class Repository {
 
     switch (order) {
       case "date":
-        q = q.orderBy("date", direction);
-        break;
       default:
         q = q.orderBy("date", direction);
     }
@@ -601,7 +604,7 @@ export class Repository {
   /**
    * @param {number} userId
    * @param {FeedEntity} feed
-   * @param {Pick<import('feedparser').Item, 'guid'|'title'|'link'|'date'|'summary'|'description'|'author'|'pubdate'>[]} items
+   * @param {FeedItem[]} items
    */
   async upsertEntries(userId, feed, items) {
     const logger = this.logger.child({ feedId: feed.id, userId });
@@ -681,8 +684,8 @@ export class Repository {
     const logger = this.logger.child({ feedId: feed.id, userId });
 
     const update = {};
-    if (typeof feed.etag !== "undefined") update.etag = feed.etag;
-    if (typeof feed.lastModified !== "undefined") update.last_modified = feed.lastModified;
+    if ("etag" in feed && feed.etag) update.etag = feed.etag;
+    if ("lastModified" in feed && feed.lastModified) update.last_modified = feed.lastModified;
     if (Object.keys(update).length === 0) {
       logger.debug("No metadata to update");
       return 0;
@@ -727,7 +730,7 @@ export class Repository {
   }
 
   /**
-   * @param {Pick<import('feedparser').Item, 'pubdate'|'date'>} item
+   * @param {FeedItem} item
    * @returns {Date}
    */
   _itemDate(item) {
