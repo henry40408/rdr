@@ -30,12 +30,13 @@ function rewriteContent(content) {
 export default defineEventHandler(async (event) => {
   const { container } = useNitroApp();
 
+  const userId = getUserIdOrThrow(event);
   const { entryId } = await getValidatedRouterParams(event, (params) => schema.parse(params));
 
   /** @type {Repository} */
   const repository = container.resolve("repository");
 
-  const content = await repository.findEntryContentById(entryId);
+  const content = await repository.findEntryContentById(userId, entryId);
   if (!content && content !== "") throw createError({ statusCode: 404, message: "Entry not found" });
 
   const trimmed = content.trim();

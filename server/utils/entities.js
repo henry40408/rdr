@@ -113,9 +113,11 @@ export class UserEntity {
    * @param {object} opts
    * @param {number} opts.id
    * @param {string} opts.username
+   * @param {boolean} [opts.isAdmin]
    */
-  constructor({ id, username }) {
+  constructor({ id, username, isAdmin = false }) {
     this.id = id;
     this.username = username;
+    this.isAdmin = isAdmin;
   }
 }

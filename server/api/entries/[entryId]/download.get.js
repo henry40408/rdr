@@ -9,6 +9,7 @@ const schema = z.object({
 export default defineEventHandler(async (event) => {
   const { container } = useNitroApp();
 
+  const userId = getUserIdOrThrow(event);
   const { entryId } = await getValidatedRouterParams(event, (params) => schema.parse(params));
 
   /** @type {Repository} */
@@ -16,7 +17,7 @@ export default defineEventHandler(async (event) => {
   /** @type {DownloadService} */
   const downloadService = container.resolve("downloadService");
 
-  const entry = await repository.findEntryById(entryId);
+  const entry = await repository.findEntryById(userId, entryId);
   if (!entry) throw createError({ statusCode: 404, statusMessage: "Entry not found" });
   if (!entry.link) throw createError({ statusCode: 400, statusMessage: "Entry has no link" });
 

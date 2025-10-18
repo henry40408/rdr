@@ -1,8 +1,10 @@
-export default defineEventHandler(() => {
+export default defineEventHandler(async (event) => {
   const { container } = useNitroApp();
+
+  const userId = getUserIdOrThrow(event);
 
   /** @type {Repository} */
   const repository = container.resolve("repository");
 
-  return repository.findImagePks();
+  return await repository.findImagePks(userId);
 });

@@ -821,7 +821,7 @@ async function markAsRead(entryId) {
   const value = entryRead.value[entryId];
   try {
     entryRead.value[entryId] = "toggling";
-    await $fetch(`/api/entries/${entryId}/toggle`, { method: "PUT" });
+    await $fetch(`/api/entries/${entryId}/read`, { method: "PUT" });
     entryRead.value[entryId] = "read";
     refresh();
   } catch (err) {
@@ -918,7 +918,7 @@ async function toggleReadEntry(entryId, index) {
 
   entryRead.value[entryId] = "toggling";
   try {
-    await $fetch(`/api/entries/${entryId}/toggle`, { method: "PUT" });
+    await $fetch(`/api/entries/${entryId}/read`, { method: "PUT" });
     refresh();
   } catch (err) {
     $q.notify({

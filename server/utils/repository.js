@@ -40,25 +40,7 @@ export class Repository {
     const match = await compare(password, row.password_hash);
     if (!match) return undefined;
 
-    return new UserEntity({ id: row.id, username: row.username });
-  }
-
-  /**
-   * @param {UserEntity} user
-   * @param {string} password
-   * @returns {Promise<UserEntity>}
-   */
-  async createUser(user, password) {
-    return await this.knex.transaction(async (tx) => {
-      const passwordHash = await hash(password, 12);
-      const [id] = await tx("users").insert({
-        username: user.username,
-        password_hash: passwordHash,
-      });
-      user.id = id;
-      this.logger.info({ msg: "Created user", username: user.username, id: user.id });
-      return user;
-    });
+    return new UserEntity({ id: row.id, username: row.username, isAdmin: !!row.is_admin });
   }
 
   /**
@@ -136,6 +118,24 @@ export class Repository {
       };
     }
     return counts;
+  }
+
+  /**
+   * @param {UserEntity} user
+   * @param {string} password
+   * @returns {Promise<UserEntity>}
+   */
+  async createUser(user, password) {
+    return await this.knex.transaction(async (tx) => {
+      const passwordHash = await hash(password, 12);
+      const [id] = await tx("users").insert({
+        username: user.username,
+        password_hash: passwordHash,
+      });
+      user.id = id;
+      this.logger.info({ msg: "Created user", username: user.username, id: user.id });
+      return user;
+    });
   }
 
   /**
@@ -448,6 +448,16 @@ export class Repository {
   }
 
   /**
+   * @param {number} id
+   * @returns {Promise<UserEntity|undefined>}
+   */
+  async findUserById(id) {
+    const row = await this.knex("users").where({ id }).first();
+    if (!row) return undefined;
+    return new UserEntity({ id: row.id, username: row.username, isAdmin: !!row.is_admin });
+  }
+
+  /**
    * @param {object} opts
    * @param {number} opts.userId
    * @param {number[]} [opts.feedIds]
@@ -571,6 +581,33 @@ export class Repository {
 
   /**
    * @param {number} userId
+   * @param {FeedEntity} feed
+   * @returns {Promise<number>}
+   */
+  async updateFeedMetadata(userId, feed) {
+    const logger = this.logger.child({ feedId: feed.id, userId });
+
+    const update = {};
+    if ("etag" in feed && feed.etag) update.etag = feed.etag;
+    if ("lastModified" in feed && feed.lastModified) update.last_modified = feed.lastModified;
+    if (Object.keys(update).length === 0) {
+      logger.debug("No metadata to update");
+      return 0;
+    }
+
+    logger.debug({ msg: "Update feed metadata", feed });
+    const updated = await this.knex("feeds")
+      .whereIn("category_id", (builder) => {
+        builder.select("id").from("categories").where("user_id", userId);
+      })
+      .where({ id: feed.id })
+      .update(update);
+    logger.info({ msg: "Updated feed metadata", feedId: feed.id, updated });
+    return updated;
+  }
+
+  /**
+   * @param {number} userId
    * @param {CategoryEntity[]} categories
    */
   async upsertCategories(userId, categories) {
@@ -673,33 +710,6 @@ export class Repository {
       .onConflict(["user_id", "external_id"])
       .merge();
     logger.info("Upserted image");
-  }
-
-  /**
-   * @param {number} userId
-   * @param {FeedEntity} feed
-   * @returns {Promise<number>}
-   */
-  async updateFeedMetadata(userId, feed) {
-    const logger = this.logger.child({ feedId: feed.id, userId });
-
-    const update = {};
-    if ("etag" in feed && feed.etag) update.etag = feed.etag;
-    if ("lastModified" in feed && feed.lastModified) update.last_modified = feed.lastModified;
-    if (Object.keys(update).length === 0) {
-      logger.debug("No metadata to update");
-      return 0;
-    }
-
-    logger.debug({ msg: "Update feed metadata", feed });
-    const updated = await this.knex("feeds")
-      .whereIn("category_id", (builder) => {
-        builder.select("id").from("categories").where("user_id", userId);
-      })
-      .where({ id: feed.id })
-      .update(update);
-    logger.info({ msg: "Updated feed metadata", feedId: feed.id, updated });
-    return updated;
   }
 
   /**

@@ -1,14 +1,19 @@
-export default defineEventHandler(async () => {
+export default defineEventHandler(async (event) => {
   const { container } = useNitroApp();
+
+  const userId = getUserIdOrThrow(event);
 
   /** @type {Repository} */
   const repository = container.resolve("repository");
 
-  const categories = await repository.findCategoriesWithFeed();
+  const categories = await repository.findCategoriesWithFeed(userId);
   const rows = categories.flatMap((c) => c.feeds);
   const [counts, imagePks] = await Promise.all([
-    repository.countEntriesByFeedIds(rows.map((f) => f.id)),
-    repository.findImagePks(),
+    repository.countEntriesByFeedIds(
+      userId,
+      rows.map((f) => f.id),
+    ),
+    repository.findImagePks(userId),
   ]);
 
   /** @type {Record<string,{ count: number, fetchedAt: string|undefined, imageExists: boolean, unreadCount: number }>} */

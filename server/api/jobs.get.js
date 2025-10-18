@@ -1,10 +1,15 @@
-export default defineEventHandler(async () => {
+export default defineEventHandler(async (event) => {
   const { container } = useNitroApp();
+
+  const userId = getUserIdOrThrow(event);
 
   /** @type {JobService} */
   const jobService = container.resolve("jobService");
   /** @type {Repository} */
   const repository = container.resolve("repository");
+
+  const user = await repository.findUserById(userId);
+  if (!user?.isAdmin) throw createError({ status: 403, message: "Forbidden" });
 
   const entities = await repository.findJobs();
   return jobService.jobs.map((job) => {

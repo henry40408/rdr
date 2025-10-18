@@ -14,17 +14,18 @@ export class OpmlService {
   }
 
   /**
+   * @param {number} userId
    * @param {string} content
    * @returns {Promise<CategoryEntity[]>}
    */
-  async importOpml(content) {
+  async importOpml(userId, content) {
     /** @type {CategoryEntity[]} */
     const categories = [];
 
     const parsed = await xml2js.parseStringPromise(content);
     for (const outline of parsed.opml.body[0].outline) {
       const categoryName = outline.$.text;
-      const category = new CategoryEntity({ id: 0, name: categoryName });
+      const category = new CategoryEntity({ id: 0, userId, name: categoryName });
 
       if (outline.outline) {
         for (const feedOutline of outline.outline) {
@@ -47,18 +48,19 @@ export class OpmlService {
       feedsCount: categories.flatMap((c) => c.feeds).length,
     });
 
-    await this.repository.upsertCategories(categories);
+    await this.repository.upsertCategories(userId, categories);
 
     return categories;
   }
 
   /**
+   * @param {number} userId
    * @returns {Promise<string>}
    */
-  async exportOpml() {
+  async exportOpml(userId) {
     const now = new Date();
     const builder = new xml2js.Builder({ headless: true, rootName: "opml" });
-    const categories = await this.repository.findCategoriesWithFeed();
+    const categories = await this.repository.findCategoriesWithFeed(userId);
     const opmlObj = {
       $: { version: "2.0" },
       head: [{ title: `Exported OPML (${now.toISOString()})` }],
