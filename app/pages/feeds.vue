@@ -156,9 +156,12 @@ const isDark = useDark();
 onMounted(() => {
   $q.dark.set(isDark.value);
 });
-watch(isDark, (val) => {
-  if (val !== $q.dark.isActive) $q.dark.set(val);
-});
+watchEffect(
+  () => {
+    if (isDark.value !== $q.dark.isActive) $q.dark.set(isDark.value);
+  },
+  { flush: "post" },
+);
 
 const { hideEmpty } = useLocalSettings();
 

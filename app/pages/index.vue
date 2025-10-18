@@ -242,6 +242,7 @@
                   removable
                   icon="category"
                   color="secondary"
+                  :outline="!isDark"
                   @remove="selectedCategoryId = undefined"
                   >Category: {{ getFilteredCategoryName() }}</q-chip
                 >
@@ -250,10 +251,18 @@
                   removable
                   color="primary"
                   icon="rss_feed"
+                  :outline="!isDark"
                   @remove="selectedFeedId = undefined"
                   >Feed: {{ getFilteredFeedTitle() }}</q-chip
                 >
-                <q-chip v-if="searchQuery" removable icon="search" color="accent" @remove="searchQuery = ''">
+                <q-chip
+                  v-if="searchQuery"
+                  removable
+                  icon="search"
+                  color="accent"
+                  :outline="!isDark"
+                  @remove="searchQuery = ''"
+                >
                   Search: {{ searchQuery }}
                 </q-chip>
               </div>
@@ -341,14 +350,21 @@
                         clickable
                         icon="category"
                         color="secondary"
+                        :outline="!isDark"
                         @click="selectedCategoryId = String(item.category.id)"
                       >
                         Category: {{ item.category.name }}
                       </q-chip>
-                      <q-chip clickable color="primary" icon="rss_feed" @click="selectedFeedId = String(item.feed.id)">
+                      <q-chip
+                        clickable
+                        color="primary"
+                        icon="rss_feed"
+                        :outline="!isDark"
+                        @click="selectedFeedId = String(item.feed.id)"
+                      >
                         Feed: {{ item.feed.title }}
                       </q-chip>
-                      <q-chip color="accent" icon="calendar_today">
+                      <q-chip color="accent" :outline="!isDark" icon="calendar_today">
                         Date: <ClientDateTime :datetime="item.entry.date" />
                       </q-chip>
                     </div>
@@ -457,9 +473,12 @@ const isDark = useDark();
 onMounted(() => {
   $q.dark.set(isDark.value);
 });
-watch(isDark, (val) => {
-  if (val !== $q.dark.isActive) $q.dark.set(val);
-});
+watchEffect(
+  () => {
+    if (isDark.value !== $q.dark.isActive) $q.dark.set(isDark.value);
+  },
+  { flush: "post" },
+);
 
 const itemRefs = useTemplateRef("item-list");
 const { hideEmpty } = useLocalSettings();
@@ -844,7 +863,7 @@ async function resetThenLoad(done) {
 
   if (done) done();
 }
-watch([listDirection, listLimit, listOrder, listStatus, selectedCategoryId, selectedFeedId, searchQuery], () => {
+watchEffect(() => {
   resetThenLoad();
 });
 
