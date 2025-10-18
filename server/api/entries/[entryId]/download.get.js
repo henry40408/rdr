@@ -1,6 +1,6 @@
-import { z } from "zod";
-import { Readability } from "@mozilla/readability";
 import { JSDOM } from "jsdom";
+import { Readability } from "@mozilla/readability";
+import { z } from "zod";
 
 const schema = z.object({
   entryId: z.coerce.number(),

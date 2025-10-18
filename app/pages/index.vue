@@ -471,9 +471,9 @@
 </template>
 
 <script setup>
-import { useRouteQuery } from "@vueuse/router";
 import { add } from "date-fns";
 import { useQuasar } from "quasar";
+import { useRouteQuery } from "@vueuse/router";
 
 const $q = useQuasar();
 const isDark = useDark();

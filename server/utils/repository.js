@@ -1,7 +1,8 @@
+import { CategoryEntity, EntryEntity, FeedEntity, ImageEntity, JobEntity, UserEntity } from "./entities.js";
+import { compare, hash } from "bcrypt";
+import { add } from "date-fns";
 import chunk from "lodash/chunk.js";
 import get from "lodash/get.js";
-import { CategoryEntity, EntryEntity, FeedEntity, JobEntity } from "./entities.js";
-import { add } from "date-fns";
 
 export class Repository {
   /**
@@ -23,14 +24,54 @@ export class Repository {
   }
 
   /**
+   * @param {string} username
+   * @param {string} password
+   * @returns {Promise<UserEntity|undefined>}
+   */
+  async authenticate(username, password) {
+    const row = await this.knex("users").where({ username }).first();
+    if (!row) return undefined;
+
+    const match = await compare(password, row.password_hash);
+    if (!match) return undefined;
+
+    return new UserEntity({ id: row.id, username: row.username });
+  }
+
+  /**
+   * @param {UserEntity} user
+   * @param {string} password
+   * @returns {Promise<UserEntity>}
+   */
+  async createUser(user, password) {
+    return await this.knex.transaction(async (tx) => {
+      const passwordHash = await hash(password, 12);
+      const [id] = await tx("users").insert({
+        username: user.username,
+        password_hash: passwordHash,
+      });
+      user.id = id;
+      this.logger.info({ msg: "Created user", username: user.username, id: user.id });
+      return user;
+    });
+  }
+
+  /**
    * @param {object} opts
+   * @param {number} opts.userId
    * @param {number[]} [opts.feedIds=[]]
    * @param {string} [opts.search]
    * @param {"all"|"read"|"unread"|"starred"} [opts.status="all"]
    * @returns {Promise<number>}
    */
-  async countEntries({ feedIds = [], search, status = "all" }) {
-    const q = this.knex("entries");
+  async countEntries({ userId, feedIds = [], search, status = "all" }) {
+    const q = this.knex("entries").whereIn("feed_id", function () {
+      this.select("id")
+        .from("feeds")
+        .whereIn("category_id", (builder) => {
+          builder.select("id").from("categories").where("user_id", userId);
+        });
+    });
     switch (status) {
       case "all":
         break;
@@ -58,10 +99,11 @@ export class Repository {
   }
 
   /**
+   * @param {number} userId
    * @param {number[]} feedIds
    * @returns {Promise<Record<string,{ total: number, unread: number }>>}
    */
-  async countEntriesByFeedIds(feedIds) {
+  async countEntriesByFeedIds(userId, feedIds) {
     if (feedIds.length === 0) return {};
 
     /** @type {Array<{ feed_id: number, total: number, unread: number }>} */
@@ -69,6 +111,14 @@ export class Repository {
       .select("feed_id")
       .count({ total: "*" })
       .sum({ unread: this.knex.raw("CASE WHEN read_at IS NULL THEN 1 ELSE 0 END") })
+      .whereIn("feed_id", (builder) => {
+        builder
+          .select("id")
+          .from("feeds")
+          .whereIn("category_id", (builder) => {
+            builder.select("id").from("categories").where("user_id", userId);
+          });
+      })
       .whereIn("feed_id", feedIds)
       .groupBy("feed_id");
 
@@ -83,11 +133,16 @@ export class Repository {
     return counts;
   }
 
-  async findCategoriesWithFeed() {
+  /**
+   * @param {number} userId
+   * @returns {Promise<CategoryEntity[]>}
+   */
+  async findCategoriesWithFeed(userId) {
     const rows = await this.knex("categories")
       .join("feeds", "categories.id", "feeds.category_id")
       .select(
         this.knex.ref("categories.id").as("category_id"),
+        this.knex.ref("categories.user_id").as("category_user_id"),
         this.knex.ref("categories.name").as("category_name"),
         this.knex.ref("feeds.id").as("feed_id"),
         this.knex.ref("feeds.title").as("feed_title"),
@@ -96,7 +151,8 @@ export class Repository {
         this.knex.ref("feeds.fetched_at").as("feed_fetched_at"),
         this.knex.ref("feeds.etag").as("feed_etag"),
         this.knex.ref("feeds.last_modified").as("feed_last_modified"),
-      );
+      )
+      .where("categories.user_id", userId);
 
     /** @type {CategoryEntity[]} */
     const categories = [];
@@ -117,7 +173,11 @@ export class Repository {
           }),
         );
       } else {
-        const newCategory = new CategoryEntity({ id: row.category_id, name: row.category_name });
+        const newCategory = new CategoryEntity({
+          id: row.category_id,
+          userId: row.category_user_id,
+          name: row.category_name,
+        });
         newCategory.feeds.push(
           new FeedEntity({
             id: row.feed_id,
@@ -138,6 +198,7 @@ export class Repository {
 
   /**
    * @param {object} opts
+   * @param {number} opts.userId
    * @param {"asc"|"desc"} [opts.direction="desc"]
    * @param {number[]} [opts.feedIds]
    * @param {number} [opts.limit=100]
@@ -148,6 +209,7 @@ export class Repository {
    * @returns {Promise<EntryEntity[]>}
    */
   async findEntries({
+    userId,
     direction = "desc",
     feedIds = [],
     limit = 100,
@@ -156,17 +218,16 @@ export class Repository {
     search,
     status = "all",
   }) {
-    let q = this.knex("entries").select([
-      "id",
-      "feed_id",
-      "guid",
-      "title",
-      "link",
-      "date",
-      "author",
-      "read_at",
-      "starred_at",
-    ]);
+    let q = this.knex("entries")
+      .select(["id", "feed_id", "guid", "title", "link", "date", "author", "read_at", "starred_at"])
+      .whereIn("feed_id", (builder) => {
+        builder
+          .select("id")
+          .from("feeds")
+          .whereIn("category_id", (builder) => {
+            builder.select("id").from("categories").where("user_id", userId);
+          });
+      });
     switch (status) {
       case "all":
         break;
@@ -216,11 +277,22 @@ export class Repository {
   }
 
   /**
+   * @param {number} userId
    * @param {number} id
    * @returns {Promise<EntryEntity|undefined>}
    */
-  async findEntryById(id) {
-    const row = await this.knex("entries").where({ id }).first();
+  async findEntryById(userId, id) {
+    const row = await this.knex("entries")
+      .whereIn("feed_id", (builder) => {
+        builder
+          .select("id")
+          .from("feeds")
+          .whereIn("category_id", (builder) => {
+            builder.select("id").from("categories").where("user_id", userId);
+          });
+      })
+      .where({ id })
+      .first();
     if (!row) return undefined;
     return new EntryEntity({
       id: row.id,
@@ -236,22 +308,38 @@ export class Repository {
   }
 
   /**
+   * @param {number} userId
    * @param {number} id
    * @returns {Promise<string|undefined>}
    */
-  async findEntryContentById(id) {
-    const row = await this.knex("entries").where({ id }).first();
+  async findEntryContentById(userId, id) {
+    const row = await this.knex("entries")
+      .whereIn("feed_id", (builder) => {
+        builder
+          .select("id")
+          .from("feeds")
+          .whereIn("category_id", (builder) => {
+            builder.select("id").from("categories").where("user_id", userId);
+          });
+      })
+      .where({ id })
+      .first();
     if (!row) return undefined;
     return row.description;
   }
 
   /**
-   *
+   * @param {number} userId
    * @param {number} id
    * @returns {Promise<FeedEntity|undefined>}
    */
-  async findFeedById(id) {
-    const row = await this.knex("feeds").where({ id }).first();
+  async findFeedById(userId, id) {
+    const row = await this.knex("feeds")
+      .whereIn("category_id", (builder) => {
+        builder.select("id").from("categories").where("user_id", userId);
+      })
+      .where({ id })
+      .first();
     if (!row) return undefined;
 
     return new FeedEntity({
@@ -260,6 +348,7 @@ export class Repository {
       title: row.title,
       xmlUrl: row.xml_url,
       htmlUrl: row.html_url,
+      fetchedAt: row.fetched_at,
       etag: row.etag,
       lastModified: row.last_modified,
     });
@@ -286,11 +375,17 @@ export class Repository {
   }
 
   /**
+   * @param {number} userId
    * @param {number} categoryId
    * @returns {Promise<FeedEntity[]>}
    */
-  async findFeedsWithCategoryId(categoryId) {
-    const rows = await this.knex("feeds").where({ category_id: categoryId }).select();
+  async findFeedsWithCategoryId(userId, categoryId) {
+    const rows = await this.knex("feeds")
+      .where({ category_id: categoryId })
+      .whereIn("category_id", (builder) => {
+        builder.select("id").from("categories").where("user_id", userId);
+      })
+      .select();
     return rows.map(
       (row) =>
         new FeedEntity({
@@ -307,11 +402,12 @@ export class Repository {
   }
 
   /**
+   * @param {number} userId
    * @param {string} externalId
    * @returns {Promise<ImageEntity|undefined>}
    */
-  async findImageByExternalId(externalId) {
-    const row = await this.knex("images").where({ external_id: externalId }).first();
+  async findImageByExternalId(userId, externalId) {
+    const row = await this.knex("images").where({ user_id: userId, external_id: externalId }).first();
     if (!row) return undefined;
     return new ImageEntity({
       externalId: row.external_id,
@@ -324,10 +420,11 @@ export class Repository {
   }
 
   /**
+   * @param {number} userId
    * @returns {Promise<string[]>}
    */
-  async findImagePks() {
-    const rows = await this.knex("images").select();
+  async findImagePks(userId) {
+    const rows = await this.knex("images").where({ user_id: userId }).select();
     return rows.map((row) => row.external_id);
   }
 
@@ -349,16 +446,26 @@ export class Repository {
 
   /**
    * @param {object} opts
+   * @param {number} opts.userId
    * @param {number[]} [opts.feedIds]
    * @param {"day"|"week"|"month"|"year"} [opts.olderThan]
    * @param {string} [opts.search]
    * @returns {Promise<number>}
    */
-  async markEntriesAsRead({ feedIds, olderThan, search }) {
+  async markEntriesAsRead({ userId, feedIds, olderThan, search }) {
     const now = new Date();
     const nowISO = now.toISOString();
 
-    const q = this.knex("entries").whereNull("read_at");
+    const q = this.knex("entries")
+      .whereNull("read_at")
+      .whereIn("feed_id", (builder) => {
+        builder
+          .select("id")
+          .from("feeds")
+          .whereIn("category_id", (builder) => {
+            builder.select("id").from("categories").where("user_id", userId);
+          });
+      });
     if (feedIds && feedIds.length > 0) q.whereIn("feed_id", feedIds);
     switch (olderThan) {
       case "day":
@@ -390,75 +497,101 @@ export class Repository {
   }
 
   /**
+   * @param {number} userId
    * @param {number} id
    * @returns {Promise<Date|undefined>}
    */
-  async toggleReadEntry(id) {
+  async toggleReadEntry(userId, id) {
     const logger = this.logger.child({ entryId: id });
+    return await this.knex.transaction(async (tx) => {
+      const row = await tx("entries")
+        .whereIn("feed_id", (builder) => {
+          builder
+            .select("id")
+            .from("feeds")
+            .whereIn("category_id", (builder) => {
+              builder.select("id").from("categories").where("user_id", userId);
+            });
+        })
+        .where({ id })
+        .first();
+      if (!row) throw new Error(`Entry with id ${id} not found`);
 
-    const row = await this.knex("entries").where({ id }).first();
-    if (!row) throw new Error(`Entry with id ${id} not found`);
-
-    const now = new Date();
-    const isoNow = now.toISOString();
-    if (row.read_at) {
-      await this.knex("entries").where({ id }).update({ read_at: null, updated_at: isoNow });
-      logger.info({ msg: "Marked entry as unread" });
-      return undefined;
-    } else {
-      await this.knex("entries").where({ id }).update({ read_at: isoNow, updated_at: isoNow });
-      logger.info({ msg: "Marked entry as read" });
-      return now;
-    }
+      const now = new Date();
+      const isoNow = now.toISOString();
+      if (row.read_at) {
+        await tx("entries").where({ id }).update({ read_at: null, updated_at: isoNow });
+        logger.info({ msg: "Marked entry as unread" });
+        return undefined;
+      } else {
+        await tx("entries").where({ id }).update({ read_at: isoNow, updated_at: isoNow });
+        logger.info({ msg: "Marked entry as read" });
+        return now;
+      }
+    });
   }
 
   /**
+   * @param {number} userId
    * @param {number} id
    * @returns {Promise<Date|undefined>}
    */
-  async toggleStarEntry(id) {
+  async toggleStarEntry(userId, id) {
     const logger = this.logger.child({ entryId: id });
+    return await this.knex.transaction(async (tx) => {
+      const row = await tx("entries")
+        .whereIn("feed_id", (builder) => {
+          builder
+            .select("id")
+            .from("feeds")
+            .whereIn("category_id", (builder) => {
+              builder.select("id").from("categories").where("user_id", userId);
+            });
+        })
+        .where({ id })
+        .first();
+      if (!row) throw new Error(`Entry with id ${id} not found`);
 
-    const row = await this.knex("entries").where({ id }).first();
-    if (!row) throw new Error(`Entry with id ${id} not found`);
-
-    const now = new Date();
-    const isoNow = now.toISOString();
-    if (row.starred_at) {
-      await this.knex("entries").where({ id }).update({ starred_at: null, updated_at: isoNow });
-      logger.info({ msg: "Unstarred entry" });
-      return undefined;
-    } else {
-      await this.knex("entries").where({ id }).update({ starred_at: isoNow, updated_at: isoNow });
-      logger.info({ msg: "Starred entry" });
-      return now;
-    }
+      const now = new Date();
+      const isoNow = now.toISOString();
+      if (row.starred_at) {
+        await tx("entries").where({ id }).update({ starred_at: null, updated_at: isoNow });
+        logger.info({ msg: "Unstarred entry" });
+        return undefined;
+      } else {
+        await tx("entries").where({ id }).update({ starred_at: isoNow, updated_at: isoNow });
+        logger.info({ msg: "Starred entry" });
+        return now;
+      }
+    });
   }
 
   /**
+   * @param {number} userId
    * @param {CategoryEntity[]} categories
    */
-  async upsertCategories(categories) {
-    this.knex.transaction(async (tx) => {
+  async upsertCategories(userId, categories) {
+    await this.knex.transaction(async (tx) => {
       for (const category of categories) {
-        await tx("categories").insert({ name: category.name }).onConflict("name").merge();
-        this.logger.info({ msg: "Upserted category", name: category.name });
-
-        const found = await tx("categories").where({ name: category.name }).first();
-        if (!found) throw new Error("Category not found after upsert");
+        const [categoryId] = await tx("categories")
+          .insert({ user_id: userId, name: category.name })
+          .onConflict(["user_id", "name"])
+          .merge();
+        this.logger.info({ msg: "Upserted category", userId, name: category.name });
+        category.id = categoryId;
 
         for (const feed of category.feeds) {
-          await tx("feeds")
+          const [feedId] = await tx("feeds")
             .insert({
-              category_id: found.id,
+              category_id: categoryId,
               title: feed.title,
               xml_url: feed.xmlUrl,
               html_url: feed.htmlUrl,
             })
-            .onConflict("xml_url")
+            .onConflict(["category_id", "xml_url"])
             .merge();
-
           this.logger.info({ msg: "Upserted feed", category: category.name, title: feed.title });
+          feed.id = feedId;
         }
       }
     });
@@ -466,11 +599,12 @@ export class Repository {
   }
 
   /**
+   * @param {number} userId
    * @param {FeedEntity} feed
-   * @param {import('feedparser').Item[]} items
+   * @param {Pick<import('feedparser').Item, 'guid'|'title'|'link'|'date'|'summary'|'description'|'author'|'pubdate'>[]} items
    */
-  async upsertEntries(feed, items) {
-    const logger = this.logger.child({ feedId: feed.id });
+  async upsertEntries(userId, feed, items) {
+    const logger = this.logger.child({ feedId: feed.id, userId });
 
     if (items.length === 0) {
       logger.warn({ msg: "No entries to upsert" });
@@ -480,40 +614,52 @@ export class Repository {
     const now = new Date();
     logger.debug({ msg: "Upserting entries", count: items.length });
 
-    const chunks = chunk(items, 10);
-    for (const chunk of chunks) {
-      await this.knex("entries")
-        .insert(
-          chunk.map((e) => ({
-            feed_id: feed.id,
-            guid: e.guid,
-            title: e.title || "(no title)",
-            link: e.link,
-            date: this._itemDate(e).toISOString(),
-            summary: e.summary || "(no summary)",
-            description: e.description,
-            author: e.author,
-          })),
-        )
-        .onConflict(["feed_id", "guid"])
-        .merge();
-      logger.debug({ msg: "Upserted chunk of entries", count: chunk.length });
-    }
-    logger.info({ msg: "Upserted entries", count: items.length });
+    await this.knex.transaction(async (tx) => {
+      const found = await tx("feeds")
+        .whereIn("category_id", (builder) => {
+          builder.select("id").from("categories").where("user_id", userId);
+        })
+        .where({ id: feed.id })
+        .first();
+      if (!found) throw new Error(`Feed ${feed.id} not found for user ${userId}`);
 
-    await this.knex("feeds").where({ id: feed.id }).update({ fetched_at: now.toISOString() });
-    logger.info({ msg: "Updated feed", feedId: feed.id, fetchedAt: now });
+      const chunks = chunk(items, 10);
+      for (const chunk of chunks) {
+        await tx("entries")
+          .insert(
+            chunk.map((e) => ({
+              feed_id: feed.id,
+              guid: e.guid,
+              title: e.title || "(no title)",
+              link: e.link,
+              date: this._itemDate(e).toISOString(),
+              summary: e.summary || "(no summary)",
+              description: e.description,
+              author: e.author,
+            })),
+          )
+          .onConflict(["feed_id", "guid"])
+          .merge();
+        logger.debug({ msg: "Upserted chunk of entries", count: chunk.length });
+      }
+
+      await tx("feeds").where({ id: feed.id }).update({ fetched_at: now.toISOString() });
+    });
+
+    logger.info({ msg: "Upserted entries", count: items.length, fetchedAt: now });
   }
 
   /**
+   * @param {number} userId
    * @param {ImageEntity} image
    */
-  async upsertImage(image) {
-    const logger = this.logger.child({ externalId: image.externalId });
+  async upsertImage(userId, image) {
+    const logger = this.logger.child({ externalId: image.externalId, userId });
 
     logger.debug("Upserting image");
     await this.knex("images")
       .insert({
+        user_id: userId,
         external_id: image.externalId,
         url: image.url,
         blob: image.blob,
@@ -521,28 +667,36 @@ export class Repository {
         etag: image.etag,
         last_modified: image.lastModified,
       })
-      .onConflict("external_id")
+      .onConflict(["user_id", "external_id"])
       .merge();
     logger.info("Upserted image");
   }
 
   /**
+   * @param {number} userId
    * @param {FeedEntity} feed
+   * @returns {Promise<number>}
    */
-  async updateFeedMetadata(feed) {
-    const logger = this.logger.child({ feedId: feed.id });
+  async updateFeedMetadata(userId, feed) {
+    const logger = this.logger.child({ feedId: feed.id, userId });
 
     const update = {};
     if (typeof feed.etag !== "undefined") update.etag = feed.etag;
     if (typeof feed.lastModified !== "undefined") update.last_modified = feed.lastModified;
     if (Object.keys(update).length === 0) {
       logger.debug("No metadata to update");
-      return;
+      return 0;
     }
 
     logger.debug({ msg: "Update feed metadata", feed });
-    await this.knex("feeds").where({ id: feed.id }).update(update);
-    logger.info({ msg: "Updated feed metadata", feedId: feed.id });
+    const updated = await this.knex("feeds")
+      .whereIn("category_id", (builder) => {
+        builder.select("id").from("categories").where("user_id", userId);
+      })
+      .where({ id: feed.id })
+      .update(update);
+    logger.info({ msg: "Updated feed metadata", feedId: feed.id, updated });
+    return updated;
   }
 
   /**
@@ -573,7 +727,7 @@ export class Repository {
   }
 
   /**
-   * @param {import('feedparser').Item} item
+   * @param {Pick<import('feedparser').Item, 'pubdate'|'date'>} item
    * @returns {Date}
    */
   _itemDate(item) {

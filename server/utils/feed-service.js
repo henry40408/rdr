@@ -1,6 +1,5 @@
-import { Readable } from "node:stream";
-
 import FeedParser from "feedparser";
+import { Readable } from "node:stream";
 
 export class FeedService {
   /**
@@ -120,13 +119,14 @@ export class FeedService {
   }
 
   /**
+   * @param {number} userId
    * @param {FeedEntity} feed
    */
-  async fetchAndSaveEntries(feed) {
+  async fetchAndSaveEntries(userId, feed) {
     const result = await this.fetchEntries(feed);
     if (result.type === "ok") {
-      await this.repository.upsertEntries(feed, result.items);
-      await this.repository.updateFeedMetadata(result.feed);
+      await this.repository.upsertEntries(userId, feed, result.items);
+      await this.repository.updateFeedMetadata(userId, result.feed);
     }
   }
 }

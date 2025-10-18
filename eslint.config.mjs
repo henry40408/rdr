@@ -1,8 +1,9 @@
 import withNuxt from "./.nuxt/eslint.config.mjs";
 
 export default withNuxt({
-  files: ["**/*.vue"],
+  files: ["**/*.js", "**/*.vue"],
   rules: {
+    "sort-imports": "warn",
     "vue/attributes-order": [
       "warn",
       {

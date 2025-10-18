@@ -1,8 +1,7 @@
-import os from "node:os";
-
-import got from "got";
 import * as cheerio from "cheerio";
 import PQueue from "p-queue";
+import got from "got";
+import os from "node:os";
 
 export class DownloadService {
   /**

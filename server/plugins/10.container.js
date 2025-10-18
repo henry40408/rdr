@@ -1,10 +1,10 @@
-import pino from "pino";
-import { createContainer, asClass, asValue } from "awilix";
+import { asClass, asValue, createContainer } from "awilix";
 import { AwilixManager } from "awilix-manager";
-import knex from "knex";
 import { DownloadService } from "../utils/download-service";
 import { FetchEntriesJob } from "../utils/jobs/fetch-entries-job";
 import { FetchImagesJob } from "../utils/jobs/fetch-images-job";
+import knex from "knex";
+import pino from "pino";
 
 export default defineNitroPlugin(
   /** @param {import('nitropack/types').NitroApp} nitroApp */
