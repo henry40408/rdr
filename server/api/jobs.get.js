@@ -10,7 +10,7 @@ export default defineEventHandler(async (event) => {
   const repository = container.resolve("repository");
 
   const user = await repository.findUserById(userId);
-  if (!user?.isAdmin) throw createError({ status: 403, message: "Forbidden" });
+  if (!user?.isAdmin) return [];
 
   const entities = await repository.findJobs();
   return jobService.jobs.map((job) => {

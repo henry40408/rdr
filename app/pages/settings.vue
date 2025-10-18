@@ -44,7 +44,7 @@
           <q-item>
             <q-item-section header>
               <q-item-label class="text-h5">Background Jobs</q-item-label>
-              <q-item-label caption>Manually trigger background jobs</q-item-label>
+              <q-item-label caption>Manually trigger background jobs. Only admins can do this.</q-item-label>
             </q-item-section>
           </q-item>
           <q-item v-for="job in jobsData" :key="job.name">
@@ -70,6 +70,13 @@
               </q-btn>
             </q-item-section>
           </q-item>
+          <q-item v-if="jobsData?.length === 0">
+            <q-item-section>
+              <q-item-label>No background jobs available.</q-item-label>
+            </q-item-section>
+          </q-item>
+        </q-list>
+        <q-list padding>
           <q-item>
             <q-item-section header>
               <q-item-label class="text-h5">Change Password</q-item-label>
