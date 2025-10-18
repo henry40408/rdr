@@ -134,12 +134,18 @@ export class Repository {
   async createUser(user, password) {
     return await this.knex.transaction(async (tx) => {
       const passwordHash = await hash(password, 12);
+      const userCount = await tx("users").count({ count: "*" }).first();
+      const isFirstUser = userCount ? Number(userCount.count) === 0 : true;
+
       const [id] = await tx("users").insert({
         username: user.username,
         password_hash: passwordHash,
+        is_admin: isFirstUser ? 1 : 0,
       });
       user.id = id;
-      this.logger.info({ msg: "Created user", username: user.username, id: user.id });
+      user.isAdmin = isFirstUser;
+
+      this.logger.info({ msg: "Created user", username: user.username, id: user.id, isAdmin: isFirstUser });
       return user;
     });
   }
@@ -461,6 +467,14 @@ export class Repository {
     const row = await this.knex("users").where({ id }).first();
     if (!row) return undefined;
     return new UserEntity({ id: row.id, username: row.username, isAdmin: !!row.is_admin });
+  }
+
+  /**
+   * @returns {Promise<UserEntity[]>}
+   */
+  async findUsers() {
+    const rows = await this.knex("users").select();
+    return rows.map((row) => new UserEntity({ id: row.id, username: row.username, isAdmin: !!row.is_admin }));
   }
 
   /**

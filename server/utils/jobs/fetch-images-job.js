@@ -35,18 +35,27 @@ export class FetchImagesJob extends BaseJob {
     let counter = 0;
     logger.info("Starting feed images job");
 
-    const feeds = await this.repository.findFeeds();
-    const tasks = feeds.map((feed) =>
-      this.feedService.fetchImage(feed).finally(() => {
-        this.logger.debug({
-          msg: "Fetched image for feed",
-          feedId: feed.id,
-          counter: ++counter,
-          total: feeds.length,
-        });
-      }),
-    );
+    const users = await this.repository.findUsers();
+    const tasks = users.map(async (user) => {
+      const categories = await this.repository.findCategoriesWithFeed(user.id);
+      const feeds = categories.flatMap((category) => category.feeds);
+      return await Promise.allSettled(
+        feeds.map(async (feed) => {
+          try {
+            return await this.feedService.fetchImage(user.id, feed);
+          } finally {
+            this.logger.debug({
+              msg: "Fetched image for feed",
+              feedId: feed.id,
+              counter: ++counter,
+              total: feeds.length,
+            });
+          }
+        }),
+      );
+    });
     await Promise.allSettled(tasks);
+
     logger.info("Completed feed images job");
   }
 }

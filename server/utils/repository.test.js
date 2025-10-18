@@ -165,13 +165,20 @@ describe("Repository", () => {
       const count1 = await repository.countUsers();
       assert.strictEqual(count1, 0);
 
-      await createUser("user1", "password1");
+      const user = await createUser("user1", "password1");
+      assert.ok(user instanceof UserEntity);
+      assert.strictEqual(user.isAdmin, true);
 
       const count2 = await repository.countUsers();
       assert.strictEqual(count2, 1);
 
-      await createUser("user2", "password2");
-      await createUser("user3", "password3");
+      const user2 = await createUser("user2", "password2");
+      assert.ok(user2 instanceof UserEntity);
+      assert.strictEqual(user2.isAdmin, false);
+
+      const user3 = await createUser("user3", "password3");
+      assert.ok(user3 instanceof UserEntity);
+      assert.strictEqual(user3.isAdmin, false);
 
       const count3 = await repository.countUsers();
       assert.strictEqual(count3, 3);
