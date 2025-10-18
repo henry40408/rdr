@@ -32,20 +32,30 @@ export class FetchEntriesJob extends BaseJob {
     let counter = 0;
     logger.info("Starting feed refresh job");
 
-    const feeds = await this.repository.findFeeds();
-    const tasks = feeds.map((feed) =>
-      Promise.allSettled([this.feedService.fetchAndSaveEntries(feed), this.feedService.fetchImage(feed)]).finally(
-        () => {
-          this.logger.debug({
-            msg: "Fetched entries for feed",
-            feedId: feed.id,
-            counter: ++counter,
-            total: feeds.length,
-          });
-        },
-      ),
-    );
+    const users = await this.repository.findUsers();
+    const tasks = users.map(async (user) => {
+      const categories = await this.repository.findCategoriesWithFeed(user.id);
+      const feeds = categories.flatMap((category) => category.feeds);
+      return await Promise.allSettled(
+        feeds.map(async (feed) => {
+          try {
+            return await Promise.allSettled([
+              this.feedService.fetchAndSaveEntries(user.id, feed),
+              this.feedService.fetchImage(user.id, feed),
+            ]);
+          } finally {
+            this.logger.debug({
+              msg: "Fetched entries for feed",
+              feedId: feed.id,
+              counter: ++counter,
+              total: feeds.length,
+            });
+          }
+        }),
+      );
+    });
     await Promise.allSettled(tasks);
+
     logger.info("Completed feed refresh job");
   }
 }

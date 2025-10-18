@@ -10,6 +10,9 @@ const schema = z.object({
 export default defineEventHandler(async (event) => {
   const { container } = useNitroApp();
 
+  const session = await requireUserSession(event);
+  const userId = session.user.id;
+
   const { search, selectedId, selectedType, status } = await getValidatedQuery(event, (query) => schema.parse(query));
 
   /** @type {Repository} */
@@ -18,13 +21,13 @@ export default defineEventHandler(async (event) => {
   /** @type {number[]|undefined} */
   let feedIds = undefined;
   if (selectedType === "category" && selectedId) {
-    const feeds = await repository.findFeedsWithCategoryId(selectedId);
+    const feeds = await repository.findFeedsWithCategoryId(userId, selectedId);
     feedIds = feeds.map((f) => f.id);
   } else if (selectedType === "feed" && selectedId) {
     feedIds = [selectedId];
   }
 
   return {
-    count: await repository.countEntries({ feedIds, search: search || undefined, status }),
+    count: await repository.countEntries({ userId, feedIds, search: search || undefined, status }),
   };
 });

@@ -1,5 +1,5 @@
 <template>
-  <q-layout view="hhh LpR fFf">
+  <q-layout v-if="loggedIn" view="hhh LpR fFf">
     <q-header elevated class="bg-primary text-white">
       <q-toolbar>
         <q-toolbar-title>
@@ -105,6 +105,7 @@
                         <q-btn
                           icon="refresh"
                           color="primary"
+                          :flat="!isDark"
                           label="Refresh"
                           :loading="refreshingFeedIds.has(feed.id)"
                           @click="refreshFeed(feed)"
@@ -114,9 +115,9 @@
                         </div>
                         <q-btn
                           color="primary"
+                          :flat="!isDark"
                           target="_blank"
                           icon="open_in_new"
-                          :outline="!isDark"
                           :href="feed.htmlUrl"
                           label="Go to website"
                           rel="noopener noreferrer"
@@ -141,20 +142,26 @@
       </q-page>
     </q-page-container>
   </q-layout>
+  <LoginPage v-else />
 </template>
 
 <script setup>
 import { formatDistanceToNow } from "date-fns";
 import { useQuasar } from "quasar";
 
+const { loggedIn } = useUserSession();
+
 const $q = useQuasar();
 const isDark = useDark();
 onMounted(() => {
   $q.dark.set(isDark.value);
 });
-watch(isDark, (val) => {
-  $q.dark.set(val);
-});
+watchEffect(
+  () => {
+    if (isDark.value !== $q.dark.isActive) $q.dark.set(isDark.value);
+  },
+  { flush: "post" },
+);
 
 const { hideEmpty } = useLocalSettings();
 
@@ -230,7 +237,7 @@ async function refreshCategory(category) {
 
   try {
     const tasks = [];
-    for (const feedId of feedIds) tasks.push($fetch(`/api/feeds/${feedId}/refresh`, { method: "POST" }));
+    for (const feedId of feedIds) tasks.push(useRequestFetch()(`/api/feeds/${feedId}/refresh`, { method: "POST" }));
     await Promise.all(tasks);
     await afterRefresh();
   } catch (err) {
@@ -253,7 +260,7 @@ async function refreshFeed(feed) {
   if (refreshingFeedIds.value.has(feed.id)) return;
   refreshingFeedIds.value.add(feed.id);
   try {
-    await $fetch(`/api/feeds/${feed.id}/refresh`, { method: "POST" });
+    await useRequestFetch()(`/api/feeds/${feed.id}/refresh`, { method: "POST" });
     await afterRefresh();
   } catch (err) {
     $q.notify({

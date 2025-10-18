@@ -12,11 +12,12 @@ export class ImageService {
   }
 
   /**
+   * @param {number} userId
    * @param {string} externalId
    * @param {string} url
    * @returns {Promise<ImageEntity|undefined>}
    */
-  async download(externalId, url) {
+  async download(userId, externalId, url) {
     const logger = this.logger.child({ externalId });
     try {
       const parsed = new URL(url);
@@ -30,11 +31,11 @@ export class ImageService {
           etag: undefined,
           lastModified: undefined,
         });
-        await this.repository.upsertImage(newImage);
+        await this.repository.upsertImage(userId, newImage);
         return newImage;
       }
 
-      const existing = await this.repository.findImageByExternalId(externalId);
+      const existing = await this.repository.findImageByExternalId(userId, externalId);
       const res = await this.downloadService.downloadBinary({
         url,
         etag: existing?.etag,
@@ -67,7 +68,7 @@ export class ImageService {
         etag,
         lastModified,
       });
-      await this.repository.upsertImage(newImage);
+      await this.repository.upsertImage(userId, newImage);
       return newImage;
     } catch (err) {
       this.logger.error(err);

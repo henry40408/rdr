@@ -13,13 +13,15 @@ export default defineNuxtConfig({
       ],
     },
   },
-  modules: ["@nuxt/eslint", "@vueuse/nuxt", "nuxt-quasar-ui"],
+  modules: ["@nuxt/eslint", "@vueuse/nuxt", "nuxt-auth-utils", "nuxt-quasar-ui"],
   runtimeConfig: {
     dbPath: "./data/db.sqlite3",
+    disableSignUp: false,
     httpTimeoutMs: 90000,
     logLevel: "",
     opmlPath: "./data/feeds.opml",
     userAgent: "Mozilla/5.0 (compatible; rdr/1.0; +https://github.com/henry40408/rdr)",
+    singleUser: true,
   },
   quasar: {
     plugins: ["Dialog", "Notify"],

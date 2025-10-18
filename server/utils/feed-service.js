@@ -1,6 +1,5 @@
-import { Readable } from "node:stream";
-
 import FeedParser from "feedparser";
+import { Readable } from "node:stream";
 
 export class FeedService {
   /**
@@ -88,23 +87,24 @@ export class FeedService {
   }
 
   /**
+   * @param {number} userId
    * @param {FeedEntity} feed
    * @returns {Promise<ImageEntity|undefined>}
    */
-  async fetchImage(feed) {
+  async fetchImage(userId, feed) {
     const logger = this.logger.child({ feedId: feed.id });
     try {
       {
         logger.debug("Trying to fetch favicon from base URL");
         const url = new URL("/favicon.ico", feed.htmlUrl).toString();
-        const result = await this.imageService.download(buildFeedImageKey(feed.id), url);
+        const result = await this.imageService.download(userId, buildFeedImageKey(feed.id), url);
         if (result) return result;
       }
       {
         logger.debug("Trying to find favicon from HTML");
         const url = await this.downloadService.findFavicon(feed.htmlUrl);
         if (url) {
-          const result = await this.imageService.download(buildFeedImageKey(feed.id), url);
+          const result = await this.imageService.download(userId, buildFeedImageKey(feed.id), url);
           if (result) {
             logger.debug({ msg: "Fetched favicon from HTML", url });
             return result;
@@ -120,13 +120,14 @@ export class FeedService {
   }
 
   /**
+   * @param {number} userId
    * @param {FeedEntity} feed
    */
-  async fetchAndSaveEntries(feed) {
+  async fetchAndSaveEntries(userId, feed) {
     const result = await this.fetchEntries(feed);
     if (result.type === "ok") {
-      await this.repository.upsertEntries(feed, result.items);
-      await this.repository.updateFeedMetadata(result.feed);
+      await this.repository.upsertEntries(userId, feed, result.items);
+      await this.repository.updateFeedMetadata(userId, result.feed);
     }
   }
 }

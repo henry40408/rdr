@@ -1,5 +1,5 @@
 <template>
-  <q-layout view="hhh LpR fFf">
+  <q-layout v-if="loggedIn" view="hhh LpR fFf">
     <q-header elevated class="bg-primary text-white">
       <q-toolbar>
         <q-btn flat dense round icon="menu" @click="leftDrawerOpen = !leftDrawerOpen" />
@@ -99,6 +99,19 @@
 
     <q-drawer v-model="rightDrawerOpen" bordered side="right" show-if-above>
       <q-list padding>
+        <q-item>
+          <q-item-section side>Username</q-item-section>
+          <q-item-section>{{ session.user.username }} </q-item-section>
+        </q-item>
+        <q-item>
+          <q-item-section side>Logged in at</q-item-section>
+          <q-item-section><ClientDateTime :datetime="session.loggedInAt" /></q-item-section>
+        </q-item>
+        <q-item>
+          <q-item-section>
+            <q-btn label="Log Out" color="negative" @click="logout()" />
+          </q-item-section>
+        </q-item>
         <q-item>
           <q-item-section header>
             <q-item-label class="text-h6">Filters</q-item-label>
@@ -279,7 +292,7 @@
                 :key="item.entry.id"
                 v-model="expanded[index]"
                 group="entry"
-                :class="{ 'bg-grey-3': !isDark && isRead(item.entry.id), 'bg-grey-9': isDark && isRead(item.entry.id) }"
+                :class="{ 'bg-grey-9': isRead(item.entry.id) }"
                 @after-show="scrollToContentRef(index)"
                 @before-show="loadContent(item.entry.id)"
               >
@@ -298,11 +311,7 @@
                   </q-item-section>
                   <q-item-section>
                     <q-item-label lines="3">
-                      <MarkedText
-                        :keyword="searchQuery"
-                        :text="item.entry.title"
-                        :class="{ 'text-dark': !isDark, 'text-white': isDark }"
-                      />
+                      <MarkedText :keyword="searchQuery" :text="item.entry.title" />
                     </q-item-label>
                     <q-item-label caption lines="2">
                       <q-img
@@ -331,12 +340,7 @@
                         :disable="entryStar[item.entry.id] === 'starring'"
                         @click="toggleStarEntry(item.entry.id)"
                       />
-                      <a
-                        target="_blank"
-                        :href="item.entry.link"
-                        rel="noopener noreferrer"
-                        :class="{ 'text-white': isDark, 'text-primary': !isDark }"
-                      >
+                      <a target="_blank" :href="item.entry.link" rel="noopener noreferrer">
                         <MarkedText :keyword="searchQuery" :text="item.entry.title" />
                       </a>
                     </div>
@@ -376,26 +380,13 @@
                     />
                   </q-card-section>
                   <q-card-actions>
-                    <q-btn
-                      flat
-                      icon="check"
-                      label="Read"
-                      :color="isDark ? 'white' : 'primary'"
-                      @click="markAsReadAndCollapse(item.entry.id, index)"
-                    />
-                    <q-btn
-                      flat
-                      label="Collapse"
-                      icon="unfold_less"
-                      :color="isDark ? 'white' : 'primary'"
-                      @click="expanded[index] = false"
-                    />
+                    <q-btn flat icon="check" label="Read" @click="markAsReadAndCollapse(item.entry.id, index)" />
+                    <q-btn flat label="Collapse" icon="unfold_less" @click="expanded[index] = false" />
                     <q-btn
                       v-if="!downloadedContents[item.entry.id]"
                       flat
                       label="Download"
                       icon="file_download"
-                      :color="isDark ? 'white' : 'primary'"
                       :loading="downloading[item.entry.id]"
                       @click="downloadContent(item.entry.id)"
                     />
@@ -404,7 +395,6 @@
                       flat
                       icon="undo"
                       label="See original"
-                      :color="isDark ? 'white' : 'primary'"
                       @click="downloadedContents[item.entry.id] = ''"
                     />
                   </q-card-actions>
@@ -468,21 +458,27 @@
       </q-page>
     </q-page-container>
   </q-layout>
+  <LoginPage v-else />
 </template>
 
 <script setup>
-import { useRouteQuery } from "@vueuse/router";
 import { add } from "date-fns";
 import { useQuasar } from "quasar";
+import { useRouteQuery } from "@vueuse/router";
+
+const { loggedIn, session, clear: logout } = useUserSession();
 
 const $q = useQuasar();
 const isDark = useDark();
 onMounted(() => {
   $q.dark.set(isDark.value);
 });
-watch(isDark, (val) => {
-  $q.dark.set(val);
-});
+watchEffect(
+  () => {
+    if (isDark.value !== $q.dark.isActive) $q.dark.set(isDark.value);
+  },
+  { flush: "post" },
+);
 
 const itemRefs = useTemplateRef("item-list");
 const { hideEmpty } = useLocalSettings();
@@ -539,10 +535,10 @@ const countQuery = computed(() => {
 
 const { data, refresh } = await useAsyncData("initial", async () =>
   Promise.all([
-    $fetch("/api/categories"),
-    $fetch("/api/count", { query: countQuery.value }),
-    $fetch("/api/images/primary-keys"),
-    $fetch("/api/feeds/data"),
+    useRequestFetch()("/api/categories"),
+    useRequestFetch()("/api/count", { query: countQuery.value }),
+    useRequestFetch()("/api/images/primary-keys"),
+    useRequestFetch()("/api/feeds/data"),
   ]),
 );
 const categories = computed(() => data.value?.[0] || []);
@@ -574,7 +570,7 @@ async function downloadContent(entryId) {
   try {
     if (downloadedContents.value[entryId]) return;
     downloading.value[entryId] = true;
-    const parsed = await $fetch(`/api/entries/${entryId}/download`);
+    const parsed = await useRequestFetch()(`/api/entries/${entryId}/download`);
     if (parsed && parsed.content) downloadedContents.value[entryId] = parsed.content;
   } catch (err) {
     $q.notify({
@@ -604,7 +600,7 @@ async function doMarkAllAsRead(olderThan) {
   }
   if (searchQuery.value) body.search = searchQuery.value;
   try {
-    const { updated } = await $fetch("/api/entries/mark-as-read", { method: "POST", body });
+    const { updated } = await useRequestFetch()("/api/entries/mark-as-read", { method: "POST", body });
     for (const item of items.value)
       if (shouldMarkAsRead(now, item.entry.id, olderThan)) entryRead.value[item.entry.id] = "read";
     refresh();
@@ -671,7 +667,7 @@ async function load() {
 
   loading.value = true;
   try {
-    const newItems = await $fetch("/api/entries", { query });
+    const newItems = await useRequestFetch()("/api/entries", { query });
     for (const item of newItems) {
       items.value.push(item);
       entryRead.value[item.entry.id] = item.entry.readAt ? "read" : "unread";
@@ -711,7 +707,7 @@ async function load() {
     loading.value = false;
   }
 }
-await load();
+if (loggedIn.value) await load();
 
 /**
  * @param {number} entryId
@@ -719,7 +715,7 @@ await load();
 async function loadContent(entryId) {
   try {
     if (contents.value[entryId]) return;
-    const { content } = await $fetch(`/api/entries/${entryId}/content`);
+    const { content } = await useRequestFetch()(`/api/entries/${entryId}/content`);
     contents.value[entryId] = content;
   } catch (err) {
     $q.notify({
@@ -821,7 +817,7 @@ async function markAsRead(entryId) {
   const value = entryRead.value[entryId];
   try {
     entryRead.value[entryId] = "toggling";
-    await $fetch(`/api/entries/${entryId}/toggle`, { method: "PUT" });
+    await useRequestFetch()(`/api/entries/${entryId}/read`, { method: "PUT" });
     entryRead.value[entryId] = "read";
     refresh();
   } catch (err) {
@@ -867,7 +863,7 @@ async function resetThenLoad(done) {
 
   if (done) done();
 }
-watch([listDirection, listLimit, listOrder, listStatus, selectedCategoryId, selectedFeedId, searchQuery], () => {
+watchEffect(() => {
   resetThenLoad();
 });
 
@@ -918,7 +914,7 @@ async function toggleReadEntry(entryId, index) {
 
   entryRead.value[entryId] = "toggling";
   try {
-    await $fetch(`/api/entries/${entryId}/toggle`, { method: "PUT" });
+    await useRequestFetch()(`/api/entries/${entryId}/read`, { method: "PUT" });
     refresh();
   } catch (err) {
     $q.notify({
@@ -943,7 +939,7 @@ async function toggleStarEntry(entryId) {
 
   entryStar.value[entryId] = "starring";
   try {
-    await $fetch(`/api/entries/${entryId}/star`, { method: "PUT" });
+    await useRequestFetch()(`/api/entries/${entryId}/star`, { method: "PUT" });
     refresh();
     entryStar.value[entryId] = value;
   } catch (err) {
@@ -969,6 +965,10 @@ async function toggleStarOpenEntry() {
 </script>
 
 <style>
+.body--dark a {
+  color: white;
+}
+
 .body--dark .entry-content a {
   color: white;
 }

@@ -7,11 +7,14 @@ const schema = z.object({
 export default defineEventHandler(async (event) => {
   const { container } = useNitroApp();
 
-  /** @type {Repository} */
-  const repository = container.resolve("repository");
+  const session = await requireUserSession(event);
+  const userId = session.user.id;
 
   const { entryId } = await getValidatedRouterParams(event, (params) => schema.parse(params));
 
-  const now = await repository.toggleStarEntry(Number(entryId));
+  /** @type {Repository} */
+  const repository = container.resolve("repository");
+
+  const now = await repository.toggleStarEntry(userId, entryId);
   return { success: true, readAt: now };
 });

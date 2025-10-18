@@ -1,10 +1,16 @@
-export default defineEventHandler(async () => {
+export default defineEventHandler(async (event) => {
   const { container } = useNitroApp();
+
+  const session = await requireUserSession(event);
+  const userId = session.user.id;
 
   /** @type {JobService} */
   const jobService = container.resolve("jobService");
   /** @type {Repository} */
   const repository = container.resolve("repository");
+
+  const user = await repository.findUserById(userId);
+  if (!user?.isAdmin) return [];
 
   const entities = await repository.findJobs();
   return jobService.jobs.map((job) => {

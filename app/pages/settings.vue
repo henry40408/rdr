@@ -1,5 +1,5 @@
 <template>
-  <q-layout view="hhh LpR fFf">
+  <q-layout v-if="loggedIn" view="hhh LpR fFf">
     <q-header elevated class="bg-primary text-white">
       <q-toolbar>
         <q-toolbar-title>
@@ -44,7 +44,7 @@
           <q-item>
             <q-item-section header>
               <q-item-label class="text-h5">Background Jobs</q-item-label>
-              <q-item-label caption>Manually trigger background jobs</q-item-label>
+              <q-item-label caption>Manually trigger background jobs. Only admins can do this.</q-item-label>
             </q-item-section>
           </q-item>
           <q-item v-for="job in jobsData" :key="job.name">
@@ -70,36 +70,60 @@
               </q-btn>
             </q-item-section>
           </q-item>
+          <q-item v-if="jobsData?.length === 0">
+            <q-item-section>
+              <q-item-label>No background jobs available.</q-item-label>
+            </q-item-section>
+          </q-item>
+        </q-list>
+        <q-list padding>
+          <q-item>
+            <q-item-section header>
+              <q-item-label class="text-h5">Change Password</q-item-label>
+              <q-item-label caption>Update your account password</q-item-label>
+            </q-item-section>
+          </q-item>
+          <q-item>
+            <q-item-section>
+              <ChangePasswordForm />
+            </q-item-section>
+          </q-item>
         </q-list>
       </q-page>
     </q-page-container>
   </q-layout>
+  <LoginPage v-else />
 </template>
 
 <script setup>
 import { millisecondsToSeconds } from "date-fns";
 import { useQuasar } from "quasar";
 
+const { loggedIn } = useUserSession();
+
 const $q = useQuasar();
 const isDark = useDark();
 onMounted(() => {
   $q.dark.set(isDark.value);
 });
-watch(isDark, (val) => {
-  $q.dark.set(val);
-});
+watchEffect(
+  () => {
+    if (isDark.value !== $q.dark.isActive) $q.dark.set(isDark.value);
+  },
+  { flush: "post" },
+);
 
 const triggeringJobs = ref(new Set());
 const uploadedFile = ref(null);
 
-const { data: jobsData } = await useFetch("/api/jobs");
+const { data: jobsData } = await useAsyncData(() => useRequestFetch()("/api/jobs"));
 
 async function importOPML() {
   if (!uploadedFile.value) return;
   const formData = new FormData();
   formData.append("file", uploadedFile.value);
   try {
-    await $fetch("/api/opml", { method: "POST", body: formData });
+    await useRequestFetch()("/api/opml", { method: "POST", body: formData });
     $q.notify({
       type: "positive",
       message: "OPML file imported successfully",
@@ -119,7 +143,7 @@ async function triggerJob(name) {
   if (triggeringJobs.value.has(name)) return;
   triggeringJobs.value.add(name);
   try {
-    await $fetch(`/api/jobs/${name}/run`, { method: "POST" });
+    await useRequestFetch()(`/api/jobs/${name}/run`, { method: "POST" });
     $q.notify({
       type: "positive",
       message: `Job ${name} triggered successfully`,

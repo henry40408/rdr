@@ -2,12 +2,16 @@ export class CategoryEntity {
   /**
    * @param {object} opts
    * @param {number} opts.id
+   * @param {number} opts.userId
    * @param {string} opts.name
    * @param {FeedEntity[]} [opts.feeds]
    */
-  constructor({ id, name, feeds = [] }) {
+  constructor({ id, userId, name, feeds = [] }) {
     this.id = id;
+
+    this.userId = userId;
     this.name = name;
+
     /** @type {FeedEntity[]} */
     this.feeds = feeds;
   }
@@ -101,5 +105,19 @@ export class JobEntity {
     this.lastDate = lastDate;
     this.lastDurationMs = lastDurationMs;
     this.lastError = lastError;
+  }
+}
+
+export class UserEntity {
+  /**
+   * @param {object} opts
+   * @param {number} opts.id
+   * @param {string} opts.username
+   * @param {boolean} [opts.isAdmin]
+   */
+  constructor({ id, username, isAdmin = false }) {
+    this.id = id;
+    this.username = username;
+    this.isAdmin = isAdmin;
   }
 }

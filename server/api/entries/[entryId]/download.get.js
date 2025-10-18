@@ -1,6 +1,6 @@
-import { z } from "zod";
-import { Readability } from "@mozilla/readability";
 import { JSDOM } from "jsdom";
+import { Readability } from "@mozilla/readability";
+import { z } from "zod";
 
 const schema = z.object({
   entryId: z.coerce.number(),
@@ -9,6 +9,9 @@ const schema = z.object({
 export default defineEventHandler(async (event) => {
   const { container } = useNitroApp();
 
+  const session = await requireUserSession(event);
+  const userId = session.user.id;
+
   const { entryId } = await getValidatedRouterParams(event, (params) => schema.parse(params));
 
   /** @type {Repository} */
@@ -16,7 +19,7 @@ export default defineEventHandler(async (event) => {
   /** @type {DownloadService} */
   const downloadService = container.resolve("downloadService");
 
-  const entry = await repository.findEntryById(entryId);
+  const entry = await repository.findEntryById(userId, entryId);
   if (!entry) throw createError({ statusCode: 404, statusMessage: "Entry not found" });
   if (!entry.link) throw createError({ statusCode: 400, statusMessage: "Entry has no link" });
 

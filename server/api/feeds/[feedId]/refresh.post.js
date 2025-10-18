@@ -7,6 +7,9 @@ const schema = z.object({
 export default defineEventHandler(async (event) => {
   const { container } = useNitroApp();
 
+  const session = await requireUserSession(event);
+  const userId = session.user.id;
+
   /** @type {FeedService} */
   const feedService = container.resolve("feedService");
   /** @type {Repository} */
@@ -14,10 +17,10 @@ export default defineEventHandler(async (event) => {
 
   const { feedId } = await getValidatedRouterParams(event, (params) => schema.parse(params));
 
-  const feed = await repository.findFeedById(feedId);
+  const feed = await repository.findFeedById(userId, feedId);
   if (!feed) throw createError({ statusCode: 404, statusMessage: "Feed not found" });
 
-  await Promise.all([feedService.fetchAndSaveEntries(feed), feedService.fetchImage(feed)]);
+  await Promise.allSettled([feedService.fetchAndSaveEntries(userId, feed), feedService.fetchImage(userId, feed)]);
 
   return { status: "ok" };
 });
