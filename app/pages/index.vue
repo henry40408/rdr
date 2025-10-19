@@ -862,11 +862,11 @@ async function resetThenLoad(done) {
 
   if (done) done();
 }
-watchEffect(
+watch(
+  [loggedIn, listDirection, listLimit, listOrder, listStatus, selectedCategoryId, selectedFeedId, searchQuery],
   () => {
     if (loggedIn.value) resetThenLoad();
   },
-  { flush: "post" },
 );
 
 /**
