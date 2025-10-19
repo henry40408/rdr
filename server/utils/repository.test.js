@@ -36,6 +36,10 @@ describe("Repository", () => {
       await repository.init();
     });
 
+    it("should rollback the migration", async () => {
+      await repository.knex.migrate.rollback(undefined, true);
+    });
+
     it("should create user", async () => {
       const user = new UserEntity({ id: 0, username: "testuser" });
       await repository.createUser(user, "password123");

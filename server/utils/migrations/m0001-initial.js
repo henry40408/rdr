@@ -95,7 +95,7 @@ export function up(knex) {
 export function down(knex) {
   return knex.schema
     .dropTable("jobs")
-    .dropTable("image")
+    .dropTable("images")
     .dropTable("entries")
     .dropTable("feeds")
     .dropTable("categories")
