@@ -21,14 +21,17 @@ export class FetchImagesJob extends BaseJob {
     this.repository = repository;
   }
 
+  /** @override */
   get name() {
     return "job:fetch-images";
   }
 
+  /** @override */
   get description() {
     return "Fetches images from all feeds";
   }
 
+  /** @override */
   async run() {
     const logger = this.logger.child({ job: this.name });
 

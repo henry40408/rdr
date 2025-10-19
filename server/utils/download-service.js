@@ -61,8 +61,8 @@ export class DownloadService {
       const content = await this.client.get(htmlUrl, {}).text();
       const $ = cheerio.load(content);
       const href =
-        $('link[rel="icon"]').attr("href") ||
-        $('link[rel="shortcut icon"]').attr("href") ||
+        $('link[rel="icon"]').attr("href") ??
+        $('link[rel="shortcut icon"]').attr("href") ??
         $('link[rel="apple-touch-icon"]').attr("href");
       if (href) return new URL(href, htmlUrl).toString();
       return undefined;

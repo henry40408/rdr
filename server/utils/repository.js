@@ -144,7 +144,7 @@ export class Repository {
         password_hash: passwordHash,
         is_admin: isFirstUser ? 1 : 0,
       });
-      user.id = id;
+      if (id) user.id = id;
       user.isAdmin = isFirstUser;
 
       this.logger.info({ msg: "Created user", username: user.username, id: user.id, isAdmin: isFirstUser });
@@ -679,7 +679,7 @@ export class Repository {
           .onConflict(["user_id", "name"])
           .merge();
         this.logger.info({ msg: "Upserted category", userId, name: category.name });
-        category.id = categoryId;
+        if (categoryId) category.id = categoryId;
 
         for (const feed of category.feeds) {
           const [feedId] = await tx("feeds")
@@ -692,7 +692,7 @@ export class Repository {
             .onConflict(["category_id", "xml_url"])
             .merge();
           this.logger.info({ msg: "Upserted feed", category: category.name, title: feed.title });
-          feed.id = feedId;
+          if (feedId) feed.id = feedId;
         }
       }
     });
@@ -731,10 +731,10 @@ export class Repository {
             chunk.map((e) => ({
               feed_id: feed.id,
               guid: e.guid,
-              title: e.title || "(no title)",
+              title: e.title ?? "(no title)",
               link: e.link,
               date: this._itemDate(e).toISOString(),
-              summary: e.summary || "(no summary)",
+              summary: e.summary ?? "(no summary)",
               description: e.description,
               author: e.author,
             })),

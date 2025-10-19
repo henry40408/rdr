@@ -56,8 +56,8 @@ const kagiLanguage = ref("EN");
 watchEffect(
   () => {
     if (!userSettings.value) return;
-    kagiLanguage.value = userSettings.value.kagiLanguage || "EN";
-    kagiSessionLink.value = userSettings.value.kagiSessionLink || "";
+    kagiLanguage.value = userSettings.value.kagiLanguage ?? "EN";
+    kagiSessionLink.value = userSettings.value.kagiSessionLink ?? "";
   },
   { flush: "post" },
 );

@@ -95,13 +95,13 @@
     <q-drawer v-model="rightDrawerOpen" bordered side="right" show-if-above>
       <q-list padding>
         <q-item-label header>Account</q-item-label>
-        <q-item>
+        <q-item v-if="session?.user">
           <q-item-section>
             <q-item-label overline>USERNAME</q-item-label>
             <q-item-label>{{ session.user.username }}</q-item-label>
           </q-item-section>
         </q-item>
-        <q-item>
+        <q-item v-if="session?.loggedInAt">
           <q-item-section>
             <q-item-label overline>LOGGED IN AT</q-item-label>
             <q-item-label><ClientDateTime :datetime="session.loggedInAt" /></q-item-label>
@@ -562,17 +562,17 @@ const { data, refresh } = await useAsyncData("initial", async () =>
     useRequestFetch()("/api/feeds/data"),
   ]),
 );
-const categories = computed(() => data.value?.[0] || []);
-const countData = computed(() => data.value?.[1] || { count: 0 });
+const categories = computed(() => data.value?.[0] ?? []);
+const countData = computed(() => data.value?.[1] ?? { count: 0 });
 useHead(() => ({
   title: selectedFeedId.value
-    ? `(${countData.value?.count || 0}) Feed: ${getFilteredFeedTitle()} - rdr`
+    ? `(${countData.value?.count ?? 0}) Feed: ${getFilteredFeedTitle()} - rdr`
     : selectedCategoryId.value
-      ? `(${countData.value?.count || 0}) Category: ${getFilteredCategoryName()} - rdr`
-      : `(${countData.value?.count || 0}) rdr`,
+      ? `(${countData.value?.count ?? 0}) Category: ${getFilteredCategoryName()} - rdr`
+      : `(${countData.value?.count ?? 0}) rdr`,
 }));
-const feedsData = computed(() => data.value?.[3] || null);
-const imagePks = computed(() => data.value?.[2] || []);
+const feedsData = computed(() => data.value?.[3]);
+const imagePks = computed(() => data.value?.[2] ?? []);
 
 /**
  * @param {number} categoryId
@@ -580,8 +580,8 @@ const imagePks = computed(() => data.value?.[2] || []);
  */
 function categoryUnreadCount(categoryId) {
   if (!feedsData.value) return 0;
-  const feedIds = categories.value?.filter((c) => c.id === categoryId).flatMap((c) => c.feeds.map((f) => f.id)) || [];
-  return feedIds.reduce((sum, feedId) => sum + (feedsData.value?.feeds[feedId]?.unreadCount || 0), 0);
+  const feedIds = categories.value?.filter((c) => c.id === categoryId).flatMap((c) => c.feeds.map((f) => f.id)) ?? [];
+  return feedIds.reduce((sum, feedId) => sum + (feedsData.value?.feeds[feedId]?.unreadCount ?? 0), 0);
 }
 
 /**
@@ -659,7 +659,7 @@ async function downloadContent(entryId) {
  */
 function feedUnreadCount(feedId) {
   if (!feedsData.value) return 0;
-  return feedsData.value?.feeds[feedId]?.unreadCount || 0;
+  return feedsData.value?.feeds[feedId]?.unreadCount ?? 0;
 }
 
 /**
@@ -667,7 +667,7 @@ function feedUnreadCount(feedId) {
  * @returns {string}
  */
 function getContent(entryId) {
-  return downloadedContents.value[entryId] || contents.value[entryId] || "";
+  return downloadedContents.value[entryId] ?? contents.value[entryId] ?? "";
 }
 
 function getFilteredCategoryName() {
@@ -771,7 +771,7 @@ async function loadContent(entryId) {
  */
 function imageExists(feedId) {
   const key = buildFeedImageKey(feedId);
-  return imagePks.value?.includes(key) || false;
+  return imagePks.value?.includes(key) ?? false;
 }
 
 function isOpenEntryStarred() {
@@ -779,7 +779,8 @@ function isOpenEntryStarred() {
   if (index === -1) return false;
 
   const item = items.value[index];
-  return entryStar.value[item.entry.id] === "starred";
+  if (item) return entryStar.value[item.entry.id] === "starred";
+  return false;
 }
 
 /**
@@ -851,7 +852,7 @@ async function markAsRead(entryId) {
       message: `Failed to mark entry ${entryId} as read: ${err}`,
       actions: [{ icon: "close", color: "white" }],
     });
-    entryRead.value[entryId] = value;
+    if (value) entryRead.value[entryId] = value;
   }
 }
 
@@ -959,13 +960,13 @@ async function summarizeEntry(entryId) {
     const text = await useRequestFetch()(`/api/entries/${entryId}/summarize`);
 
     const [prefixedTitle, content] = text.split("\n\n");
-    const title = prefixedTitle.replace("Title: ", "").trim();
+    const title = (prefixedTitle ?? "").replace("Title: ", "").trim();
 
     summarizations.value[entryId] = `${pangu.spacingText(title)}
     
 ${entry.entry.link}
 
-${pangu.spacingText(content)}`;
+${pangu.spacingText(content ?? "")}`;
   } catch (err) {
     $q.notify({
       type: "negative",
@@ -998,7 +999,7 @@ async function toggleReadEntry(entryId, index) {
       actions: [{ icon: "close", color: "white" }],
     });
   } finally {
-    entryRead.value[entryId] = value;
+    if (value) entryRead.value[entryId] = value;
     if (value === "read") collapseItem(index);
   }
 }
@@ -1016,7 +1017,7 @@ async function toggleStarEntry(entryId) {
   try {
     await useRequestFetch()(`/api/entries/${entryId}/star`, { method: "PUT" });
     refresh();
-    entryStar.value[entryId] = value;
+    if (value) entryStar.value[entryId] = value;
   } catch (err) {
     $q.notify({
       type: "negative",

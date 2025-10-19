@@ -9,8 +9,8 @@ const schema = z.object({
 const defaults = sanitizeHtml.defaults;
 const allowedAttributes = {
   ...defaults.allowedAttributes,
-  a: [...defaults.allowedAttributes.a, "href", "name", "target", "rel"],
-  img: [...defaults.allowedAttributes.img, "src", "alt", "title", "width", "height"],
+  a: [...(defaults.allowedAttributes.a ?? []), "href", "name", "target", "rel"],
+  img: [...(defaults.allowedAttributes.img ?? []), "src", "alt", "title", "width", "height"],
 };
 const allowedTags = [...defaults.allowedTags, "img"];
 

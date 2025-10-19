@@ -172,7 +172,7 @@ const refreshingFeedIds = ref(new Set());
 
 const { data: categories, execute: refreshCategories } = await useFetch("/api/categories");
 const { data: feedData, execute: refreshFeedData } = await useFetch("/api/feeds/data");
-const feedDataByFeedId = computed(() => feedData.value?.feeds || {});
+const feedDataByFeedId = computed(() => feedData.value?.feeds ?? {});
 
 async function afterRefresh() {
   await Promise.all([refreshCategories(), refreshFeedData()]);
@@ -187,7 +187,7 @@ function categoryUnreadCount(categoryId) {
   if (!category) return 0;
   return category.feeds.reduce((sum, feed) => {
     const feedData = feedDataByFeedId.value[feed.id];
-    return sum + (feedData?.unreadCount || 0);
+    return sum + (feedData?.unreadCount ?? 0);
   }, 0);
 }
 
@@ -196,7 +196,7 @@ function categoryUnreadCount(categoryId) {
  * @returns {number}
  */
 function feedUnreadCount(feedId) {
-  return feedDataByFeedId.value[feedId]?.unreadCount || 0;
+  return feedDataByFeedId.value[feedId]?.unreadCount ?? 0;
 }
 
 /**
@@ -214,7 +214,7 @@ function formatFetchedAtToNow(feedId) {
  * @returns {boolean}
  */
 function imageExists(feedId) {
-  return feedData.value?.feeds[feedId]?.imageExists || false;
+  return feedData.value?.feeds[feedId]?.imageExists ?? false;
 }
 
 async function refreshAll() {

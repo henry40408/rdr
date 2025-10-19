@@ -75,8 +75,8 @@ export class FeedService {
       });
 
       const cloned = structuredClone(feed);
-      cloned.etag = res.headers["etag"] || undefined;
-      cloned.lastModified = res.headers["last-modified"] || undefined;
+      cloned.etag = res.headers["etag"];
+      cloned.lastModified = res.headers["last-modified"];
 
       return { type: "ok", items, meta, feed: cloned };
     } catch (err) {

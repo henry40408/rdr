@@ -24,7 +24,7 @@ export default defineEventHandler(async (event) => {
   let feedIds = [];
   if (selectedType === "category" && selectedId) {
     const category = categories.find((c) => c.id === selectedId);
-    feedIds = category?.feeds.map((f) => f.id) || [];
+    feedIds = category?.feeds.map((f) => f.id) ?? [];
   } else if (selectedType === "feed" && selectedId) {
     feedIds = [selectedId];
   }

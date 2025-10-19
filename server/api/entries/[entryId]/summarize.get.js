@@ -57,7 +57,7 @@ export default defineEventHandler(async (event) => {
 
   const url = new URL("https://kagi.com/mother/summary_labs");
   url.searchParams.set("summary_type", "summary");
-  url.searchParams.set("target_language", settings.kagiLanguage || "EN");
+  url.searchParams.set("target_language", settings.kagiLanguage ?? "EN");
   url.searchParams.set("url", entry.link);
 
   /** @type {KagiSummarizationResponse|void} */

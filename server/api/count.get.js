@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 const schema = z.object({
-  search: z.string().nullable().optional(),
+  search: z.string().optional(),
   selectedId: z.coerce.number().optional(),
   selectedType: z.enum(["category", "feed"]).optional(),
   status: z.enum(["all", "read", "unread", "starred"]).default("all"),
@@ -28,6 +28,6 @@ export default defineEventHandler(async (event) => {
   }
 
   return {
-    count: await repository.countEntries({ userId, feedIds, search: search || undefined, status }),
+    count: await repository.countEntries({ userId, feedIds, search, status }),
   };
 });

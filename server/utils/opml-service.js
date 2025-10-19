@@ -32,7 +32,7 @@ export class OpmlService {
           const feed = new FeedEntity({
             id: 0,
             categoryId: 0,
-            title: feedOutline.$.title || feedOutline.$.text,
+            title: feedOutline.$.title ?? feedOutline.$.text,
             xmlUrl: feedOutline.$.xmlUrl,
             htmlUrl: feedOutline.$.htmlUrl,
           });
@@ -74,7 +74,7 @@ export class OpmlService {
                 title: feed.title,
                 type: "rss",
                 xmlUrl: feed.xmlUrl,
-                htmlUrl: feed.htmlUrl || "",
+                htmlUrl: feed.htmlUrl ?? "",
               },
             })),
           })),

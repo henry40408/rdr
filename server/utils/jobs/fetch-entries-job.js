@@ -18,14 +18,17 @@ export class FetchEntriesJob extends BaseJob {
     this.repository = repository;
   }
 
+  /** @override */
   get name() {
     return "job:fetch-entries";
   }
 
+  /** @override */
   get description() {
     return "Fetches new entries from all feeds";
   }
 
+  /** @override */
   async run() {
     const logger = this.logger.child({ job: this.name });
 
