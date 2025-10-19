@@ -290,7 +290,10 @@
                 :key="item.entry.id"
                 v-model="expanded[index]"
                 group="entry"
-                :class="{ 'bg-grey-9': isDark && isRead(item.entry.id), 'bg-grey-1': !isDark && isRead(item.entry.id) }"
+                :class="{
+                  'bg-grey-9': isDark && isRead(item.entry.id),
+                  'bg-grey-1': !isDark && isRead(item.entry.id),
+                }"
                 @after-show="scrollToContentRef(index)"
                 @before-show="loadContent(item.entry.id)"
               >
@@ -323,6 +326,9 @@
                       {{ item.category.name }} &middot; {{ item.feed.title }} &middot;
                       <ClientAgo :datetime="item.entry.date" />
                     </q-item-label>
+                  </q-item-section>
+                  <q-item-section v-if="summarizations[item.entry.id]" top side>
+                    <q-icon size="xs" color="positive" name="psychology" />
                   </q-item-section>
                 </template>
 
@@ -367,12 +373,13 @@
                       </q-chip>
                     </div>
                   </q-card-section>
-                  <q-card-section>
+                  <q-card-section v-if="features?.summarization">
                     <q-btn
-                      v-if="features?.summarization && !summarizations[item.entry.id]"
+                      v-if="!summarizations[item.entry.id]"
                       color="primary"
+                      icon="psychology"
                       label="Summarize"
-                      :loading="summarizing"
+                      :loading="summarizing[item.entry.id]"
                       @click="summarizeEntry(item.entry.id)"
                     />
                     <UseClipboard v-else v-slot="{ copy, copied }" :source="summarizations[item.entry.id]">
@@ -394,25 +401,16 @@
                       :text="getContent(item.entry.id)"
                     />
                   </q-card-section>
-                  <q-card-actions>
-                    <q-btn flat icon="check" label="Read" @click="markAsReadAndCollapse(item.entry.id, index)" />
-                    <q-btn flat label="Collapse" icon="unfold_less" @click="collapseItem(index)" />
+                  <q-card-section>
                     <q-btn
                       v-if="!downloadedContents[item.entry.id]"
-                      flat
                       label="Download"
                       icon="file_download"
                       :loading="downloading[item.entry.id]"
                       @click="downloadContent(item.entry.id)"
                     />
-                    <q-btn
-                      v-else
-                      flat
-                      icon="undo"
-                      label="See original"
-                      @click="downloadedContents[item.entry.id] = ''"
-                    />
-                  </q-card-actions>
+                    <q-btn v-else icon="undo" label="See original" @click="downloadedContents[item.entry.id] = ''" />
+                  </q-card-section>
                 </q-card>
               </q-expansion-item>
               <q-item v-if="!hasMore && items.length > 0">
@@ -523,7 +521,8 @@ const offset = ref(0);
 const rightDrawerOpen = ref(false);
 /** @type {Ref<{ [key: string]: string }>} */
 const summarizations = ref({});
-const summarizing = ref(false);
+/** @type {Ref<Record<string,boolean>>} */
+const summarizing = ref({});
 
 /** @type {Ref<"asc"|"desc">} */
 const listDirection = useRouteQuery("direction", "desc");
@@ -955,7 +954,7 @@ async function summarizeEntry(entryId) {
   const entry = items.value.find((i) => i.entry.id === entryId);
   if (!entry) return;
 
-  summarizing.value = true;
+  summarizing.value[entryId] = true;
   try {
     const text = await useRequestFetch()(`/api/entries/${entryId}/summarize`);
 
@@ -974,7 +973,7 @@ ${pangu.spacingText(content)}`;
       actions: [{ icon: "close", color: "white" }],
     });
   } finally {
-    summarizing.value = false;
+    summarizing.value[entryId] = false;
   }
 }
 
