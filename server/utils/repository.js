@@ -480,6 +480,15 @@ export class Repository {
   }
 
   /**
+   * @param {number} userId
+   * @returns {Promise<Record<string,string>>}
+   */
+  async findUserSettings(userId) {
+    const rows = await this.knex("user_settings").where({ user_id: userId }).select();
+    return Object.fromEntries(rows.map((row) => [row.name, row.value]));
+  }
+
+  /**
    * @param {object} opts
    * @param {number} opts.userId
    * @param {number[]} [opts.feedIds]
@@ -642,6 +651,20 @@ export class Repository {
     const updated = await this.knex("users").where({ username }).update({ password_hash: passwordHash });
     this.logger.info({ msg: "Updated user password", username });
     return updated;
+  }
+
+  /**
+   * @param {number} userId
+   * @param {Record<string,string>} settings
+   */
+  async updateUserSettings(userId, settings) {
+    await this.knex.transaction(async (tx) => {
+      for (const [name, value] of Object.entries(settings)) {
+        await tx("user_settings").insert({ user_id: userId, name, value }).onConflict(["user_id", "name"]).merge();
+        this.logger.info({ msg: "Upserted user setting", userId, name });
+      }
+    });
+    this.logger.info({ msg: "Updated user settings", userId, count: Object.keys(settings).length });
   }
 
   /**

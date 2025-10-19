@@ -1,4 +1,4 @@
-import { migrationNames, migrations } from "./migrations/index.js";
+import { migrationNames, migrations } from "../migrations/index.js";
 
 export class MigrationSource {
   /**
@@ -22,10 +22,7 @@ export class MigrationSource {
    */
   async getMigration(migration) {
     const mig = migrations[migration];
-    if (!mig) throw new Error(`Migration not found: ${migration}`);
-    return {
-      up: mig.up,
-      down: mig.down,
-    };
+    if (!mig) throw new Error(`Unknown migration: ${migration}`);
+    return mig;
   }
 }

@@ -368,6 +368,24 @@
                     </div>
                   </q-card-section>
                   <q-card-section>
+                    <q-btn
+                      v-if="features?.summarization && !summarizations[item.entry.id]"
+                      color="primary"
+                      label="Summarize"
+                      :loading="summarizing"
+                      @click="summarizeEntry(item.entry.id)"
+                    />
+                    <UseClipboard v-else v-slot="{ copy, copied }" :source="summarizations[item.entry.id]">
+                      <div
+                        class="entry-summary q-pa-md q-mb-sm"
+                        :class="{ 'bg-grey-2': !isDark, 'bg-grey-8 text-white': isDark }"
+                      >
+                        <pre>{{ summarizations[item.entry.id] }}</pre>
+                      </div>
+                      <q-btn color="secondary" :label="copied ? 'Copied!' : 'Copy'" @click="copy()" />
+                    </UseClipboard>
+                  </q-card-section>
+                  <q-card-section>
                     <MarkedText
                       v-if="getContent(item.entry.id)"
                       :keyword="searchQuery"
@@ -459,11 +477,15 @@
 </template>
 
 <script setup>
+import { UseClipboard } from "@vueuse/components";
 import { add } from "date-fns";
+import pangu from "pangu";
 import { useQuasar } from "quasar";
 import { useRouteQuery } from "@vueuse/router";
 
+const { hideEmpty } = useLocalSettings();
 const { loggedIn, session, clear: logout } = useUserSession();
+const features = useFeatures();
 
 const $q = useQuasar();
 const isDark = useDark();
@@ -479,7 +501,6 @@ watchEffect(
 
 const infiniteScroll = useTemplateRef("infinite-scroll");
 const itemRefs = useTemplateRef("item-list");
-const { hideEmpty } = useLocalSettings();
 
 /** @type {Ref<{ [key: string]: string }> } */
 const contents = ref({});
@@ -500,6 +521,9 @@ const leftDrawerOpen = ref(false);
 const loading = ref(false);
 const offset = ref(0);
 const rightDrawerOpen = ref(false);
+/** @type {Ref<{ [key: string]: string }>} */
+const summarizations = ref({});
+const summarizing = ref(false);
 
 /** @type {Ref<"asc"|"desc">} */
 const listDirection = useRouteQuery("direction", "desc");
@@ -926,6 +950,36 @@ function shouldMarkAsRead(now, entryId, olderThan) {
 
 /**
  * @param {number} entryId
+ */
+async function summarizeEntry(entryId) {
+  const entry = items.value.find((i) => i.entry.id === entryId);
+  if (!entry) return;
+
+  summarizing.value = true;
+  try {
+    const text = await useRequestFetch()(`/api/entries/${entryId}/summarize`);
+
+    const [prefixedTitle, content] = text.split("\n\n");
+    const title = prefixedTitle.replace("Title: ", "").trim();
+
+    summarizations.value[entryId] = `${pangu.spacingText(title)}
+    
+${entry.entry.link}
+
+${pangu.spacingText(content)}`;
+  } catch (err) {
+    $q.notify({
+      type: "negative",
+      message: `Failed to summarize entry ${entryId}: ${err}`,
+      actions: [{ icon: "close", color: "white" }],
+    });
+  } finally {
+    summarizing.value = false;
+  }
+}
+
+/**
+ * @param {number} entryId
  * @param {number} index
  */
 async function toggleReadEntry(entryId, index) {
@@ -993,6 +1047,18 @@ async function toggleStarOpenEntry() {
 
 .body--dark .entry-content a {
   color: white;
+}
+
+.entry-summary {
+  width: 100%;
+  overflow: hidden;
+}
+
+.entry-summary pre {
+  margin: 0;
+  overflow-wrap: break-word;
+  text-wrap: break-word;
+  white-space: pre-wrap;
 }
 
 .entry-content img {

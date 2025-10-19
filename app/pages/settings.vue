@@ -15,12 +15,7 @@
     <q-page-container>
       <q-page>
         <q-list padding>
-          <q-item>
-            <q-item-section header>
-              <q-item-label class="text-h5">Subscriptions</q-item-label>
-              <q-item-label caption>Manage your subscriptions</q-item-label>
-            </q-item-section>
-          </q-item>
+          <q-item-label header>Subscriptions</q-item-label>
           <q-item>
             <q-item-section>
               <q-file v-model="uploadedFile" label="Upload OPML">
@@ -32,21 +27,12 @@
             <q-item-section side>
               <q-btn label="Import" class="q-ml-sm" color="primary" :disabled="!uploadedFile" @click="importOPML" />
             </q-item-section>
-          </q-item>
-          <q-item href="/api/opml">
-            <q-item-section>
-              <q-item-label>Export OPML</q-item-label>
-              <q-item-label caption>Export your feed subscriptions as an OPML file</q-item-label>
+            <q-item-section side>
+              <q-btn label="Export" color="primary" href="/api/opml" />
             </q-item-section>
           </q-item>
-        </q-list>
-        <q-list padding>
-          <q-item>
-            <q-item-section header>
-              <q-item-label class="text-h5">Background Jobs</q-item-label>
-              <q-item-label caption>Manually trigger background jobs. Only admins can do this.</q-item-label>
-            </q-item-section>
-          </q-item>
+          <q-separator spaced />
+          <q-item-label header>Background Jobs</q-item-label>
           <q-item v-for="job in jobsData" :key="job.name">
             <q-item-section>
               <q-item-label>{{ job.name }}</q-item-label>
@@ -75,17 +61,18 @@
               <q-item-label>No background jobs available.</q-item-label>
             </q-item-section>
           </q-item>
-        </q-list>
-        <q-list padding>
-          <q-item>
-            <q-item-section header>
-              <q-item-label class="text-h5">Change Password</q-item-label>
-              <q-item-label caption>Update your account password</q-item-label>
-            </q-item-section>
-          </q-item>
+          <q-separator spaced />
+          <q-item-label header>Change Password</q-item-label>
           <q-item>
             <q-item-section>
               <ChangePasswordForm />
+            </q-item-section>
+          </q-item>
+          <q-separator spaced />
+          <q-item-label header>User Settings</q-item-label>
+          <q-item>
+            <q-item-section>
+              <UserSettingsForm />
             </q-item-section>
           </q-item>
         </q-list>
