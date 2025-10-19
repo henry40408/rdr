@@ -298,6 +298,8 @@
                 :key="item.entry.id"
                 v-model="expanded[index]"
                 group="entry"
+                hide-expand-icon
+                header-class="q-pa-none"
                 :class="{
                   'bg-grey-9': isDark && isRead(item.entry.id),
                   'bg-grey-1': !isDark && isRead(item.entry.id),
@@ -306,39 +308,58 @@
                 @before-show="loadContent(item.entry.id)"
               >
                 <template #header>
-                  <q-item-section side>
-                    <q-checkbox
-                      v-model="entryRead[item.entry.id]"
-                      color="grey"
-                      true-value="read"
-                      false-value="unread"
-                      checked-icon="drafts"
-                      unchecked-icon="mail"
-                      :disable="entryRead[item.entry.id] === 'toggling'"
-                      @click="toggleReadEntry(item.entry.id, index)"
-                    />
-                  </q-item-section>
-                  <q-item-section>
-                    <q-item-label lines="3">
-                      <MarkedText :keyword="searchQuery" :text="item.entry.title" />
-                    </q-item-label>
-                    <q-item-label caption lines="2">
-                      <q-img
-                        v-if="imageExists(item.feed.id)"
-                        width=".75rem"
-                        class="q-mr-sm"
-                        height=".75rem"
-                        :class="{ 'bg-white': isDark }"
-                        :src="`/api/images/${buildFeedImageKey(item.feed.id)}`"
-                      />
-                      {{ item.category.name }} &middot; {{ item.feed.title }} &middot;
-                      <ClientAgo :datetime="item.entry.date" />
-                    </q-item-label>
-                  </q-item-section>
-                  <q-item-section v-if="features?.summarization" top side>
-                    <q-icon v-if="summarizations[item.entry.id]" size="xs" color="positive" name="psychology" />
-                    <q-spinner v-if="summarizing[item.entry.id]" />
-                  </q-item-section>
+                  <q-slide-item
+                    class="full-width"
+                    right-color="primary"
+                    left-color="secondary"
+                    @left="({ reset }) => slideLeft(item.entry.id, index, reset)"
+                    @right="({ reset }) => slideRight(item.entry.id, index, reset)"
+                  >
+                    <template #left>
+                      <q-icon size="xs" name="star" />
+                      {{ entryStar[item.entry.id] === "starred" ? "Unstar" : "Star" }}
+                    </template>
+                    <template #right>
+                      <q-icon size="xs" name="check" />
+                      {{ entryRead[item.entry.id] === "read" ? "Unread" : "Read" }}
+                    </template>
+
+                    <q-item>
+                      <q-item-section side>
+                        <q-checkbox
+                          v-model="entryRead[item.entry.id]"
+                          color="grey"
+                          true-value="read"
+                          false-value="unread"
+                          checked-icon="drafts"
+                          unchecked-icon="mail"
+                          :disable="entryRead[item.entry.id] === 'toggling'"
+                          @click="toggleReadEntry(item.entry.id, index)"
+                        />
+                      </q-item-section>
+                      <q-item-section>
+                        <q-item-label lines="3">
+                          <MarkedText :keyword="searchQuery" :text="item.entry.title" />
+                        </q-item-label>
+                        <q-item-label caption lines="2">
+                          <q-img
+                            v-if="imageExists(item.feed.id)"
+                            width=".75rem"
+                            class="q-mr-sm"
+                            height=".75rem"
+                            :class="{ 'bg-white': isDark }"
+                            :src="`/api/images/${buildFeedImageKey(item.feed.id)}`"
+                          />
+                          {{ item.category.name }} &middot; {{ item.feed.title }} &middot;
+                          <ClientAgo :datetime="item.entry.date" />
+                        </q-item-label>
+                      </q-item-section>
+                      <q-item-section v-if="features?.summarization" top side>
+                        <q-icon v-if="summarizations[item.entry.id]" size="xs" color="positive" name="psychology" />
+                        <q-spinner v-if="summarizing[item.entry.id]" />
+                      </q-item-section>
+                    </q-item>
+                  </q-slide-item>
                 </template>
 
                 <q-card>
@@ -357,7 +378,7 @@
                         <MarkedText :keyword="searchQuery" :text="item.entry.title" />
                       </a>
                     </div>
-                    <div class="q-my-sm">by {{ item.entry.author }}</div>
+                    <div v-if="item.entry.author" class="q-my-sm">by {{ item.entry.author }}</div>
                     <div class="q-my-sm">
                       <q-chip
                         clickable
@@ -412,13 +433,20 @@
                   </q-card-section>
                   <q-card-section>
                     <q-btn
-                      v-if="!downloadedContents[item.entry.id]"
-                      label="Download"
+                      v-if="!fullContents[item.entry.id]"
+                      color="secondary"
                       icon="file_download"
-                      :loading="downloading[item.entry.id]"
-                      @click="downloadContent(item.entry.id)"
+                      label="Full Content"
+                      :loading="scrapping[item.entry.id]"
+                      @click="getFullContent(item.entry.id)"
                     />
-                    <q-btn v-else icon="undo" label="See original" @click="downloadedContents[item.entry.id] = ''" />
+                    <q-btn
+                      v-else
+                      icon="undo"
+                      color="secondary"
+                      label="See original"
+                      @click="delete fullContents[item.entry.id]"
+                    />
                   </q-card-section>
                 </q-card>
               </q-expansion-item>
@@ -512,9 +540,7 @@ const itemRefs = useTemplateRef("item-list");
 /** @type {Ref<{ [key: string]: string }> } */
 const contents = ref({});
 /** @type {Ref<{ [key: string]: string }> } */
-const downloadedContents = ref({});
-/** @type {Ref<Record<string,boolean>>} */
-const downloading = ref({});
+const fullContents = ref({});
 /** @type {Ref<Record<string,"read"|"toggling"|"unread">>} */
 const entryRead = ref({});
 /** @type {Ref<Record<string,"unstarred"|"starring"|"starred">>} */
@@ -528,6 +554,8 @@ const leftDrawerOpen = ref(false);
 const loading = ref(false);
 const offset = ref(0);
 const rightDrawerOpen = ref(false);
+/** @type {Ref<Record<string,boolean>>} */
+const scrapping = ref({});
 /** @type {Ref<{ [key: string]: string }>} */
 const summarizations = ref({});
 /** @type {Ref<Record<string,boolean>>} */
@@ -636,26 +664,6 @@ async function doMarkAllAsRead(olderThan) {
 }
 
 /**
- * @param {number} entryId
- */
-async function downloadContent(entryId) {
-  try {
-    if (downloadedContents.value[entryId]) return;
-    downloading.value[entryId] = true;
-    const parsed = await useRequestFetch()(`/api/entries/${entryId}/download`);
-    if (parsed && parsed.content) downloadedContents.value[entryId] = parsed.content;
-  } catch (err) {
-    $q.notify({
-      type: "negative",
-      message: `Failed to download entry content: ${err}`,
-      actions: [{ icon: "close", color: "white" }],
-    });
-  } finally {
-    downloading.value[entryId] = false;
-  }
-}
-
-/**
  * @param {number} feedId
  * @returns {number}
  */
@@ -669,7 +677,7 @@ function feedUnreadCount(feedId) {
  * @returns {string}
  */
 function getContent(entryId) {
-  return downloadedContents.value[entryId] ?? contents.value[entryId] ?? "";
+  return fullContents.value[entryId] ?? contents.value[entryId] ?? "";
 }
 
 function getFilteredCategoryName() {
@@ -684,6 +692,26 @@ function getFilteredFeedTitle() {
   if (!categories.value) return "Unknown";
   const entry = categories.value.flatMap((c) => c.feeds).find((f) => f.id === Number(selectedFeedId.value));
   return entry ? entry.title : "Unknown";
+}
+
+/**
+ * @param {number} entryId
+ */
+async function getFullContent(entryId) {
+  try {
+    if (fullContents.value[entryId]) return;
+    scrapping.value[entryId] = true;
+    const parsed = await useRequestFetch()(`/api/entries/${entryId}/full-content`);
+    if (parsed && parsed.content) fullContents.value[entryId] = parsed.content;
+  } catch (err) {
+    $q.notify({
+      type: "negative",
+      message: `Failed to download full content: ${err}`,
+      actions: [{ icon: "close", color: "white" }],
+    });
+  } finally {
+    scrapping.value[entryId] = false;
+  }
 }
 
 async function load() {
@@ -895,7 +923,7 @@ async function onLoad(_index, done) {
  */
 async function resetThenLoad(done) {
   contents.value = {};
-  downloadedContents.value = {};
+  fullContents.value = {};
   expanded.value = [];
   hasMore.value = true;
   items.value = [];
@@ -949,6 +977,28 @@ function shouldMarkAsRead(now, entryId, olderThan) {
     default:
       return false;
   }
+}
+
+/**
+ * @param {number} entryId
+ * @param {number} index
+ * @param {()=>void} done
+ */
+async function slideLeft(entryId, index, done) {
+  entryStar.value[entryId] = entryStar.value[entryId] === "starred" ? "unstarred" : "starred";
+  await toggleStarEntry(entryId);
+  done();
+}
+
+/**
+ * @param {number} entryId
+ * @param {number} index
+ * @param {()=>void} done
+ */
+async function slideRight(entryId, index, done) {
+  entryRead.value[entryId] = entryRead.value[entryId] === "read" ? "unread" : "read";
+  await toggleReadEntry(entryId, index);
+  done();
 }
 
 /**
