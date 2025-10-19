@@ -370,7 +370,6 @@
                   <q-card-section>
                     <MarkedText
                       v-if="getContent(item.entry.id)"
-                      is-html
                       :keyword="searchQuery"
                       class="col entry-content"
                       style="max-width: 1000vw"
