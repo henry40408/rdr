@@ -379,7 +379,7 @@
                   </q-card-section>
                   <q-card-actions>
                     <q-btn flat icon="check" label="Read" @click="markAsReadAndCollapse(item.entry.id, index)" />
-                    <q-btn flat label="Collapse" icon="unfold_less" @click="expanded[index] = false" />
+                    <q-btn flat label="Collapse" icon="unfold_less" @click="collapseItem(index)" />
                     <q-btn
                       v-if="!downloadedContents[item.entry.id]"
                       flat
@@ -416,7 +416,7 @@
               :icon="isOpenEntryStarred() ? 'star' : 'star_border'"
               @click="toggleStarOpenEntry()"
             />
-            <q-btn fab icon="close" padding="sm" color="primary" @click="expanded = []" />
+            <q-btn fab icon="close" padding="sm" color="primary" @click="collapseOpenItem()" />
             <q-btn fab icon="done" padding="sm" color="secondary" @click="markOpenAsReadAndCollapse()" />
           </div>
         </q-page-sticky>
@@ -563,23 +563,17 @@ function categoryUnreadCount(categoryId) {
 }
 
 /**
- * @param {number} entryId
+ * @param {number} index
  */
-async function downloadContent(entryId) {
-  try {
-    if (downloadedContents.value[entryId]) return;
-    downloading.value[entryId] = true;
-    const parsed = await useRequestFetch()(`/api/entries/${entryId}/download`);
-    if (parsed && parsed.content) downloadedContents.value[entryId] = parsed.content;
-  } catch (err) {
-    $q.notify({
-      type: "negative",
-      message: `Failed to download entry content: ${err}`,
-      actions: [{ icon: "close", color: "white" }],
-    });
-  } finally {
-    downloading.value[entryId] = false;
-  }
+function collapseItem(index) {
+  expanded.value[index] = false;
+  scrollToContentRef(index);
+}
+
+function collapseOpenItem() {
+  const index = expanded.value.findIndex((v) => v);
+  if (index === -1) return;
+  collapseItem(index);
 }
 
 /**
@@ -619,10 +613,22 @@ async function doMarkAllAsRead(olderThan) {
 
 /**
  * @param {number} entryId
- * @returns {string}
  */
-function getContent(entryId) {
-  return downloadedContents.value[entryId] || contents.value[entryId] || "";
+async function downloadContent(entryId) {
+  try {
+    if (downloadedContents.value[entryId]) return;
+    downloading.value[entryId] = true;
+    const parsed = await useRequestFetch()(`/api/entries/${entryId}/download`);
+    if (parsed && parsed.content) downloadedContents.value[entryId] = parsed.content;
+  } catch (err) {
+    $q.notify({
+      type: "negative",
+      message: `Failed to download entry content: ${err}`,
+      actions: [{ icon: "close", color: "white" }],
+    });
+  } finally {
+    downloading.value[entryId] = false;
+  }
 }
 
 /**
@@ -632,6 +638,14 @@ function getContent(entryId) {
 function feedUnreadCount(feedId) {
   if (!feedsData.value) return 0;
   return feedsData.value?.feeds[feedId]?.unreadCount || 0;
+}
+
+/**
+ * @param {number} entryId
+ * @returns {string}
+ */
+function getContent(entryId) {
+  return downloadedContents.value[entryId] || contents.value[entryId] || "";
 }
 
 function getFilteredCategoryName() {
@@ -725,20 +739,6 @@ async function loadContent(entryId) {
 }
 
 /**
- * @param {number} [_index]
- * @param {(stop?:boolean) => void} [done]
- */
-async function onLoad(_index, done) {
-  if (!hasMore.value) {
-    if (done) done(true);
-    return;
-  }
-  offset.value += listLimit.value;
-  await load();
-  if (done) done();
-}
-
-/**
  * @param {number} feedId
  * @returns {boolean}
  */
@@ -747,20 +747,20 @@ function imageExists(feedId) {
   return imagePks.value?.includes(key) || false;
 }
 
-/**
- * @param {number} entryId
- * @returns {boolean}
- */
-function isRead(entryId) {
-  return entryRead.value[entryId] === "read";
-}
-
 function isOpenEntryStarred() {
   const index = expanded.value.findIndex((v) => v);
   if (index === -1) return false;
 
   const item = items.value[index];
   return entryStar.value[item.entry.id] === "starred";
+}
+
+/**
+ * @param {number} entryId
+ * @returns {boolean}
+ */
+function isRead(entryId) {
+  return entryRead.value[entryId] === "read";
 }
 
 /**
@@ -834,7 +834,7 @@ async function markAsRead(entryId) {
  */
 async function markAsReadAndCollapse(entryId, index) {
   await markAsRead(entryId);
-  expanded.value[index] = false;
+  collapseItem(index);
 }
 
 function markOpenAsReadAndCollapse() {
@@ -843,6 +843,20 @@ function markOpenAsReadAndCollapse() {
 
   const entryId = items.value[index]?.entry.id;
   if (entryId) markAsReadAndCollapse(entryId, index);
+}
+
+/**
+ * @param {number} [_index]
+ * @param {(stop?:boolean) => void} [done]
+ */
+async function onLoad(_index, done) {
+  if (!hasMore.value) {
+    if (done) done(true);
+    return;
+  }
+  offset.value += listLimit.value;
+  await load();
+  if (done) done();
 }
 
 /**
@@ -928,7 +942,7 @@ async function toggleReadEntry(entryId, index) {
     });
   } finally {
     entryRead.value[entryId] = value;
-    if (value === "read") expanded.value[index] = false;
+    if (value === "read") collapseItem(index);
   }
 }
 
