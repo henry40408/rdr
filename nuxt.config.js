@@ -1,3 +1,5 @@
+import { isProduction } from "std-env";
+
 export default defineNuxtConfig({
   compatibilityDate: "2025-09-25",
   app: {
@@ -21,6 +23,18 @@ export default defineNuxtConfig({
     logLevel: "",
     opmlPath: "./data/feeds.opml",
     userAgent: "Mozilla/5.0 (compatible; rdr/1.0; +https://github.com/henry40408/rdr)",
+    session: {
+      cookie: {
+        httpOnly: true,
+        maxAge: 60 * 60 * 24 * 30, // 30 days
+        path: "/",
+        sameSite: "lax",
+        secure: isProduction,
+      },
+      maxAge: 60 * 60 * 24 * 30, // 30 days
+      name: "nuxt-session",
+      password: process.env.NUXT_SESSION_PASSWORD || "",
+    },
     singleUser: true,
   },
   quasar: {
