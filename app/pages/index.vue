@@ -335,8 +335,9 @@
                       <ClientAgo :datetime="item.entry.date" />
                     </q-item-label>
                   </q-item-section>
-                  <q-item-section v-if="summarizations[item.entry.id]" top side>
-                    <q-icon size="xs" color="positive" name="psychology" />
+                  <q-item-section v-if="features?.summarization" top side>
+                    <q-icon v-if="summarizations[item.entry.id]" size="xs" color="positive" name="psychology" />
+                    <q-spinner v-if="summarizing[item.entry.id]" />
                   </q-item-section>
                 </template>
 
