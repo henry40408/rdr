@@ -292,7 +292,7 @@
                 :key="item.entry.id"
                 v-model="expanded[index]"
                 group="entry"
-                :class="{ 'bg-grey-9': isRead(item.entry.id) }"
+                :class="{ 'bg-grey-9': isDark && isRead(item.entry.id), 'bg-grey-1': !isDark && isRead(item.entry.id) }"
                 @after-show="scrollToContentRef(index)"
                 @before-show="loadContent(item.entry.id)"
               >

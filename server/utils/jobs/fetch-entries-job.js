@@ -39,10 +39,7 @@ export class FetchEntriesJob extends BaseJob {
       return await Promise.allSettled(
         feeds.map(async (feed) => {
           try {
-            return await Promise.allSettled([
-              this.feedService.fetchAndSaveEntries(user.id, feed),
-              this.feedService.fetchImage(user.id, feed),
-            ]);
+            return await this.feedService.fetchAndSaveEntries(user.id, feed);
           } finally {
             this.logger.debug({
               msg: "Fetched entries for feed",
