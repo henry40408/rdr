@@ -290,7 +290,10 @@
                 :key="item.entry.id"
                 v-model="expanded[index]"
                 group="entry"
-                :class="{ 'bg-grey-9': isDark && isRead(item.entry.id), 'bg-grey-1': !isDark && isRead(item.entry.id) }"
+                :class="{
+                  'bg-grey-9': isDark && isRead(item.entry.id),
+                  'bg-grey-1': !isDark && isRead(item.entry.id),
+                }"
                 @after-show="scrollToContentRef(index)"
                 @before-show="loadContent(item.entry.id)"
               >
@@ -323,6 +326,9 @@
                       {{ item.category.name }} &middot; {{ item.feed.title }} &middot;
                       <ClientAgo :datetime="item.entry.date" />
                     </q-item-label>
+                  </q-item-section>
+                  <q-item-section v-if="summarizations[item.entry.id]" top side>
+                    <q-icon size="xs" color="positive" name="psychology" />
                   </q-item-section>
                 </template>
 
@@ -367,6 +373,25 @@
                       </q-chip>
                     </div>
                   </q-card-section>
+                  <q-card-section v-if="features?.summarization">
+                    <q-btn
+                      v-if="!summarizations[item.entry.id]"
+                      color="primary"
+                      icon="psychology"
+                      label="Summarize"
+                      :loading="summarizing[item.entry.id]"
+                      @click="summarizeEntry(item.entry.id)"
+                    />
+                    <UseClipboard v-else v-slot="{ copy, copied }" :source="summarizations[item.entry.id]">
+                      <div
+                        class="entry-summary q-pa-md q-mb-sm"
+                        :class="{ 'bg-grey-2': !isDark, 'bg-grey-8 text-white': isDark }"
+                      >
+                        <pre>{{ summarizations[item.entry.id] }}</pre>
+                      </div>
+                      <q-btn color="secondary" :label="copied ? 'Copied!' : 'Copy'" @click="copy()" />
+                    </UseClipboard>
+                  </q-card-section>
                   <q-card-section>
                     <MarkedText
                       v-if="getContent(item.entry.id)"
@@ -376,25 +401,16 @@
                       :text="getContent(item.entry.id)"
                     />
                   </q-card-section>
-                  <q-card-actions>
-                    <q-btn flat icon="check" label="Read" @click="markAsReadAndCollapse(item.entry.id, index)" />
-                    <q-btn flat label="Collapse" icon="unfold_less" @click="collapseItem(index)" />
+                  <q-card-section>
                     <q-btn
                       v-if="!downloadedContents[item.entry.id]"
-                      flat
                       label="Download"
                       icon="file_download"
                       :loading="downloading[item.entry.id]"
                       @click="downloadContent(item.entry.id)"
                     />
-                    <q-btn
-                      v-else
-                      flat
-                      icon="undo"
-                      label="See original"
-                      @click="downloadedContents[item.entry.id] = ''"
-                    />
-                  </q-card-actions>
+                    <q-btn v-else icon="undo" label="See original" @click="downloadedContents[item.entry.id] = ''" />
+                  </q-card-section>
                 </q-card>
               </q-expansion-item>
               <q-item v-if="!hasMore && items.length > 0">
@@ -459,11 +475,15 @@
 </template>
 
 <script setup>
+import { UseClipboard } from "@vueuse/components";
 import { add } from "date-fns";
+import pangu from "pangu";
 import { useQuasar } from "quasar";
 import { useRouteQuery } from "@vueuse/router";
 
+const { hideEmpty } = useLocalSettings();
 const { loggedIn, session, clear: logout } = useUserSession();
+const features = useFeatures();
 
 const $q = useQuasar();
 const isDark = useDark();
@@ -479,7 +499,6 @@ watchEffect(
 
 const infiniteScroll = useTemplateRef("infinite-scroll");
 const itemRefs = useTemplateRef("item-list");
-const { hideEmpty } = useLocalSettings();
 
 /** @type {Ref<{ [key: string]: string }> } */
 const contents = ref({});
@@ -500,6 +519,10 @@ const leftDrawerOpen = ref(false);
 const loading = ref(false);
 const offset = ref(0);
 const rightDrawerOpen = ref(false);
+/** @type {Ref<{ [key: string]: string }>} */
+const summarizations = ref({});
+/** @type {Ref<Record<string,boolean>>} */
+const summarizing = ref({});
 
 /** @type {Ref<"asc"|"desc">} */
 const listDirection = useRouteQuery("direction", "desc");
@@ -926,6 +949,36 @@ function shouldMarkAsRead(now, entryId, olderThan) {
 
 /**
  * @param {number} entryId
+ */
+async function summarizeEntry(entryId) {
+  const entry = items.value.find((i) => i.entry.id === entryId);
+  if (!entry) return;
+
+  summarizing.value[entryId] = true;
+  try {
+    const text = await useRequestFetch()(`/api/entries/${entryId}/summarize`);
+
+    const [prefixedTitle, content] = text.split("\n\n");
+    const title = prefixedTitle.replace("Title: ", "").trim();
+
+    summarizations.value[entryId] = `${pangu.spacingText(title)}
+    
+${entry.entry.link}
+
+${pangu.spacingText(content)}`;
+  } catch (err) {
+    $q.notify({
+      type: "negative",
+      message: `Failed to summarize entry ${entryId}: ${err}`,
+      actions: [{ icon: "close", color: "white" }],
+    });
+  } finally {
+    summarizing.value[entryId] = false;
+  }
+}
+
+/**
+ * @param {number} entryId
  * @param {number} index
  */
 async function toggleReadEntry(entryId, index) {
@@ -993,6 +1046,18 @@ async function toggleStarOpenEntry() {
 
 .body--dark .entry-content a {
   color: white;
+}
+
+.entry-summary {
+  width: 100%;
+  overflow: hidden;
+}
+
+.entry-summary pre {
+  margin: 0;
+  overflow-wrap: break-word;
+  text-wrap: break-word;
+  white-space: pre-wrap;
 }
 
 .entry-content img {

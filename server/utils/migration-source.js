@@ -1,11 +1,11 @@
-import migration1 from "./migrations/m0001-initial.js";
+import { migrationNames, migrations } from "../migrations/index.js";
 
 export class MigrationSource {
   /**
    * @returns {Promise<string[]>}
    */
   async getMigrations() {
-    return [migration1.name];
+    return migrationNames;
   }
 
   /**
@@ -21,11 +21,8 @@ export class MigrationSource {
    * @returns {Promise<{up: (knex: import('knex').Knex) => Promise<void>, down: (knex: import('knex').Knex) => Promise<void>}>}
    */
   async getMigration(migration) {
-    switch (migration) {
-      case migration1.name:
-        return migration1;
-      default:
-        throw new Error(`Unknown migration: ${migration}`);
-    }
+    const mig = migrations[migration];
+    if (!mig) throw new Error(`Unknown migration: ${migration}`);
+    return mig;
   }
 }
