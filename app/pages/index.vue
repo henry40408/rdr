@@ -9,7 +9,15 @@
           </q-avatar>
           rdr
         </q-toolbar-title>
-        <q-input v-model="searchQuery" dark dense standout debounce="500" placeholder="Search" input-class="text-right">
+        <q-input
+          v-model="searchQuery"
+          dark
+          dense
+          borderless
+          debounce="500"
+          placeholder="Search"
+          input-class="text-right"
+        >
           <template #append>
             <q-icon v-if="!searchQuery" name="search" />
             <q-icon v-else name="clear" class="cursor-pointer" @click="searchQuery = ''" />
@@ -584,18 +592,11 @@ function categoryUnreadCount(categoryId) {
   return feedIds.reduce((sum, feedId) => sum + (feedsData.value?.feeds[feedId]?.unreadCount ?? 0), 0);
 }
 
-/**
- * @param {number} index
- */
-function collapseItem(index) {
-  expanded.value[index] = false;
-  scrollToContentRef(index);
-}
-
 function collapseOpenItem() {
   const index = expanded.value.findIndex((v) => v);
   if (index === -1) return;
-  collapseItem(index);
+  expanded.value[index] = false;
+  scrollToContentRef(index);
 }
 
 /**
@@ -862,7 +863,8 @@ async function markAsRead(entryId) {
  */
 async function markAsReadAndCollapse(entryId, index) {
   await markAsRead(entryId);
-  collapseItem(index);
+  expanded.value[index] = false;
+  scrollToContentRef(index);
 }
 
 function markOpenAsReadAndCollapse() {
@@ -1000,7 +1002,7 @@ async function toggleReadEntry(entryId, index) {
     });
   } finally {
     if (value) entryRead.value[entryId] = value;
-    if (value === "read") collapseItem(index);
+    if (value === "read") expanded.value[index] = false;
   }
 }
 

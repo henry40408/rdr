@@ -6,7 +6,7 @@ import { isDevelopment } from "std-env";
  */
 export function getLoggerOptions(config) {
   return {
-    level: config.logLevel ?? (isDevelopment ? "debug" : "info"),
+    level: config.logLevel || (isDevelopment ? "debug" : "info"),
     formatters: {
       bindings: () => ({}),
       level: (label) => ({ level: label }),
