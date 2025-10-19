@@ -688,7 +688,7 @@ async function load() {
     }
     if (newItems.length < listLimit.value) hasMore.value = false;
 
-    if (offset.value === 0 && items.value.length === 0) {
+    if (items.value.length === 0) {
       if (selectedFeedId.value) {
         $q.notify({
           type: "info",
@@ -698,7 +698,10 @@ async function load() {
           actions: [{ icon: "close", color: "white" }],
         });
         selectedFeedId.value = undefined;
-      } else if (selectedCategoryId.value) {
+        await nextTick();
+        return;
+      }
+      if (selectedCategoryId.value) {
         $q.notify({
           type: "info",
           icon: "search_off",
@@ -707,6 +710,8 @@ async function load() {
           actions: [{ icon: "close", color: "white" }],
         });
         selectedCategoryId.value = undefined;
+        await nextTick();
+        return;
       }
     }
   } catch (err) {
