@@ -9,8 +9,8 @@
           </q-card-section>
           <form @submit.prevent="onSubmit('login')">
             <q-card-section class="q-gutter-md">
-              <q-input v-model="username" required standout label="Username" />
-              <q-input v-model="password" required standout type="password" label="Password" />
+              <q-input v-model="username" outlined required label="Username" />
+              <q-input v-model="password" outlined required type="password" label="Password" />
             </q-card-section>
             <q-card-actions align="right">
               <q-btn flat label="Sign Up" color="secondary" :loading="loading" @click="onSubmit('signup')" />
