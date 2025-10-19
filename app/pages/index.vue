@@ -22,12 +22,7 @@
 
     <q-drawer v-model="leftDrawerOpen" bordered side="left" show-if-above>
       <q-list padding>
-        <q-item>
-          <q-item-section header>
-            <q-item-label class="text-h5">Categories</q-item-label>
-            <q-item-label caption>Browse by category</q-item-label>
-          </q-item-section>
-        </q-item>
+        <q-item-label header>Categories</q-item-label>
         <q-item>
           <q-item-section>
             <ClientOnly>
@@ -99,25 +94,26 @@
 
     <q-drawer v-model="rightDrawerOpen" bordered side="right" show-if-above>
       <q-list padding>
+        <q-item-label header>Account</q-item-label>
         <q-item>
-          <q-item-section side>Username</q-item-section>
-          <q-item-section>{{ session.user.username }} </q-item-section>
+          <q-item-section>
+            <q-item-label overline>USERNAME</q-item-label>
+            <q-item-label>{{ session.user.username }}</q-item-label>
+          </q-item-section>
         </q-item>
         <q-item>
-          <q-item-section side>Logged in at</q-item-section>
-          <q-item-section><ClientDateTime :datetime="session.loggedInAt" /></q-item-section>
+          <q-item-section>
+            <q-item-label overline>LOGGED IN AT</q-item-label>
+            <q-item-label><ClientDateTime :datetime="session.loggedInAt" /></q-item-label>
+          </q-item-section>
         </q-item>
         <q-item>
           <q-item-section>
             <q-btn label="Log Out" color="negative" @click="logout()" />
           </q-item-section>
         </q-item>
-        <q-item>
-          <q-item-section header>
-            <q-item-label class="text-h6">Filters</q-item-label>
-            <q-item-label caption>Adjust your feed display options</q-item-label>
-          </q-item-section>
-        </q-item>
+        <q-separator spaced />
+        <q-item-label header>Filters</q-item-label>
         <q-item v-ripple tag="label">
           <q-item-section top side>
             <q-radio v-model="listStatus" val="unread" />
@@ -191,8 +187,8 @@
       <q-page>
         <q-list padding>
           <q-item>
-            <q-item-section header>
-              <q-item-label>
+            <q-item-section>
+              <q-item-label header>
                 <div class="q-gutter-sm row items-center">
                   <div class="text-h6">
                     <span v-if="listStatus === 'unread'">Unread</span>
@@ -244,8 +240,9 @@
                   color="secondary"
                   :outline="!isDark"
                   @remove="selectedCategoryId = undefined"
-                  >Category: {{ getFilteredCategoryName() }}</q-chip
                 >
+                  Category: {{ getFilteredCategoryName() }}
+                </q-chip>
                 <q-chip
                   v-if="selectedFeedId"
                   removable
@@ -253,8 +250,9 @@
                   icon="rss_feed"
                   :outline="!isDark"
                   @remove="selectedFeedId = undefined"
-                  >Feed: {{ getFilteredFeedTitle() }}</q-chip
                 >
+                  Feed: {{ getFilteredFeedTitle() }}
+                </q-chip>
                 <q-chip
                   v-if="searchQuery"
                   removable
@@ -284,7 +282,7 @@
           </div>
         </q-banner>
         <q-pull-to-refresh @refresh="resetThenLoad">
-          <q-infinite-scroll :offset="250" @load="onLoad">
+          <q-infinite-scroll ref="infinite-scroll" :offset="250" @load="onLoad">
             <q-list separator>
               <q-expansion-item
                 v-for="(item, index) in items"
@@ -402,7 +400,7 @@
               </q-expansion-item>
               <q-item v-if="!hasMore && items.length > 0">
                 <q-item-section>
-                  <q-item-label class="text-center text-grey-8">End of list</q-item-label>
+                  <q-item-label header class="text-center">End of list</q-item-label>
                 </q-item-section>
               </q-item>
             </q-list>
@@ -480,6 +478,7 @@ watchEffect(
   { flush: "post" },
 );
 
+const infiniteScroll = useTemplateRef("infinite-scroll");
 const itemRefs = useTemplateRef("item-list");
 const { hideEmpty } = useLocalSettings();
 
@@ -859,6 +858,9 @@ async function resetThenLoad(done) {
 
   refresh();
   await load();
+
+  // @ts-expect-error: resume exists
+  infiniteScroll.value?.resume();
 
   if (done) done();
 }
