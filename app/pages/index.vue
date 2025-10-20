@@ -1145,4 +1145,9 @@ async function toggleStarOpenEntry() {
 .entry-content pre {
   overflow-x: auto;
 }
+
+.entry-content video {
+  max-width: 100%;
+  height: auto;
+}
 </style>
