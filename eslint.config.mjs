@@ -11,5 +11,6 @@ export default withNuxt({
         sortLineLength: true,
       },
     ],
+    "vue/html-self-closing": "off",
   },
 });

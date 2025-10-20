@@ -71,7 +71,13 @@
                 >
                   <q-item-section avatar>
                     <q-avatar v-if="imageExists(feed.id)" square>
-                      <q-img :class="{ 'bg-white': isDark }" :src="`/api/images/${buildFeedImageKey(feed.id)}`" />
+                      <img
+                        loading="lazy"
+                        alt="Feed image"
+                        decoding="async"
+                        :class="{ 'bg-white': isDark }"
+                        :src="`/api/images/${buildFeedImageKey(feed.id)}`"
+                      />
                     </q-avatar>
                     <q-icon v-else name="rss_feed" />
                   </q-item-section>
@@ -342,12 +348,14 @@
                           <MarkedText :keyword="searchQuery" :text="item.entry.title" />
                         </q-item-label>
                         <q-item-label caption lines="2">
-                          <q-img
+                          <img
                             v-if="imageExists(item.feed.id)"
-                            width=".75rem"
+                            loading="lazy"
                             class="q-mr-sm"
-                            height=".75rem"
+                            alt="Feed image"
+                            decoding="async"
                             :class="{ 'bg-white': isDark }"
+                            style="height: 0.75rem; width: 0.75rem"
                             :src="`/api/images/${buildFeedImageKey(item.feed.id)}`"
                           />
                           {{ item.category.name }} &middot; {{ item.feed.title }} &middot;

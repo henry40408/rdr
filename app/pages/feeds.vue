@@ -74,8 +74,10 @@
                     <template #header>
                       <q-item-section side>
                         <q-avatar v-if="imageExists(feed.id)" square>
-                          <q-img
-                            alt="Feed Image"
+                          <img
+                            loading="lazy"
+                            alt="Feed image"
+                            decoding="async"
                             :class="{ 'bg-white': isDark }"
                             :src="`/api/images/${buildFeedImageKey(feed.id)}`"
                           />
