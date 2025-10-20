@@ -116,12 +116,12 @@
               </q-item>
             </template>
           </template>
-          <q-item v-if="!categories?.length">
+          <q-item v-if="filteredCategories.length <= 0" class="bg-grey-2 text-grey-7">
             <q-item-section>
               <q-item-label class="text-subtitle2">No categories found.</q-item-label>
               <q-item-label caption>
-                You can add new feeds on the
-                <router-link to="/settings">settings page</router-link>.
+                Try adjusting your filters or
+                <router-link to="/settings">add new feeds</router-link>.
               </q-item-label>
             </q-item-section>
           </q-item>
