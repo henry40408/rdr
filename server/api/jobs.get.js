@@ -18,6 +18,7 @@ export default defineEventHandler(async (event) => {
     return {
       name: job.name,
       description: job.description,
+      pausedAt: entity?.pausedAt,
       lastDate: entity?.lastDate,
       lastDurationMs: entity?.lastDurationMs,
       lastError: entity?.lastError,

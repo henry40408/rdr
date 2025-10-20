@@ -16,8 +16,8 @@
       <q-page>
         <q-list padding>
           <q-item>
-            <q-item-section header>
-              <q-item-label class="text-h5">Feeds</q-item-label>
+            <q-item-section>
+              <q-item-label>Feeds</q-item-label>
               <q-item-label caption>Manage your feed subscriptions</q-item-label>
             </q-item-section>
             <q-item-section side>

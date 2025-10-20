@@ -446,6 +446,23 @@ export class Repository {
   }
 
   /**
+   * @param {string} name
+   * @returns {Promise<JobEntity|undefined>}
+   */
+  async findJobByName(name) {
+    const row = await this.knex("jobs").where({ name }).first();
+    if (!row) return undefined;
+    return new JobEntity({
+      id: row.id,
+      name: row.name,
+      pausedAt: row.paused_at,
+      lastDate: row.last_date,
+      lastDurationMs: row.last_duration_ms,
+      lastError: row.last_error,
+    });
+  }
+
+  /**
    * @returns {Promise<JobEntity[]>}
    */
   async findJobs() {
@@ -453,7 +470,9 @@ export class Repository {
     return jobs.map(
       (job) =>
         new JobEntity({
+          id: job.id,
           name: job.name,
+          pausedAt: job.paused_at,
           lastDate: job.last_date,
           lastDurationMs: job.last_duration_ms,
           lastError: job.last_error,
@@ -774,23 +793,21 @@ export class Repository {
   }
 
   /**
-   * @param {string} name
+   * @param {JobEntity} job
    */
-  async upsertJob(name) {
-    await this.knex("jobs").insert({ name }).onConflict("name").ignore();
-  }
-
-  /**
-   * @param {string} name
-   * @param {number} duration
-   * @param {string|null} error
-   */
-  async upsertJobExecution(name, duration, error) {
-    await this.knex("jobs").where({ name }).update({
-      last_date: new Date().toISOString(),
-      last_duration_ms: duration,
-      last_error: error,
-    });
+  async upsertJob(job) {
+    const [jobId] = await this.knex("jobs")
+      .insert({
+        name: job.name,
+        paused_at: job.pausedAt,
+        last_date: job.lastDate,
+        last_duration_ms: job.lastDurationMs,
+        last_error: job.lastError,
+      })
+      .onConflict("name")
+      .merge();
+    if (jobId) job.id = jobId;
+    this.logger.debug({ msg: "Upserted job", job });
   }
 
   async _setPragmas() {

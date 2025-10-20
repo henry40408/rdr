@@ -202,46 +202,15 @@
         <q-list padding>
           <q-item>
             <q-item-section>
-              <q-item-label header>
-                <div class="q-gutter-sm row items-center">
-                  <div class="text-h6">
-                    <span v-if="listStatus === 'unread'">Unread</span>
-                    <span v-else-if="listStatus === 'read'">Read</span>
-                    <span v-else-if="listStatus === 'starred'">Starred</span>
-                    <span v-else>All</span>
-                  </div>
-                  <q-badge>{{ countData ? countData.count : "..." }}</q-badge>
-                </div>
+              <q-item-label>
+                <span v-if="listStatus === 'unread'">Unread</span>
+                <span v-else-if="listStatus === 'read'">Read</span>
+                <span v-else-if="listStatus === 'starred'">Starred</span>
+                <span v-else>All</span>
               </q-item-label>
             </q-item-section>
             <q-item-section side>
-              <q-btn-group flat class="gt-xs">
-                <q-btn icon="refresh" label="Refresh" @click="resetThenLoad()" />
-                <q-btn-dropdown split auto-close icon="done_all" label="Mark all as read" @click="markAllAsRead()">
-                  <q-list>
-                    <q-item clickable @click="markAllAsRead('day')">
-                      <q-item-section>
-                        <q-item-label>Older than 1 day</q-item-label>
-                      </q-item-section>
-                    </q-item>
-                    <q-item clickable @click="markAllAsRead('week')">
-                      <q-item-section>
-                        <q-item-label>Older than 1 week</q-item-label>
-                      </q-item-section>
-                    </q-item>
-                    <q-item clickable @click="markAllAsRead('month')">
-                      <q-item-section>
-                        <q-item-label>Older than 1 month</q-item-label>
-                      </q-item-section>
-                    </q-item>
-                    <q-item clickable @click="markAllAsRead('year')">
-                      <q-item-section>
-                        <q-item-label>Older than 1 year</q-item-label>
-                      </q-item-section>
-                    </q-item>
-                  </q-list>
-                </q-btn-dropdown>
-              </q-btn-group>
+              <q-badge>{{ countData ? countData.count : "..." }}</q-badge>
             </q-item-section>
           </q-item>
           <q-item v-if="!!selectedCategoryId || !!selectedFeedId || !!searchQuery">
@@ -481,7 +450,7 @@
           </div>
         </q-page-sticky>
 
-        <q-page-sticky class="lt-sm" :offset="[18, 18]" position="bottom-right">
+        <q-page-sticky :offset="[18, 18]" position="bottom-right">
           <q-fab direction="up" color="primary" icon="keyboard_arrow_up">
             <q-fab-action
               external-label
@@ -748,7 +717,7 @@ async function load() {
     }
     if (newItems.length < listLimit.value) hasMore.value = false;
 
-    if (items.value.length === 0) {
+    if (listStatus.value === "unread" && items.value.length === 0) {
       if (selectedFeedId.value) {
         $q.notify({
           type: "info",
@@ -829,23 +798,6 @@ function isRead(entryId) {
   return entryRead.value[entryId] === "read";
 }
 
-/**
- * @param {"day"|"week"|"month"|"year"} [olderThan]
- */
-async function markAllAsRead(olderThan) {
-  $q.dialog({
-    title: "Mark all as read",
-    message: olderThan
-      ? `Are you sure you want to mark all entries older than ${olderThan} as read?`
-      : "Are you sure you want to mark all entries as read?",
-    ok: { color: "negative" },
-    cancel: true,
-    persistent: true,
-  }).onOk(async () => {
-    await doMarkAllAsRead(olderThan);
-  });
-}
-
 function markAllAsReadDialog() {
   $q.dialog({
     title: "Mark all as read",
@@ -854,7 +806,7 @@ function markAllAsReadDialog() {
       type: "radio",
       model: "all",
       items: [
-        { label: "All entries", value: "all" },
+        { label: "All entries (filter applied)", value: "all" },
         { label: "Older than 1 day", value: "day" },
         { label: "Older than 1 week", value: "week" },
         { label: "Older than 1 month", value: "month" },

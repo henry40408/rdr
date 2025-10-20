@@ -95,13 +95,17 @@ export class ImageEntity {
 export class JobEntity {
   /**
    * @param {object} opts
+   * @param {number} opts.id
    * @param {string} opts.name
+   * @param {string} [opts.pausedAt]
    * @param {string} [opts.lastDate]
    * @param {number} [opts.lastDurationMs]
    * @param {string} [opts.lastError]
    */
-  constructor({ name, lastDate, lastDurationMs, lastError }) {
+  constructor({ id, name, pausedAt, lastDate, lastDurationMs, lastError }) {
+    this.id = id;
     this.name = name;
+    this.pausedAt = pausedAt;
     this.lastDate = lastDate;
     this.lastDurationMs = lastDurationMs;
     this.lastError = lastError;
