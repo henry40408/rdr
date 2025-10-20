@@ -1,8 +1,5 @@
 import { asClass, asValue, createContainer } from "awilix";
 import { AwilixManager } from "awilix-manager";
-import { DownloadService } from "../utils/download-service";
-import { FetchEntriesJob } from "../utils/jobs/fetch-entries-job";
-import { FetchImagesJob } from "../utils/jobs/fetch-images-job";
 import knex from "knex";
 import pino from "pino";
 
@@ -30,6 +27,7 @@ export default defineNitroPlugin(
     diContainer.register({
       config: asValue(config),
       downloadService: asClass(DownloadService).singleton(),
+      featureService: asClass(FeatureService).singleton(),
       feedService: asClass(FeedService).singleton(),
       imageService: asClass(ImageService).singleton(),
       jobService: asClass(JobService, { asyncInit: "init", asyncDispose: "dispose" }).singleton(),

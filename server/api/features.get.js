@@ -4,13 +4,8 @@ export default defineEventHandler(async (event) => {
   const session = await requireUserSession(event);
   const userId = session.user.id;
 
-  /** @type {Repository} */
-  const repository = container.resolve("repository");
+  /** @type {FeatureService} */
+  const featureService = container.resolve("featureService");
 
-  const settings = await repository.findUserSettings(userId);
-
-  const summarization = !!settings.kagiSessionLink && !!settings.kagiLanguage;
-  return {
-    summarization,
-  };
+  return await featureService.userFeatures(userId);
 });
