@@ -38,6 +38,32 @@
             </ClientOnly>
           </q-item-section>
         </q-item>
+        <q-item>
+          <q-item-section>
+            <q-select
+              v-model="categoriesOrder"
+              filled
+              size="xs"
+              emit-value
+              map-options
+              label="Sort by"
+              :options="[
+                { label: 'Count', value: 'count' },
+                { label: 'Name', value: 'name' },
+              ]"
+            />
+          </q-item-section>
+        </q-item>
+        <q-item>
+          <q-item-section>
+            <q-radio v-model="categoriesDirection" size="xs" val="asc" label="Ascending" />
+          </q-item-section>
+        </q-item>
+        <q-item>
+          <q-item-section>
+            <q-radio v-model="categoriesDirection" size="xs" val="desc" label="Descending" />
+          </q-item-section>
+        </q-item>
         <ClientOnly>
           <template v-for="category in categories" :key="category.id">
             <template v-if="!hideEmpty || categoryUnreadCount(category.id) > 0">
@@ -177,7 +203,7 @@
             <q-select
               v-model="listOrder"
               filled
-              outlined
+              emit-value
               map-options
               label="Sort by"
               :options="[{ label: 'Date', value: 'date' }]"
@@ -213,7 +239,7 @@
               <q-badge>{{ countData ? countData.count : "..." }}</q-badge>
             </q-item-section>
           </q-item>
-          <q-item v-if="!!selectedCategoryId || !!selectedFeedId || !!searchQuery">
+          <q-item v-if="filtersEnabled">
             <q-item-section>
               <div>
                 <q-chip
@@ -475,10 +501,10 @@
             <q-fab-action
               external-label
               icon="done_all"
-              label="Read all"
               color="secondary"
+              label="Mark as read"
               label-position="left"
-              @click="markAllAsReadDialog()"
+              @click="markManyAsReadDialog()"
             />
           </q-fab>
         </q-page-sticky>
@@ -539,6 +565,10 @@ const summarizations = ref({});
 const summarizing = ref({});
 
 /** @type {Ref<"asc"|"desc">} */
+const categoriesDirection = useRouteQuery("categoriesDirection", "asc");
+/** @type {Ref<"name"|"count">} */
+const categoriesOrder = useRouteQuery("categoriesOrder", "name");
+/** @type {Ref<"asc"|"desc">} */
 const listDirection = useRouteQuery("direction", "desc");
 /** @type {Ref<number>} */
 const listLimit = useRouteQuery("limit", "30", { transform: Number });
@@ -567,6 +597,7 @@ const countQuery = computed(() => {
   if (listStatus.value) query.status = listStatus.value;
   return query;
 });
+const filtersEnabled = computed(() => !!selectedFeedId.value || !!selectedCategoryId.value || !!searchQuery.value);
 
 const { data, refresh } = await useAsyncData("initial", async () =>
   Promise.all([
@@ -576,7 +607,38 @@ const { data, refresh } = await useAsyncData("initial", async () =>
     useRequestFetch()("/api/feeds/data"),
   ]),
 );
-const categories = computed(() => data.value?.[0] ?? []);
+const categories = computed(() => {
+  const original = data.value?.[0] ?? [];
+
+  for (const category of original) {
+    category.feeds.sort((a, b) => {
+      const [aTitle, bTitle] = [a.title.toLowerCase(), b.title.toLowerCase()];
+      return aTitle < bTitle ? -1 : aTitle > bTitle ? 1 : 0;
+    });
+  }
+
+  switch (categoriesOrder.value) {
+    case "count":
+      return original.slice().sort((a, b) => {
+        const aCount = a.feeds.reduce((acc, f) => {
+          const unreadCount = feedsData.value?.feeds[f.id]?.unreadCount ?? 0;
+          return acc + unreadCount;
+        }, 0);
+        const bCount = b.feeds.reduce((acc, f) => {
+          const unreadCount = feedsData.value?.feeds[f.id]?.unreadCount ?? 0;
+          return acc + unreadCount;
+        }, 0);
+        return categoriesDirection.value === "asc" ? aCount - bCount : bCount - aCount;
+      });
+    case "name":
+    default:
+      return original.slice().sort((a, b) => {
+        const order = categoriesDirection.value === "asc" ? 1 : -1;
+        const [aName, bName] = [a.name.toLowerCase(), b.name.toLowerCase()];
+        return aName < bName ? -order : aName > bName ? order : 0;
+      });
+  }
+});
 const countData = computed(() => data.value?.[1] ?? { count: 0 });
 useHead(() => ({
   title: selectedFeedId.value
@@ -608,7 +670,7 @@ function collapseOpenItem() {
 /**
  * @param {"day"|"week"|"month"|"year"} [olderThan]
  */
-async function doMarkAllAsRead(olderThan) {
+async function doMarkManyAsRead(olderThan) {
   const now = new Date();
 
   const body = {};
@@ -798,7 +860,7 @@ function isRead(entryId) {
   return entryRead.value[entryId] === "read";
 }
 
-function markAllAsReadDialog() {
+function markManyAsReadDialog() {
   $q.dialog({
     title: "Mark all as read",
     message: "Are you sure you want to mark all entries as read?",
@@ -806,7 +868,7 @@ function markAllAsReadDialog() {
       type: "radio",
       model: "all",
       items: [
-        { label: "All entries (filter applied)", value: "all" },
+        { label: filtersEnabled.value ? "Filtered entries" : "All entries", value: "all" },
         { label: "Older than 1 day", value: "day" },
         { label: "Older than 1 week", value: "week" },
         { label: "Older than 1 month", value: "month" },
@@ -819,8 +881,8 @@ function markAllAsReadDialog() {
   }).onOk(
     /** @param {"day"|"week"|"month"|"year"|"all"} data */
     async (data) => {
-      if (data === "all") await doMarkAllAsRead();
-      else await doMarkAllAsRead(data);
+      if (data === "all") await doMarkManyAsRead();
+      else await doMarkManyAsRead(data);
     },
   );
 }
