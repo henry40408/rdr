@@ -48,20 +48,20 @@
               map-options
               label="Sort by"
               :options="[
-                { label: 'Count', value: 'count' },
-                { label: 'Name', value: 'name' },
+                { label: 'Unread count', value: 'unread_count' },
+                { label: 'Name', value: 'category_name' },
               ]"
             />
           </q-item-section>
         </q-item>
         <q-item>
           <q-item-section>
-            <q-radio v-model="categoriesDirection" size="xs" val="asc" label="Ascending" />
+            <q-radio v-model="categoriesDirection" size="xs" val="desc" label="Descending" />
           </q-item-section>
         </q-item>
         <q-item>
           <q-item-section>
-            <q-radio v-model="categoriesDirection" size="xs" val="desc" label="Descending" />
+            <q-radio v-model="categoriesDirection" size="xs" val="asc" label="Ascending" />
           </q-item-section>
         </q-item>
         <ClientOnly>
@@ -569,9 +569,9 @@ const summarizations = ref({});
 const summarizing = ref({});
 
 /** @type {Ref<"asc"|"desc">} */
-const categoriesDirection = useRouteQuery("categoriesDirection", "asc");
-/** @type {Ref<"name"|"count">} */
-const categoriesOrder = useRouteQuery("categoriesOrder", "name");
+const categoriesDirection = useRouteQuery("categoriesDirection", "desc");
+/** @type {Ref<"category_name"|"unread_count">} */
+const categoriesOrder = useRouteQuery("categoriesOrder", "unread_count");
 /** @type {Ref<"asc"|"desc">} */
 const itemsDirection = useRouteQuery("direction", "desc");
 /** @type {Ref<number>} */
@@ -622,7 +622,7 @@ const categories = computed(() => {
   }
 
   switch (categoriesOrder.value) {
-    case "count":
+    case "unread_count":
       return original.slice().sort((a, b) => {
         const aCount = a.feeds.reduce((acc, f) => {
           const unreadCount = feedsData.value?.feeds[f.id]?.unreadCount ?? 0;
@@ -634,7 +634,7 @@ const categories = computed(() => {
         }, 0);
         return categoriesDirection.value === "asc" ? aCount - bCount : bCount - aCount;
       });
-    case "name":
+    case "category_name":
     default:
       return original.slice().sort((a, b) => {
         const order = categoriesDirection.value === "asc" ? 1 : -1;
