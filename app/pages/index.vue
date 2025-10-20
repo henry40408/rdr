@@ -65,58 +65,55 @@
           </q-item-section>
         </q-item>
         <ClientOnly>
-          <template v-for="category in categories" :key="category.id">
-            <template v-if="!hideEmpty || categoryUnreadCount(category.id) > 0">
+          <template v-for="category in filteredCategories" :key="category.id">
+            <q-item
+              v-ripple
+              clickable
+              @click="
+                selectedCategoryId = String(category.id);
+                selectedFeedId = undefined;
+              "
+            >
+              <q-item-section>
+                <q-item-label>{{ category.name }}</q-item-label>
+              </q-item-section>
+              <q-item-section side>
+                <q-badge color="primary" :outline="!categoryUnreadCount(category.id)">
+                  {{ categoryUnreadCount(category.id) }}
+                </q-badge>
+              </q-item-section>
+            </q-item>
+            <q-separator />
+            <template v-for="feed in category.feeds" :key="feed.id">
               <q-item
                 v-ripple
                 clickable
                 @click="
                   selectedCategoryId = String(category.id);
-                  selectedFeedId = undefined;
+                  selectedFeedId = String(feed.id);
                 "
               >
+                <q-item-section avatar>
+                  <q-avatar v-if="imageExists(feed.id)" square>
+                    <img
+                      loading="lazy"
+                      alt="Feed image"
+                      decoding="async"
+                      :class="{ 'bg-white': isDark }"
+                      :src="`/api/images/${buildFeedImageKey(feed.id)}`"
+                    />
+                  </q-avatar>
+                  <q-icon v-else name="rss_feed" />
+                </q-item-section>
                 <q-item-section>
-                  <q-item-label>{{ category.name }}</q-item-label>
+                  <q-item-label lines="1">{{ feed.title }}</q-item-label>
                 </q-item-section>
                 <q-item-section side>
-                  <q-badge color="primary" :outline="!categoryUnreadCount(category.id)">
-                    {{ categoryUnreadCount(category.id) }}
+                  <q-badge color="primary" :outline="!feedUnreadCount(feed.id)">
+                    {{ feedUnreadCount(feed.id) }}
                   </q-badge>
                 </q-item-section>
               </q-item>
-              <q-separator />
-              <template v-for="feed in category.feeds" :key="feed.id">
-                <q-item
-                  v-if="!hideEmpty || feedUnreadCount(feed.id) > 0"
-                  v-ripple
-                  clickable
-                  @click="
-                    selectedCategoryId = String(category.id);
-                    selectedFeedId = String(feed.id);
-                  "
-                >
-                  <q-item-section avatar>
-                    <q-avatar v-if="imageExists(feed.id)" square>
-                      <img
-                        loading="lazy"
-                        alt="Feed image"
-                        decoding="async"
-                        :class="{ 'bg-white': isDark }"
-                        :src="`/api/images/${buildFeedImageKey(feed.id)}`"
-                      />
-                    </q-avatar>
-                    <q-icon v-else name="rss_feed" />
-                  </q-item-section>
-                  <q-item-section>
-                    <q-item-label lines="1">{{ feed.title }}</q-item-label>
-                  </q-item-section>
-                  <q-item-section side>
-                    <q-badge color="primary" :outline="!feedUnreadCount(feed.id)">
-                      {{ feedUnreadCount(feed.id) }}
-                    </q-badge>
-                  </q-item-section>
-                </q-item>
-              </template>
             </template>
           </template>
           <q-item v-if="!categories?.length">
@@ -611,37 +608,21 @@ const { data, refresh } = await useAsyncData("initial", async () =>
     useRequestFetch()("/api/feeds/data"),
   ]),
 );
-const categories = computed(() => {
-  const original = data.value?.[0] ?? [];
+const categories = computed(() => data.value?.[0] ?? []);
+const filteredCategories = computed(() => {
+  const original = structuredClone(categories.value);
 
-  for (const category of original) {
-    category.feeds.sort((a, b) => {
-      const [aTitle, bTitle] = [a.title.toLowerCase(), b.title.toLowerCase()];
-      return aTitle < bTitle ? -1 : aTitle > bTitle ? 1 : 0;
-    });
+  if (hideEmpty.value) {
+    for (const category of original) {
+      category.feeds = category.feeds.filter((feed) => {
+        const unreadCount = data.value?.[3]?.feeds[feed.id]?.unreadCount ?? 0;
+        return unreadCount > 0;
+      });
+    }
+    return original.filter((category) => category.feeds.length > 0);
   }
 
-  switch (categoriesOrder.value) {
-    case "unread_count":
-      return original.slice().sort((a, b) => {
-        const aCount = a.feeds.reduce((acc, f) => {
-          const unreadCount = feedsData.value?.feeds[f.id]?.unreadCount ?? 0;
-          return acc + unreadCount;
-        }, 0);
-        const bCount = b.feeds.reduce((acc, f) => {
-          const unreadCount = feedsData.value?.feeds[f.id]?.unreadCount ?? 0;
-          return acc + unreadCount;
-        }, 0);
-        return categoriesDirection.value === "asc" ? aCount - bCount : bCount - aCount;
-      });
-    case "category_name":
-    default:
-      return original.slice().sort((a, b) => {
-        const order = categoriesDirection.value === "asc" ? 1 : -1;
-        const [aName, bName] = [a.name.toLowerCase(), b.name.toLowerCase()];
-        return aName < bName ? -order : aName > bName ? order : 0;
-      });
-  }
+  return original;
 });
 const countData = computed(() => data.value?.[1] ?? { count: 0 });
 useHead(() => ({
@@ -782,6 +763,7 @@ async function load() {
       entryStar.value[item.entry.id] = item.entry.starredAt ? "starred" : "unstarred";
     }
     if (newItems.length < itemsLimit.value) hasMore.value = false;
+    offset.value += itemsLimit.value;
 
     if (itemsStatus.value === "unread" && items.value.length === 0) {
       if (selectedFeedId.value) {
@@ -939,7 +921,6 @@ async function onLoad(_index, done) {
     if (done) done(true);
     return;
   }
-  offset.value += itemsLimit.value;
   await load();
   if (done) done();
 }
