@@ -1,3 +1,5 @@
+import { JobEntity } from "./entities";
+
 export class JobService {
   /**
    * @param {object} opts
@@ -16,7 +18,8 @@ export class JobService {
     const tasks = [];
     for (const job of this.jobs) {
       const task = async () => {
-        await this.repository.upsertJob(job.name);
+        const entity = new JobEntity({ id: 0, name: job.name });
+        await this.repository.upsertJob(entity);
         await job.init();
         this.logger.info({ msg: "Registered job", job: job.name });
       };
@@ -60,18 +63,35 @@ export class JobService {
    * @param {BaseJob} job
    */
   async run(job) {
+    const logger = this.logger.child({ jobName: job.name });
+
     const now = new Date();
     const name = job.name;
+
+    const entity = await this.repository.findJobByName(name);
+    if (!entity) throw new Error(`Job entity for ${name} not found`);
+
+    if (entity.pausedAt) {
+      logger.info(`Job ${name} is paused, skipping execution`);
+      return;
+    }
+
     try {
       await job.run();
-      const elapsed = Date.now() - now.valueOf();
-      await this.repository.upsertJobExecution(name, elapsed, null).catch((error) => {
-        this.logger.error({ msg: "Failed to record job execution", name, error });
+
+      entity.lastDate = now.toISOString();
+      entity.lastDurationMs = Date.now() - now.valueOf();
+      entity.lastError = undefined;
+
+      await this.repository.upsertJob(entity).catch((error) => {
+        logger.error({ msg: "Failed to record job execution", name, error });
       });
     } catch (err) {
-      const elapsed = Date.now() - now.valueOf();
-      await this.repository.upsertJobExecution(name, elapsed, `${err}`).catch((error) => {
-        this.logger.error({ msg: "Failed to record job execution failure", name, error });
+      entity.lastDate = now.toISOString();
+      entity.lastError = `${err}`;
+
+      await this.repository.upsertJob(entity).catch((error) => {
+        logger.error({ msg: "Failed to record job execution failure", name, error });
       });
     }
   }

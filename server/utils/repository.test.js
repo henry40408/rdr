@@ -1,4 +1,6 @@
-import { CategoryEntity, EntryEntity, FeedEntity, ImageEntity, UserEntity } from "./entities.js";
+// @ts-check
+
+import { CategoryEntity, EntryEntity, FeedEntity, ImageEntity, JobEntity, UserEntity } from "./entities.js";
 import { afterEach, beforeEach, describe, it } from "vitest";
 import { MigrationSource } from "./migration-source.js";
 import { Repository } from "./repository.js";
@@ -73,18 +75,22 @@ describe("Repository", () => {
     /**
      * @param {Repository} repository
      * @param {UserEntity} user
+     * @returns {Promise<{categoryId: number, feedId: number, entryId: number}>}
      */
     async function createEntries(repository, user) {
       const [categoryId] = await repository.knex("categories").insert({
         user_id: user.id,
         name: "Test Category",
       });
+      assert.ok(typeof categoryId === "number");
+
       const [feedId] = await repository.knex("feeds").insert({
         category_id: categoryId,
         title: "Test Feed",
         xml_url: "http://example.com/feed",
         html_url: "http://example.com",
       });
+      assert.ok(typeof feedId === "number");
 
       const now = new Date().toISOString();
       const [entryId] = await repository.knex("entries").insert([
@@ -122,6 +128,7 @@ describe("Repository", () => {
           starred_at: now,
         },
       ]);
+      assert.ok(typeof entryId === "number");
 
       return { categoryId, feedId, entryId };
     }
@@ -196,6 +203,7 @@ describe("Repository", () => {
 
       const categories = await repository.findCategoriesWithFeed(alice.id);
       assert.strictEqual(categories.length, 1);
+      assert.ok(categories[0] instanceof CategoryEntity);
       assert.strictEqual(categories[0].id, feedId);
       assert.strictEqual(categories[0].userId, alice.id);
 
@@ -235,6 +243,7 @@ describe("Repository", () => {
           offset: 0,
         });
         assert.strictEqual(readEntries.length, 1);
+        assert.ok(readEntries[0] instanceof EntryEntity);
         assert.strictEqual(typeof readEntries[0].readAt, "string");
       }
 
@@ -247,8 +256,11 @@ describe("Repository", () => {
           offset: 0,
         });
         assert.strictEqual(starredEntries.length, 1);
+        assert.ok(starredEntries[0] instanceof EntryEntity);
         assert.strictEqual(typeof starredEntries[0].starredAt, "string");
       }
+
+      assert.ok(entries[0] instanceof EntryEntity);
 
       const entry = await repository.findEntryById(alice.id, entries[0].id);
       assert.ok(entry instanceof EntryEntity);
@@ -517,13 +529,17 @@ describe("Repository", () => {
       const categories = await repository.findCategoriesWithFeed(user.id);
       assert.strictEqual(categories.length, 1);
 
+      assert.ok(categories[0] instanceof CategoryEntity);
+
       assert.ok(categories[0].id !== 0);
       assert.strictEqual(categories[0].name, "Tech News");
       assert.strictEqual(categories[0].feeds.length, 2);
 
+      assert.ok(categories[0].feeds[0] instanceof FeedEntity);
       assert.ok(categories[0].feeds[0].id !== 0);
       assert.strictEqual(categories[0].feeds[0].title, "Feed 1");
 
+      assert.ok(categories[0].feeds[1] instanceof FeedEntity);
       assert.ok(categories[0].feeds[1].id !== 0);
       assert.strictEqual(categories[0].feeds[1].title, "Feed 2");
 
@@ -532,6 +548,7 @@ describe("Repository", () => {
 
       const categoriesAfterSecondUpsert = await repository.findCategoriesWithFeed(user.id);
       assert.strictEqual(categoriesAfterSecondUpsert.length, 1);
+      assert.ok(categoriesAfterSecondUpsert[0] instanceof CategoryEntity);
       assert.strictEqual(categoriesAfterSecondUpsert[0].id, categories[0].id);
       assert.strictEqual(categoriesAfterSecondUpsert[0].feeds.length, 2);
     });
@@ -720,48 +737,81 @@ describe("Repository", () => {
     });
 
     it("should upsert job", async () => {
-      const jobName = "test-job";
+      const job = new JobEntity({
+        id: 0,
+        name: "sample-job",
+      });
 
       // First upsert
-      await repository.upsertJob(jobName);
+      await repository.upsertJob(job);
+      assert.ok(job.id !== 0);
 
       let jobs = await repository.findJobs();
       assert.strictEqual(jobs.length, 1);
-      assert.strictEqual(jobs[0].name, jobName);
+      assert.ok(jobs[0] instanceof JobEntity);
+      assert.strictEqual(jobs[0].name, job.name);
 
       // Second upsert
-      await repository.upsertJob(jobName);
+      await repository.upsertJob(job);
 
       jobs = await repository.findJobs();
       assert.strictEqual(jobs.length, 1);
-      assert.strictEqual(jobs[0].name, jobName);
+      assert.ok(jobs[0] instanceof JobEntity);
+      assert.strictEqual(jobs[0].name, job.name);
     });
 
     it("should upsert job execution", async () => {
-      const jobName = "execution-time-job";
+      const job = new JobEntity({
+        id: 0,
+        name: "execution-time-job",
+      });
 
       // Upsert job first
-      await repository.upsertJob(jobName);
+      await repository.upsertJob(job);
 
       // Upsert execution time
-      const duration1 = 1;
-      await repository.upsertJobExecution(jobName, duration1, null);
+      job.lastDurationMs = 1;
+      await repository.upsertJob(job);
 
       let jobs = await repository.findJobs();
       assert.strictEqual(jobs.length, 1);
-      assert.strictEqual(jobs[0].name, jobName);
-      assert.strictEqual(jobs[0].lastDurationMs, duration1);
+      assert.ok(jobs[0] instanceof JobEntity);
+      assert.strictEqual(jobs[0].name, job.name);
+      assert.strictEqual(jobs[0].lastDurationMs, job.lastDurationMs);
       assert.strictEqual(jobs[0].lastError, null);
 
       // Upsert updated execution time and error message
-      const duration2 = 2;
-      await repository.upsertJobExecution(jobName, duration2, "Some error occurred");
+      job.lastDurationMs = 2;
+      job.lastError = "Some error occurred";
+      await repository.upsertJob(job);
 
       jobs = await repository.findJobs();
       assert.strictEqual(jobs.length, 1);
-      assert.strictEqual(jobs[0].name, jobName);
-      assert.strictEqual(jobs[0].lastDurationMs, duration2);
+      assert.ok(jobs[0] instanceof JobEntity);
+      assert.strictEqual(jobs[0].name, job.name);
+      assert.strictEqual(jobs[0].lastDurationMs, job.lastDurationMs);
       assert.strictEqual(jobs[0].lastError, "Some error occurred");
+
+      // Pause a job
+      const pausedAt = new Date().toISOString();
+      job.pausedAt = pausedAt;
+      await repository.upsertJob(job);
+
+      jobs = await repository.findJobs();
+      assert.strictEqual(jobs.length, 1);
+      assert.ok(jobs[0] instanceof JobEntity);
+      assert.strictEqual(jobs[0].name, job.name);
+      assert.strictEqual(jobs[0].pausedAt, pausedAt);
+
+      // Unpause a job
+      job.pausedAt = undefined;
+      await repository.upsertJob(job);
+
+      jobs = await repository.findJobs();
+      assert.strictEqual(jobs.length, 1);
+      assert.ok(jobs[0] instanceof JobEntity);
+      assert.strictEqual(jobs[0].name, job.name);
+      assert.strictEqual(jobs[0].pausedAt, null);
     });
   });
 });

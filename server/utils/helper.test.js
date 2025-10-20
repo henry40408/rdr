@@ -1,3 +1,5 @@
+// @ts-check
+
 import { describe, it } from "vitest";
 import { normalizeDatetime, parseDataURL } from "./helper.js";
 import assert from "node:assert";
