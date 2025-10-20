@@ -147,6 +147,7 @@
 import { formatDistanceToNow } from "date-fns";
 import { useQuasar } from "quasar";
 
+const requestFetch = useRequestFetch();
 const { loggedIn } = useUserSession();
 
 const $q = useQuasar();
@@ -235,7 +236,7 @@ async function refreshCategory(category) {
 
   try {
     const tasks = [];
-    for (const feedId of feedIds) tasks.push(useRequestFetch()(`/api/feeds/${feedId}/refresh`, { method: "POST" }));
+    for (const feedId of feedIds) tasks.push(requestFetch(`/api/feeds/${feedId}/refresh`, { method: "POST" }));
     await Promise.all(tasks);
     await afterRefresh();
   } catch (err) {
@@ -258,7 +259,7 @@ async function refreshFeed(feed) {
   if (refreshingFeedIds.value.has(feed.id)) return;
   refreshingFeedIds.value.add(feed.id);
   try {
-    await useRequestFetch()(`/api/feeds/${feed.id}/refresh`, { method: "POST" });
+    await requestFetch(`/api/feeds/${feed.id}/refresh`, { method: "POST" });
     await afterRefresh();
   } catch (err) {
     $q.notify({

@@ -33,13 +33,6 @@
         <q-item-label header>Categories</q-item-label>
         <q-item>
           <q-item-section>
-            <ClientOnly>
-              <q-toggle v-model="hideEmpty" label="Hide empty" />
-            </ClientOnly>
-          </q-item-section>
-        </q-item>
-        <q-item>
-          <q-item-section>
             <q-select
               v-model="categoriesOrder"
               filled
@@ -62,6 +55,13 @@
         <q-item>
           <q-item-section>
             <q-radio v-model="categoriesDirection" size="xs" val="asc" label="Ascending" />
+          </q-item-section>
+        </q-item>
+        <q-item>
+          <q-item-section>
+            <ClientOnly>
+              <q-toggle v-model="hideEmpty" label="Hide empty" />
+            </ClientOnly>
           </q-item-section>
         </q-item>
         <ClientOnly>
@@ -116,9 +116,9 @@
               </q-item>
             </template>
           </template>
-          <q-item v-if="filteredCategories.length <= 0" class="bg-grey-2 text-grey-7">
+          <q-item v-if="filteredCategories.length <= 0" :class="{ 'bg-grey-9': isDark, 'bg-grey-3': !isDark }">
             <q-item-section>
-              <q-item-label class="text-subtitle2">No categories found.</q-item-label>
+              <q-item-label>No categories found.</q-item-label>
               <q-item-label caption>
                 Try adjusting your filters or
                 <router-link to="/settings">add new feeds</router-link>.
@@ -278,7 +278,11 @@
             <q-spinner color="primary" />
           </q-card-section>
         </q-card>
-        <q-banner v-if="!loading && items.length === 0" class="bg-grey-2 text-grey-7">
+        <q-banner
+          v-if="!loading && items.length === 0"
+          class="q-pa-md q-mb-md"
+          :class="{ 'bg-grey-9': isDark, 'bg-grey-3': !isDark }"
+        >
           <template #avatar>
             <q-icon name="info" />
           </template>
@@ -343,19 +347,20 @@
                         <q-item-label lines="3">
                           <MarkedText :keyword="searchQuery" :text="item.entry.title" />
                         </q-item-label>
-                        <q-item-label caption lines="2">
-                          <img
-                            v-if="imageExists(item.feed.id)"
-                            loading="lazy"
-                            class="q-mr-sm"
-                            alt="Feed image"
-                            decoding="async"
-                            :class="{ 'bg-white': isDark }"
-                            style="height: 0.75rem; width: 0.75rem"
-                            :src="`/api/images/${buildFeedImageKey(item.feed.id)}`"
-                          />
-                          {{ item.category.name }} &middot; {{ item.feed.title }} &middot;
-                          <ClientAgo :datetime="item.entry.date" />
+                        <q-item-label caption lines="3">
+                          <q-avatar square size="xs" class="bg-white q-mr-sm">
+                            <img
+                              v-if="imageExists(item.feed.id)"
+                              loading="lazy"
+                              alt="Feed image"
+                              decoding="async"
+                              :src="`/api/images/${buildFeedImageKey(item.feed.id)}`"
+                            />
+                          </q-avatar>
+                          <span>
+                            {{ item.category.name }} &middot; {{ item.feed.title }} &middot;
+                            <ClientAgo :datetime="item.entry.date" />
+                          </span>
                         </q-item-label>
                       </q-item-section>
                       <q-item-section v-if="features?.summarization" top side>
@@ -522,9 +527,10 @@ import pangu from "pangu";
 import { useQuasar } from "quasar";
 import { useRouteQuery } from "@vueuse/router";
 
+const features = useFeatures();
+const requestFetch = useRequestFetch();
 const { hideEmpty } = useLocalSettings();
 const { loggedIn, session, clear: logout } = useUserSession();
-const features = useFeatures();
 
 const $q = useQuasar();
 const isDark = useDark();
@@ -602,27 +608,32 @@ const filtersEnabled = computed(() => !!selectedFeedId.value || !!selectedCatego
 
 const { data, refresh } = await useAsyncData("initial", async () =>
   Promise.all([
-    useRequestFetch()("/api/categories"),
-    useRequestFetch()("/api/count", { query: countQuery.value }),
-    useRequestFetch()("/api/images/primary-keys"),
-    useRequestFetch()("/api/feeds/data"),
+    requestFetch("/api/categories"),
+    requestFetch("/api/count", { query: countQuery.value }),
+    requestFetch("/api/images/primary-keys"),
+    requestFetch("/api/feeds/data"),
   ]),
 );
 const categories = computed(() => data.value?.[0] ?? []);
 const filteredCategories = computed(() => {
-  const original = structuredClone(categories.value);
+  let original = structuredClone(categories.value);
 
   if (hideEmpty.value) {
-    for (const category of original) {
-      category.feeds = category.feeds.filter((feed) => {
-        const unreadCount = data.value?.[3]?.feeds[feed.id]?.unreadCount ?? 0;
-        return unreadCount > 0;
-      });
-    }
-    return original.filter((category) => category.feeds.length > 0);
+    for (const category of original) category.feeds = category.feeds.filter((feed) => feedUnreadCount(feed.id) > 0);
+    original = original.filter((category) => category.feeds.length > 0);
   }
 
-  return original;
+  return original.slice().sort((a, b) => {
+    let compare = 0;
+    if (categoriesOrder.value === "unread_count") {
+      const aCount = categoryUnreadCount(a.id);
+      const bCount = categoryUnreadCount(b.id);
+      compare = aCount - bCount;
+    } else if (categoriesOrder.value === "category_name") {
+      compare = a.name.localeCompare(b.name);
+    }
+    return categoriesDirection.value === "asc" ? compare : -compare;
+  });
 });
 const countData = computed(() => data.value?.[1] ?? { count: 0 });
 useHead(() => ({
@@ -669,7 +680,7 @@ async function doMarkManyAsRead(olderThan) {
   }
   if (searchQuery.value) body.search = searchQuery.value;
   try {
-    const { updated } = await useRequestFetch()("/api/entries/mark-as-read", { method: "POST", body });
+    const { updated } = await requestFetch("/api/entries/mark-as-read", { method: "POST", body });
     for (const item of items.value)
       if (shouldMarkAsRead(now, item.entry.id, olderThan)) entryRead.value[item.entry.id] = "read";
     refresh();
@@ -725,7 +736,7 @@ async function getFullContent(entryId) {
   try {
     if (fullContents.value[entryId]) return;
     scrapping.value[entryId] = true;
-    const parsed = await useRequestFetch()(`/api/entries/${entryId}/full-content`);
+    const parsed = await requestFetch(`/api/entries/${entryId}/full-content`);
     if (parsed && parsed.content) fullContents.value[entryId] = parsed.content;
   } catch (err) {
     $q.notify({
@@ -756,7 +767,7 @@ async function load() {
 
   loading.value = true;
   try {
-    const newItems = await useRequestFetch()("/api/entries", { query });
+    const newItems = await requestFetch("/api/entries", { query });
     for (const item of newItems) {
       items.value.push(item);
       entryRead.value[item.entry.id] = item.entry.readAt ? "read" : "unread";
@@ -809,7 +820,7 @@ async function load() {
 async function loadContent(entryId) {
   try {
     if (contents.value[entryId]) return;
-    const { content } = await useRequestFetch()(`/api/entries/${entryId}/content`);
+    const { content } = await requestFetch(`/api/entries/${entryId}/content`);
     contents.value[entryId] = content;
   } catch (err) {
     $q.notify({
@@ -881,7 +892,7 @@ async function markAsRead(entryId) {
   const value = entryRead.value[entryId];
   try {
     entryRead.value[entryId] = "toggling";
-    await useRequestFetch()(`/api/entries/${entryId}/read`, { method: "PUT" });
+    await requestFetch(`/api/entries/${entryId}/read`, { method: "PUT" });
     entryRead.value[entryId] = "read";
     refresh();
   } catch (err) {
@@ -1017,7 +1028,7 @@ async function summarizeEntry(entryId) {
 
   summarizing.value[entryId] = true;
   try {
-    const text = await useRequestFetch()(`/api/entries/${entryId}/summarize`);
+    const text = await requestFetch(`/api/entries/${entryId}/summarize`);
 
     const [prefixedTitle, content] = text.split("\n\n");
     const title = (prefixedTitle ?? "").replace("Title: ", "").trim();
@@ -1050,7 +1061,7 @@ async function toggleReadEntry(entryId, index) {
 
   entryRead.value[entryId] = "toggling";
   try {
-    await useRequestFetch()(`/api/entries/${entryId}/read`, { method: "PUT" });
+    await requestFetch(`/api/entries/${entryId}/read`, { method: "PUT" });
     refresh();
   } catch (err) {
     $q.notify({
@@ -1075,7 +1086,7 @@ async function toggleStarEntry(entryId) {
 
   entryStar.value[entryId] = "starring";
   try {
-    await useRequestFetch()(`/api/entries/${entryId}/star`, { method: "PUT" });
+    await requestFetch(`/api/entries/${entryId}/star`, { method: "PUT" });
     refresh();
     if (value) entryStar.value[entryId] = value;
   } catch (err) {

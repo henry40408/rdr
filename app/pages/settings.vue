@@ -98,6 +98,7 @@
 import { millisecondsToSeconds } from "date-fns";
 import { useQuasar } from "quasar";
 
+const requestFetch = useRequestFetch();
 const { loggedIn } = useUserSession();
 
 const $q = useQuasar();
@@ -115,7 +116,7 @@ watchEffect(
 const triggeringJobs = ref(new Set());
 const uploadedFile = ref(null);
 
-const { data: jobsData, refresh: refreshJobs } = await useAsyncData(() => useRequestFetch()("/api/jobs"));
+const { data: jobsData, refresh: refreshJobs } = await useAsyncData(() => requestFetch("/api/jobs"));
 const jobPaused = computed(() => {
   /** @type {Record<string, boolean>} */
   const map = {};
@@ -128,7 +129,7 @@ async function importOPML() {
   const formData = new FormData();
   formData.append("file", uploadedFile.value);
   try {
-    await useRequestFetch()("/api/opml", { method: "POST", body: formData });
+    await requestFetch("/api/opml", { method: "POST", body: formData });
     $q.notify({
       type: "positive",
       message: "OPML file imported successfully",
@@ -148,7 +149,7 @@ async function triggerJob(name) {
   if (triggeringJobs.value.has(name)) return;
   triggeringJobs.value.add(name);
   try {
-    await useRequestFetch()(`/api/jobs/${name}/run`, { method: "POST" });
+    await requestFetch(`/api/jobs/${name}/run`, { method: "POST" });
     $q.notify({
       type: "positive",
       message: `Job ${name} triggered successfully`,

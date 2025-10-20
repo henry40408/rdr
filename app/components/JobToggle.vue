@@ -3,6 +3,8 @@
 </template>
 
 <script setup>
+const requestFetch = useRequestFetch();
+
 const props = defineProps({
   name: { type: String, required: true },
   value: { type: Boolean, required: true },
@@ -14,7 +16,7 @@ const value = ref(props.value);
 
 watch(value, async (newVal) => {
   try {
-    await useRequestFetch()(`/api/jobs/${props.name}/toggle`, { method: "PUT" });
+    await requestFetch(`/api/jobs/${props.name}/toggle`, { method: "PUT" });
     emit("toggled", newVal);
   } catch (error) {
     console.error("Failed to toggle job:", error);
