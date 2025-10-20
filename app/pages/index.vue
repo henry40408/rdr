@@ -38,6 +38,32 @@
             </ClientOnly>
           </q-item-section>
         </q-item>
+        <q-item>
+          <q-item-section>
+            <q-select
+              v-model="categoriesOrder"
+              filled
+              size="xs"
+              emit-value
+              map-options
+              label="Sort by"
+              :options="[
+                { label: 'Unread count', value: 'unread_count' },
+                { label: 'Name', value: 'category_name' },
+              ]"
+            />
+          </q-item-section>
+        </q-item>
+        <q-item>
+          <q-item-section>
+            <q-radio v-model="categoriesDirection" size="xs" val="desc" label="Descending" />
+          </q-item-section>
+        </q-item>
+        <q-item>
+          <q-item-section>
+            <q-radio v-model="categoriesDirection" size="xs" val="asc" label="Ascending" />
+          </q-item-section>
+        </q-item>
         <ClientOnly>
           <template v-for="category in categories" :key="category.id">
             <template v-if="!hideEmpty || categoryUnreadCount(category.id) > 0">
@@ -130,7 +156,7 @@
         <q-item-label header>Filters</q-item-label>
         <q-item v-ripple tag="label">
           <q-item-section top side>
-            <q-radio v-model="listStatus" val="unread" />
+            <q-radio v-model="itemsStatus" val="unread" />
           </q-item-section>
           <q-item-section>
             <q-item-label>Unread</q-item-label>
@@ -138,7 +164,7 @@
         </q-item>
         <q-item v-ripple tag="label">
           <q-item-section top side>
-            <q-radio v-model="listStatus" val="all" />
+            <q-radio v-model="itemsStatus" val="all" />
           </q-item-section>
           <q-item-section>
             <q-item-label>All</q-item-label>
@@ -146,7 +172,7 @@
         </q-item>
         <q-item v-ripple tag="label">
           <q-item-section top side>
-            <q-radio v-model="listStatus" val="read" />
+            <q-radio v-model="itemsStatus" val="read" />
           </q-item-section>
           <q-item-section>
             <q-item-label>Read</q-item-label>
@@ -154,7 +180,7 @@
         </q-item>
         <q-item v-ripple tag="label">
           <q-item-section top side>
-            <q-radio v-model="listStatus" val="starred" />
+            <q-radio v-model="itemsStatus" val="starred" />
           </q-item-section>
           <q-item-section>
             <q-item-label>Starred</q-item-label>
@@ -164,10 +190,10 @@
         <q-item-label header>Page size</q-item-label>
         <q-item>
           <q-item-section side>
-            {{ listLimit }}
+            {{ itemsLimit }}
           </q-item-section>
           <q-item-section>
-            <q-slider v-model.number="listLimit" filled markers :min="30" :max="300" :step="30" type="number" />
+            <q-slider v-model.number="itemsLimit" filled markers :min="30" :max="300" :step="30" type="number" />
           </q-item-section>
         </q-item>
         <q-separator spaced />
@@ -175,9 +201,9 @@
         <q-item>
           <q-item-section>
             <q-select
-              v-model="listOrder"
+              v-model="itemsOrder"
               filled
-              outlined
+              emit-value
               map-options
               label="Sort by"
               :options="[{ label: 'Date', value: 'date' }]"
@@ -186,12 +212,12 @@
         </q-item>
         <q-item>
           <q-item-section>
-            <q-radio v-model="listDirection" val="desc" label="Descending" />
+            <q-radio v-model="itemsDirection" val="desc" label="Descending" />
           </q-item-section>
         </q-item>
         <q-item>
           <q-item-section>
-            <q-radio v-model="listDirection" val="asc" label="Ascending" />
+            <q-radio v-model="itemsDirection" val="asc" label="Ascending" />
           </q-item-section>
         </q-item>
       </q-list>
@@ -203,9 +229,9 @@
           <q-item>
             <q-item-section>
               <q-item-label>
-                <span v-if="listStatus === 'unread'">Unread</span>
-                <span v-else-if="listStatus === 'read'">Read</span>
-                <span v-else-if="listStatus === 'starred'">Starred</span>
+                <span v-if="itemsStatus === 'unread'">Unread</span>
+                <span v-else-if="itemsStatus === 'read'">Read</span>
+                <span v-else-if="itemsStatus === 'starred'">Starred</span>
                 <span v-else>All</span>
               </q-item-label>
             </q-item-section>
@@ -213,7 +239,7 @@
               <q-badge>{{ countData ? countData.count : "..." }}</q-badge>
             </q-item-section>
           </q-item>
-          <q-item v-if="!!selectedCategoryId || !!selectedFeedId || !!searchQuery">
+          <q-item v-if="filtersEnabled">
             <q-item-section>
               <div>
                 <q-chip
@@ -287,6 +313,10 @@
                     class="full-width"
                     right-color="primary"
                     left-color="secondary"
+                    :class="{
+                      'bg-grey-9': isDark && isRead(item.entry.id),
+                      'bg-grey-1': !isDark && isRead(item.entry.id),
+                    }"
                     @left="({ reset }) => slideLeft(item.entry.id, index, reset)"
                     @right="({ reset }) => slideRight(item.entry.id, index, reset)"
                   >
@@ -342,6 +372,9 @@
                 <q-card>
                   <q-card-section>
                     <div class="q-my-sm text-h6">
+                      <a target="_blank" :href="item.entry.link" rel="noopener noreferrer">
+                        <MarkedText :keyword="searchQuery" :text="item.entry.title" />
+                      </a>
                       <q-checkbox
                         v-model="entryStar[item.entry.id]"
                         checked-icon="star"
@@ -351,9 +384,6 @@
                         :disable="entryStar[item.entry.id] === 'starring'"
                         @click="toggleStarEntry(item.entry.id)"
                       />
-                      <a target="_blank" :href="item.entry.link" rel="noopener noreferrer">
-                        <MarkedText :keyword="searchQuery" :text="item.entry.title" />
-                      </a>
                     </div>
                     <div v-if="item.entry.author" class="q-my-sm">by {{ item.entry.author }}</div>
                     <div class="q-my-sm">
@@ -475,10 +505,10 @@
             <q-fab-action
               external-label
               icon="done_all"
-              label="Read all"
               color="secondary"
+              label="Mark as read"
               label-position="left"
-              @click="markAllAsReadDialog()"
+              @click="markManyAsReadDialog()"
             />
           </q-fab>
         </q-page-sticky>
@@ -539,13 +569,17 @@ const summarizations = ref({});
 const summarizing = ref({});
 
 /** @type {Ref<"asc"|"desc">} */
-const listDirection = useRouteQuery("direction", "desc");
+const categoriesDirection = useRouteQuery("categoriesDirection", "desc");
+/** @type {Ref<"category_name"|"unread_count">} */
+const categoriesOrder = useRouteQuery("categoriesOrder", "unread_count");
+/** @type {Ref<"asc"|"desc">} */
+const itemsDirection = useRouteQuery("direction", "desc");
 /** @type {Ref<number>} */
-const listLimit = useRouteQuery("limit", "30", { transform: Number });
+const itemsLimit = useRouteQuery("limit", "30", { transform: Number });
 /** @type {Ref<"date">} */
-const listOrder = useRouteQuery("order", "date");
+const itemsOrder = useRouteQuery("order", "date");
 /** @type {Ref<"all"|"read"|"unread"|"starred">} */
-const listStatus = useRouteQuery("status", "unread");
+const itemsStatus = useRouteQuery("status", "unread");
 /** @type {Ref<string|undefined>} */
 const selectedCategoryId = useRouteQuery("categoryId", undefined);
 /** @type {Ref<string|undefined>} */
@@ -564,9 +598,10 @@ const countQuery = computed(() => {
     query.selectedId = selectedCategoryId.value;
   }
   if (searchQuery.value) query.search = searchQuery.value;
-  if (listStatus.value) query.status = listStatus.value;
+  if (itemsStatus.value) query.status = itemsStatus.value;
   return query;
 });
+const filtersEnabled = computed(() => !!selectedFeedId.value || !!selectedCategoryId.value || !!searchQuery.value);
 
 const { data, refresh } = await useAsyncData("initial", async () =>
   Promise.all([
@@ -576,7 +611,38 @@ const { data, refresh } = await useAsyncData("initial", async () =>
     useRequestFetch()("/api/feeds/data"),
   ]),
 );
-const categories = computed(() => data.value?.[0] ?? []);
+const categories = computed(() => {
+  const original = data.value?.[0] ?? [];
+
+  for (const category of original) {
+    category.feeds.sort((a, b) => {
+      const [aTitle, bTitle] = [a.title.toLowerCase(), b.title.toLowerCase()];
+      return aTitle < bTitle ? -1 : aTitle > bTitle ? 1 : 0;
+    });
+  }
+
+  switch (categoriesOrder.value) {
+    case "unread_count":
+      return original.slice().sort((a, b) => {
+        const aCount = a.feeds.reduce((acc, f) => {
+          const unreadCount = feedsData.value?.feeds[f.id]?.unreadCount ?? 0;
+          return acc + unreadCount;
+        }, 0);
+        const bCount = b.feeds.reduce((acc, f) => {
+          const unreadCount = feedsData.value?.feeds[f.id]?.unreadCount ?? 0;
+          return acc + unreadCount;
+        }, 0);
+        return categoriesDirection.value === "asc" ? aCount - bCount : bCount - aCount;
+      });
+    case "category_name":
+    default:
+      return original.slice().sort((a, b) => {
+        const order = categoriesDirection.value === "asc" ? 1 : -1;
+        const [aName, bName] = [a.name.toLowerCase(), b.name.toLowerCase()];
+        return aName < bName ? -order : aName > bName ? order : 0;
+      });
+  }
+});
 const countData = computed(() => data.value?.[1] ?? { count: 0 });
 useHead(() => ({
   title: selectedFeedId.value
@@ -608,7 +674,7 @@ function collapseOpenItem() {
 /**
  * @param {"day"|"week"|"month"|"year"} [olderThan]
  */
-async function doMarkAllAsRead(olderThan) {
+async function doMarkManyAsRead(olderThan) {
   const now = new Date();
 
   const body = {};
@@ -693,9 +759,9 @@ async function getFullContent(entryId) {
 
 async function load() {
   const query = {};
-  if (listDirection.value) query.direction = listDirection.value;
-  if (listOrder.value) query.order = listOrder.value;
-  if (listStatus.value) query.status = listStatus.value;
+  if (itemsDirection.value) query.direction = itemsDirection.value;
+  if (itemsOrder.value) query.order = itemsOrder.value;
+  if (itemsStatus.value) query.status = itemsStatus.value;
   if (selectedFeedId.value) {
     query.selectedType = "feed";
     query.selectedId = selectedFeedId.value;
@@ -704,7 +770,7 @@ async function load() {
     query.selectedId = selectedCategoryId.value;
   }
   if (searchQuery.value) query.search = searchQuery.value;
-  query.limit = listLimit.value;
+  query.limit = itemsLimit.value;
   query.offset = offset.value;
 
   loading.value = true;
@@ -715,9 +781,9 @@ async function load() {
       entryRead.value[item.entry.id] = item.entry.readAt ? "read" : "unread";
       entryStar.value[item.entry.id] = item.entry.starredAt ? "starred" : "unstarred";
     }
-    if (newItems.length < listLimit.value) hasMore.value = false;
+    if (newItems.length < itemsLimit.value) hasMore.value = false;
 
-    if (listStatus.value === "unread" && items.value.length === 0) {
+    if (itemsStatus.value === "unread" && items.value.length === 0) {
       if (selectedFeedId.value) {
         $q.notify({
           type: "info",
@@ -798,7 +864,7 @@ function isRead(entryId) {
   return entryRead.value[entryId] === "read";
 }
 
-function markAllAsReadDialog() {
+function markManyAsReadDialog() {
   $q.dialog({
     title: "Mark all as read",
     message: "Are you sure you want to mark all entries as read?",
@@ -806,7 +872,7 @@ function markAllAsReadDialog() {
       type: "radio",
       model: "all",
       items: [
-        { label: "All entries (filter applied)", value: "all" },
+        { label: filtersEnabled.value ? "Filtered entries" : "All entries", value: "all" },
         { label: "Older than 1 day", value: "day" },
         { label: "Older than 1 week", value: "week" },
         { label: "Older than 1 month", value: "month" },
@@ -819,8 +885,8 @@ function markAllAsReadDialog() {
   }).onOk(
     /** @param {"day"|"week"|"month"|"year"|"all"} data */
     async (data) => {
-      if (data === "all") await doMarkAllAsRead();
-      else await doMarkAllAsRead(data);
+      if (data === "all") await doMarkManyAsRead();
+      else await doMarkManyAsRead(data);
     },
   );
 }
@@ -873,7 +939,7 @@ async function onLoad(_index, done) {
     if (done) done(true);
     return;
   }
-  offset.value += listLimit.value;
+  offset.value += itemsLimit.value;
   await load();
   if (done) done();
 }
@@ -898,7 +964,7 @@ async function resetThenLoad(done) {
   if (done) done();
 }
 watch(
-  [loggedIn, listDirection, listLimit, listOrder, listStatus, selectedCategoryId, selectedFeedId, searchQuery],
+  [loggedIn, itemsDirection, itemsLimit, itemsOrder, itemsStatus, selectedCategoryId, selectedFeedId, searchQuery],
   () => {
     if (loggedIn.value) resetThenLoad();
   },

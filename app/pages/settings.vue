@@ -34,6 +34,9 @@
           <q-separator spaced />
           <q-item-label header>Background Jobs</q-item-label>
           <q-item v-for="job in jobsData" :key="job.name">
+            <q-item-section side>
+              <JobToggle :name="job.name" :value="jobPaused[job.name]" @toggled="refreshJobs()" />
+            </q-item-section>
             <q-item-section>
               <q-item-label>{{ job.name }}</q-item-label>
               <q-item-label caption>{{ job.description }}</q-item-label>
@@ -42,19 +45,16 @@
                   <q-icon name="pause" />
                   Paused at: <ClientDateTime :datetime="job.pausedAt" />
                 </span>
-                <span v-else><q-icon name="check" /> Not paused</span>
-                , Last run:
-                <ClientDateTime v-if="job.lastDate" :datetime="job.lastDate" />
-                <span v-else>Never</span>, Last duration:
-                {{ job.lastDurationMs ? `${millisecondsToSeconds(job.lastDurationMs)}s` : "-" }}
+                <span v-else><q-icon name="check" /> Not paused</span>,
+                <span>
+                  Last run:
+                  <ClientDateTime v-if="job.lastDate" :datetime="job.lastDate" />
+                  <span v-else>Never</span> </span
+                >,
+                <span>
+                  Last duration: {{ job.lastDurationMs ? `${millisecondsToSeconds(job.lastDurationMs)}s` : "-" }}
+                </span>
               </q-item-label>
-            </q-item-section>
-            <q-item-section side>
-              <q-btn flat round :icon="job.pausedAt ? 'play_arrow' : 'pause'" @click="() => toggleJob(job.name)">
-                <q-tooltip self="center right" anchor="center left">
-                  {{ job.pausedAt ? "Resume job" : "Pause job" }}
-                </q-tooltip>
-              </q-btn>
             </q-item-section>
             <q-item-section side>
               <q-btn
@@ -116,6 +116,12 @@ const triggeringJobs = ref(new Set());
 const uploadedFile = ref(null);
 
 const { data: jobsData, refresh: refreshJobs } = await useAsyncData(() => useRequestFetch()("/api/jobs"));
+const jobPaused = computed(() => {
+  /** @type {Record<string, boolean>} */
+  const map = {};
+  if (jobsData.value) for (const job of jobsData.value) map[job.name] = !!job.pausedAt;
+  return map;
+});
 
 async function importOPML() {
   if (!uploadedFile.value) return;
@@ -131,27 +137,6 @@ async function importOPML() {
     $q.notify({
       type: "negative",
       message: `Failed to import OPML file: ${err}`,
-    });
-  }
-}
-
-/**
- * @param {string} name
- */
-async function toggleJob(name) {
-  try {
-    await useRequestFetch()(`/api/jobs/${name}/toggle`, { method: "PUT" });
-    $q.notify({
-      type: "positive",
-      message: `Job ${name} toggled successfully`,
-      actions: [{ label: "Close", color: "white" }],
-    });
-    refreshJobs();
-  } catch (err) {
-    $q.notify({
-      type: "negative",
-      message: `Failed to toggle job: ${err}`,
-      actions: [{ label: "Close", color: "white" }],
     });
   }
 }

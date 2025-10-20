@@ -40,7 +40,7 @@
                     clickable
                     @click="() => $router.push({ path: '/', query: { categoryId: category.id } })"
                   >
-                    <q-item-label class="text-h6">{{ category.name }}</q-item-label>
+                    <q-item-label>{{ category.name }}</q-item-label>
                   </q-item-section>
                   <q-item-section top side>
                     <q-item-label caption>{{ category.feeds.length }} feeds</q-item-label>
@@ -72,7 +72,7 @@
                     :group="`category-${category.id}`"
                   >
                     <template #header>
-                      <q-item-section side>
+                      <q-item-section avatar>
                         <q-avatar v-if="imageExists(feed.id)" square>
                           <img
                             loading="lazy"
@@ -93,7 +93,8 @@
                           {{ feed.title }}
                         </q-item-label>
                       </q-item-section>
-                      <q-item-section side>
+                      <q-item-section top side>
+                        <q-item-label caption>{{ formatFetchedAtToNow(feed.id) }}</q-item-label>
                         <div class="q-mt-xs">
                           <q-badge color="primary" :outline="!feedUnreadCount(feed.id)">{{
                             feedUnreadCount(feed.id)
@@ -107,17 +108,12 @@
                         <q-btn
                           icon="refresh"
                           color="primary"
-                          :flat="!isDark"
                           label="Refresh"
                           :loading="refreshingFeedIds.has(feed.id)"
                           @click="refreshFeed(feed)"
                         />
-                        <div class="text-caption">
-                          {{ formatFetchedAtToNow(feed.id) }}
-                        </div>
                         <q-btn
                           color="primary"
-                          :flat="!isDark"
                           target="_blank"
                           icon="open_in_new"
                           :href="feed.htmlUrl"
