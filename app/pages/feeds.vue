@@ -31,112 +31,112 @@
               <q-toggle v-model="hideEmpty" label="Hide empty" />
             </q-item-section>
           </q-item>
-          <template v-for="category in categories" :key="category.id">
-            <template v-if="!hideEmpty || categoryUnreadCount(category.id) > 0">
-              <q-expansion-item group="category">
-                <template #header>
-                  <q-item-section
-                    v-ripple
-                    clickable
-                    @click="() => $router.push({ path: '/', query: { categoryId: category.id } })"
-                  >
-                    <q-item-label>{{ category.name }}</q-item-label>
-                  </q-item-section>
-                  <q-item-section top side>
-                    <q-item-label caption>{{ category.feeds.length }} feeds</q-item-label>
-                    <div class="q-mt-xs">
-                      <q-badge color="primary" :outline="!categoryUnreadCount(category.id)">{{
-                        categoryUnreadCount(category.id)
-                      }}</q-badge>
-                    </div>
-                  </q-item-section>
-                </template>
+          <template v-for="category in filteredCategories" :key="category.id">
+            <q-expansion-item group="category">
+              <template #header>
+                <q-item-section
+                  v-ripple
+                  clickable
+                  @click="() => $router.push({ path: '/', query: { categoryId: category.id } })"
+                >
+                  <q-item-label>{{ category.name }}</q-item-label>
+                </q-item-section>
+                <q-item-section top side>
+                  <q-item-label caption>{{ category.feeds.length }} feeds</q-item-label>
+                  <div class="q-mt-xs">
+                    <q-badge color="primary" :outline="!categoryUnreadCount(category.id)">{{
+                      categoryUnreadCount(category.id)
+                    }}</q-badge>
+                  </div>
+                </q-item-section>
+              </template>
 
-                <q-card>
-                  <q-card-section class="row items-center q-gutter-sm">
-                    <q-btn
-                      icon="refresh"
-                      color="primary"
-                      label="Refresh"
-                      :loading="refreshingCategoryIds.has(category.id)"
-                      @click="refreshCategory(category)"
-                    />
-                  </q-card-section>
-                </q-card>
-              </q-expansion-item>
-              <q-list separator>
-                <template v-for="feed in category.feeds" :key="feed.id">
-                  <q-expansion-item
-                    v-if="!hideEmpty || feedUnreadCount(feed.id) > 0"
-                    expand-icon-toggle
-                    :group="`category-${category.id}`"
-                  >
-                    <template #header>
-                      <q-item-section avatar>
-                        <q-avatar v-if="imageExists(feed.id)" square>
-                          <img
-                            loading="lazy"
-                            alt="Feed image"
-                            decoding="async"
-                            :class="{ 'bg-white': isDark }"
-                            :src="`/api/images/${buildFeedImageKey(feed.id)}`"
-                          />
-                        </q-avatar>
-                        <q-icon v-else name="rss_feed" class="feed-image" />
-                      </q-item-section>
-                      <q-item-section
-                        v-ripple
-                        clickable
-                        @click="() => $router.push({ path: '/', query: { feedId: feed.id } })"
-                      >
-                        <q-item-label lines="1">
-                          {{ feed.title }}
-                        </q-item-label>
-                      </q-item-section>
-                      <q-item-section top side>
-                        <q-item-label caption>{{ formatFetchedAtToNow(feed.id) }}</q-item-label>
-                        <div class="q-mt-xs">
-                          <q-badge color="primary" :outline="!feedUnreadCount(feed.id)">{{
-                            feedUnreadCount(feed.id)
-                          }}</q-badge>
-                        </div>
-                      </q-item-section>
-                    </template>
+              <q-card>
+                <q-card-section class="row items-center q-gutter-sm">
+                  <q-btn
+                    icon="refresh"
+                    color="primary"
+                    label="Refresh"
+                    :loading="refreshingCategoryIds.has(category.id)"
+                    @click="refreshCategory(category)"
+                  />
+                </q-card-section>
+              </q-card>
+            </q-expansion-item>
+            <q-list separator>
+              <template v-for="feed in category.feeds" :key="feed.id">
+                <q-expansion-item
+                  v-if="!hideEmpty || feedUnreadCount(feed.id) > 0"
+                  expand-icon-toggle
+                  :group="`category-${category.id}`"
+                >
+                  <template #header>
+                    <q-item-section side>
+                      <q-avatar v-if="imageExists(feed.id)" square>
+                        <img
+                          loading="lazy"
+                          alt="Feed image"
+                          decoding="async"
+                          :class="{ 'bg-white': isDark }"
+                          :src="`/api/images/${buildFeedImageKey(feed.id)}`"
+                        />
+                      </q-avatar>
+                      <q-icon v-else name="rss_feed" class="feed-image" />
+                    </q-item-section>
+                    <q-item-section
+                      v-ripple
+                      clickable
+                      @click="() => $router.push({ path: '/', query: { feedId: feed.id } })"
+                    >
+                      <q-item-label lines="1">
+                        {{ feed.title }}
+                      </q-item-label>
+                    </q-item-section>
+                    <q-item-section top side>
+                      <q-item-label caption>{{ formatFetchedAtToNow(feed.id) }}</q-item-label>
+                      <div class="q-mt-xs">
+                        <q-badge color="primary" :outline="!feedUnreadCount(feed.id)">{{
+                          feedUnreadCount(feed.id)
+                        }}</q-badge>
+                      </div>
+                    </q-item-section>
+                  </template>
 
-                    <q-card>
-                      <q-card-section class="row items-center q-gutter-sm">
-                        <q-btn
-                          icon="refresh"
-                          color="primary"
-                          label="Refresh"
-                          :loading="refreshingFeedIds.has(feed.id)"
-                          @click="refreshFeed(feed)"
-                        />
-                        <q-btn
-                          color="primary"
-                          target="_blank"
-                          icon="open_in_new"
-                          :href="feed.htmlUrl"
-                          label="Go to website"
-                          rel="noopener noreferrer"
-                        />
-                      </q-card-section>
-                    </q-card>
-                  </q-expansion-item>
-                </template>
-              </q-list>
-            </template>
+                  <q-card>
+                    <q-card-section class="row items-center q-gutter-sm">
+                      <q-btn
+                        icon="refresh"
+                        color="primary"
+                        label="Refresh"
+                        :loading="refreshingFeedIds.has(feed.id)"
+                        @click="refreshFeed(feed)"
+                      />
+                      <q-btn
+                        color="primary"
+                        target="_blank"
+                        icon="open_in_new"
+                        :href="feed.htmlUrl"
+                        label="Go to website"
+                        rel="noopener noreferrer"
+                      />
+                    </q-card-section>
+                  </q-card>
+                </q-expansion-item>
+              </template>
+            </q-list>
           </template>
-          <q-item v-if="!categories?.length">
-            <q-item-section>
-              <q-item-label class="text-subtitle2">No categories found.</q-item-label>
-              <q-item-label caption>
-                You can add new feeds on the
-                <router-link to="/settings">settings page</router-link>.
-              </q-item-label>
-            </q-item-section>
-          </q-item>
         </q-list>
+        <q-banner v-if="filteredCategories.length <= 0" :class="{ 'bg-grey-9': isDark, 'bg-grey-3': !isDark }">
+          <template #avatar>
+            <q-icon name="info" />
+          </template>
+
+          <div>No categories found</div>
+          <div class="text-caption">
+            Try adjusting your filters or
+            <router-link to="/settings">add new feeds</router-link>.
+          </div>
+        </q-banner>
       </q-page>
     </q-page-container>
   </q-layout>
@@ -171,7 +171,15 @@ const refreshingFeedIds = ref(new Set());
 
 const { data: categories, execute: refreshCategories } = await useFetch("/api/categories");
 const { data: feedData, execute: refreshFeedData } = await useFetch("/api/feeds/data");
+
 const feedDataByFeedId = computed(() => feedData.value?.feeds ?? {});
+const filteredCategories = computed(() => {
+  const original = structuredClone(categories.value ?? []);
+  return original.filter((category) => {
+    if (!hideEmpty.value) return true;
+    return category.feeds.some((feed) => feedDataByFeedId.value[feed.id]?.unreadCount ?? 0);
+  });
+});
 
 async function afterRefresh() {
   await Promise.all([refreshCategories(), refreshFeedData()]);

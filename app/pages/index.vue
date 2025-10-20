@@ -116,15 +116,13 @@
               </q-item>
             </template>
           </template>
-          <q-item v-if="filteredCategories.length <= 0" :class="{ 'bg-grey-9': isDark, 'bg-grey-3': !isDark }">
-            <q-item-section>
-              <q-item-label>No categories found.</q-item-label>
-              <q-item-label caption>
-                Try adjusting your filters or
-                <router-link to="/settings">add new feeds</router-link>.
-              </q-item-label>
-            </q-item-section>
-          </q-item>
+          <q-banner v-if="filteredCategories.length <= 0" :class="{ 'bg-grey-9': isDark, 'bg-grey-3': !isDark }">
+            <div>No categories found</div>
+            <div class="text-caption">
+              Try adjusting your filters or
+              <router-link to="/settings">add new feeds</router-link>.
+            </div>
+          </q-banner>
         </ClientOnly>
       </q-list>
     </q-drawer>
