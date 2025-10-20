@@ -156,7 +156,7 @@
         <q-item-label header>Filters</q-item-label>
         <q-item v-ripple tag="label">
           <q-item-section top side>
-            <q-radio v-model="listStatus" val="unread" />
+            <q-radio v-model="itemsStatus" val="unread" />
           </q-item-section>
           <q-item-section>
             <q-item-label>Unread</q-item-label>
@@ -164,7 +164,7 @@
         </q-item>
         <q-item v-ripple tag="label">
           <q-item-section top side>
-            <q-radio v-model="listStatus" val="all" />
+            <q-radio v-model="itemsStatus" val="all" />
           </q-item-section>
           <q-item-section>
             <q-item-label>All</q-item-label>
@@ -172,7 +172,7 @@
         </q-item>
         <q-item v-ripple tag="label">
           <q-item-section top side>
-            <q-radio v-model="listStatus" val="read" />
+            <q-radio v-model="itemsStatus" val="read" />
           </q-item-section>
           <q-item-section>
             <q-item-label>Read</q-item-label>
@@ -180,7 +180,7 @@
         </q-item>
         <q-item v-ripple tag="label">
           <q-item-section top side>
-            <q-radio v-model="listStatus" val="starred" />
+            <q-radio v-model="itemsStatus" val="starred" />
           </q-item-section>
           <q-item-section>
             <q-item-label>Starred</q-item-label>
@@ -190,10 +190,10 @@
         <q-item-label header>Page size</q-item-label>
         <q-item>
           <q-item-section side>
-            {{ listLimit }}
+            {{ itemsLimit }}
           </q-item-section>
           <q-item-section>
-            <q-slider v-model.number="listLimit" filled markers :min="30" :max="300" :step="30" type="number" />
+            <q-slider v-model.number="itemsLimit" filled markers :min="30" :max="300" :step="30" type="number" />
           </q-item-section>
         </q-item>
         <q-separator spaced />
@@ -201,7 +201,7 @@
         <q-item>
           <q-item-section>
             <q-select
-              v-model="listOrder"
+              v-model="itemsOrder"
               filled
               emit-value
               map-options
@@ -212,12 +212,12 @@
         </q-item>
         <q-item>
           <q-item-section>
-            <q-radio v-model="listDirection" val="desc" label="Descending" />
+            <q-radio v-model="itemsDirection" val="desc" label="Descending" />
           </q-item-section>
         </q-item>
         <q-item>
           <q-item-section>
-            <q-radio v-model="listDirection" val="asc" label="Ascending" />
+            <q-radio v-model="itemsDirection" val="asc" label="Ascending" />
           </q-item-section>
         </q-item>
       </q-list>
@@ -229,9 +229,9 @@
           <q-item>
             <q-item-section>
               <q-item-label>
-                <span v-if="listStatus === 'unread'">Unread</span>
-                <span v-else-if="listStatus === 'read'">Read</span>
-                <span v-else-if="listStatus === 'starred'">Starred</span>
+                <span v-if="itemsStatus === 'unread'">Unread</span>
+                <span v-else-if="itemsStatus === 'read'">Read</span>
+                <span v-else-if="itemsStatus === 'starred'">Starred</span>
                 <span v-else>All</span>
               </q-item-label>
             </q-item-section>
@@ -313,6 +313,10 @@
                     class="full-width"
                     right-color="primary"
                     left-color="secondary"
+                    :class="{
+                      'bg-grey-9': isDark && isRead(item.entry.id),
+                      'bg-grey-1': !isDark && isRead(item.entry.id),
+                    }"
                     @left="({ reset }) => slideLeft(item.entry.id, index, reset)"
                     @right="({ reset }) => slideRight(item.entry.id, index, reset)"
                   >
@@ -368,6 +372,9 @@
                 <q-card>
                   <q-card-section>
                     <div class="q-my-sm text-h6">
+                      <a target="_blank" :href="item.entry.link" rel="noopener noreferrer">
+                        <MarkedText :keyword="searchQuery" :text="item.entry.title" />
+                      </a>
                       <q-checkbox
                         v-model="entryStar[item.entry.id]"
                         checked-icon="star"
@@ -377,9 +384,6 @@
                         :disable="entryStar[item.entry.id] === 'starring'"
                         @click="toggleStarEntry(item.entry.id)"
                       />
-                      <a target="_blank" :href="item.entry.link" rel="noopener noreferrer">
-                        <MarkedText :keyword="searchQuery" :text="item.entry.title" />
-                      </a>
                     </div>
                     <div v-if="item.entry.author" class="q-my-sm">by {{ item.entry.author }}</div>
                     <div class="q-my-sm">
@@ -569,13 +573,13 @@ const categoriesDirection = useRouteQuery("categoriesDirection", "asc");
 /** @type {Ref<"name"|"count">} */
 const categoriesOrder = useRouteQuery("categoriesOrder", "name");
 /** @type {Ref<"asc"|"desc">} */
-const listDirection = useRouteQuery("direction", "desc");
+const itemsDirection = useRouteQuery("direction", "desc");
 /** @type {Ref<number>} */
-const listLimit = useRouteQuery("limit", "30", { transform: Number });
+const itemsLimit = useRouteQuery("limit", "30", { transform: Number });
 /** @type {Ref<"date">} */
-const listOrder = useRouteQuery("order", "date");
+const itemsOrder = useRouteQuery("order", "date");
 /** @type {Ref<"all"|"read"|"unread"|"starred">} */
-const listStatus = useRouteQuery("status", "unread");
+const itemsStatus = useRouteQuery("status", "unread");
 /** @type {Ref<string|undefined>} */
 const selectedCategoryId = useRouteQuery("categoryId", undefined);
 /** @type {Ref<string|undefined>} */
@@ -594,7 +598,7 @@ const countQuery = computed(() => {
     query.selectedId = selectedCategoryId.value;
   }
   if (searchQuery.value) query.search = searchQuery.value;
-  if (listStatus.value) query.status = listStatus.value;
+  if (itemsStatus.value) query.status = itemsStatus.value;
   return query;
 });
 const filtersEnabled = computed(() => !!selectedFeedId.value || !!selectedCategoryId.value || !!searchQuery.value);
@@ -755,9 +759,9 @@ async function getFullContent(entryId) {
 
 async function load() {
   const query = {};
-  if (listDirection.value) query.direction = listDirection.value;
-  if (listOrder.value) query.order = listOrder.value;
-  if (listStatus.value) query.status = listStatus.value;
+  if (itemsDirection.value) query.direction = itemsDirection.value;
+  if (itemsOrder.value) query.order = itemsOrder.value;
+  if (itemsStatus.value) query.status = itemsStatus.value;
   if (selectedFeedId.value) {
     query.selectedType = "feed";
     query.selectedId = selectedFeedId.value;
@@ -766,7 +770,7 @@ async function load() {
     query.selectedId = selectedCategoryId.value;
   }
   if (searchQuery.value) query.search = searchQuery.value;
-  query.limit = listLimit.value;
+  query.limit = itemsLimit.value;
   query.offset = offset.value;
 
   loading.value = true;
@@ -777,9 +781,9 @@ async function load() {
       entryRead.value[item.entry.id] = item.entry.readAt ? "read" : "unread";
       entryStar.value[item.entry.id] = item.entry.starredAt ? "starred" : "unstarred";
     }
-    if (newItems.length < listLimit.value) hasMore.value = false;
+    if (newItems.length < itemsLimit.value) hasMore.value = false;
 
-    if (listStatus.value === "unread" && items.value.length === 0) {
+    if (itemsStatus.value === "unread" && items.value.length === 0) {
       if (selectedFeedId.value) {
         $q.notify({
           type: "info",
@@ -935,7 +939,7 @@ async function onLoad(_index, done) {
     if (done) done(true);
     return;
   }
-  offset.value += listLimit.value;
+  offset.value += itemsLimit.value;
   await load();
   if (done) done();
 }
@@ -960,7 +964,7 @@ async function resetThenLoad(done) {
   if (done) done();
 }
 watch(
-  [loggedIn, listDirection, listLimit, listOrder, listStatus, selectedCategoryId, selectedFeedId, searchQuery],
+  [loggedIn, itemsDirection, itemsLimit, itemsOrder, itemsStatus, selectedCategoryId, selectedFeedId, searchQuery],
   () => {
     if (loggedIn.value) resetThenLoad();
   },
