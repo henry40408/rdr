@@ -950,20 +950,31 @@ async function onLoad(_index, done) {
  * @param {(stop?:boolean) => void} [done]
  */
 async function resetThenLoad(done) {
-  contents.value = {};
-  fullContents.value = {};
-  expanded.value = [];
-  hasMore.value = true;
-  items.value = [];
-  offset.value = 0;
+  // @ts-expect-error: stop exists
+  infiniteScroll.value?.stop();
+  try {
+    contents.value = {};
+    fullContents.value = {};
+    entryRead.value = {};
+    entryStar.value = {};
+    expanded.value = [];
+    hasMore.value = true;
+    items.value = [];
+    offset.value = 0;
+    saving.value = {};
+    scrapping.value = {};
+    summarizations.value = {};
+    summarizing.value = {};
 
-  refresh();
-  await load();
-
-  // @ts-expect-error: resume exists
-  infiniteScroll.value?.resume();
-
-  if (done) done();
+    refresh();
+    await load();
+  } catch (e) {
+    console.error("Error in resetThenLoad:", e);
+  } finally {
+    // @ts-expect-error: resume exists
+    infiniteScroll.value?.resume();
+    if (done) done();
+  }
 }
 watch(
   [loggedIn, itemsDirection, itemsLimit, itemsOrder, itemsStatus, selectedCategoryId, selectedFeedId, searchQuery],
