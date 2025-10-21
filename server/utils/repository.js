@@ -560,6 +560,16 @@ export class Repository {
   }
 
   /**
+   * @param {string} name
+   * @returns {Promise<number>}
+   */
+  async registerJob(name) {
+    const [id] = await this.knex("jobs").insert({ name }).onConflict("name").ignore();
+    this.logger.info({ msg: "Registered job", name });
+    return id;
+  }
+
+  /**
    * @param {number} userId
    * @param {number} id
    * @returns {Promise<Date|undefined>}

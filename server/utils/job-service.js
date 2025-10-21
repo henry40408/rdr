@@ -1,5 +1,3 @@
-import { JobEntity } from "./entities";
-
 export class JobService {
   /**
    * @param {object} opts
@@ -18,10 +16,8 @@ export class JobService {
     const tasks = [];
     for (const job of this.jobs) {
       const task = async () => {
-        const entity = new JobEntity({ id: 0, name: job.name });
-        await this.repository.upsertJob(entity);
+        await this.repository.registerJob(job.name);
         await job.init();
-        this.logger.info({ msg: "Registered job", job: job.name });
       };
       tasks.push(task());
     }

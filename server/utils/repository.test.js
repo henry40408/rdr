@@ -352,6 +352,31 @@ describe("Repository", () => {
       }
     });
 
+    it("should register job without modifying existing jobs", async () => {
+      const jobName = "test-job";
+
+      const now = new Date().toISOString();
+      await repository.knex("jobs").insert({
+        name: jobName,
+        paused_at: now,
+        last_date: now,
+        last_duration_ms: 1,
+        last_error: null,
+      });
+
+      await repository.registerJob(jobName);
+
+      const jobs = await repository.knex("jobs").where({ name: jobName });
+      assert.strictEqual(jobs.length, 1);
+
+      const job = jobs[0];
+      assert.strictEqual(job.name, jobName);
+      assert.strictEqual(job.paused_at, now);
+      assert.strictEqual(job.last_date, now);
+      assert.strictEqual(job.last_duration_ms, 1);
+      assert.strictEqual(job.last_error, null);
+    });
+
     it("should returns jobs", async () => {
       const jobs = await repository.findJobs();
       assert.ok(jobs);
