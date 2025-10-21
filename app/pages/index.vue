@@ -28,7 +28,7 @@
       <NavTabs />
     </q-header>
 
-    <q-drawer v-model="leftDrawerOpen" bordered side="left" show-if-above>
+    <q-drawer v-model="leftDrawerOpen" bordered persistent side="left" show-if-above>
       <q-list padding>
         <q-item-label header>Categories</q-item-label>
         <q-item>
@@ -127,7 +127,7 @@
       </q-list>
     </q-drawer>
 
-    <q-drawer v-model="rightDrawerOpen" bordered side="right" show-if-above>
+    <q-drawer v-model="rightDrawerOpen" bordered persistent side="right" show-if-above>
       <q-list padding>
         <q-item-label header>Account</q-item-label>
         <q-item v-if="session?.user">
