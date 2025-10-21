@@ -419,10 +419,11 @@
                     <q-btn-group push>
                       <q-btn
                         v-if="!fullContents[item.entry.id]"
-                        icon="file_download"
-                        label="Full Content"
-                        :loading="scrapping[item.entry.id]"
-                        @click="getFullContent(item.entry.id)"
+                        :icon="scrapping[item.entry.id] ? 'cancel' : 'article'"
+                        :label="scrapping[item.entry.id] ? 'Cancel' : 'Full Content'"
+                        @click="
+                          scrapping[item.entry.id] ? cancelScraping(item.entry.id) : getFullContent(item.entry.id)
+                        "
                       />
                       <q-btn v-else icon="undo" label="See original" @click="delete fullContents[item.entry.id]" />
                       <q-btn
@@ -434,10 +435,13 @@
                       />
                       <q-btn
                         v-if="summarizationEnabled && !summarizations[item.entry.id]"
-                        icon="psychology"
-                        label="Summarize"
-                        :loading="summarizing[item.entry.id]"
-                        @click="summarizeEntry(item.entry.id)"
+                        :icon="summarizing[item.entry.id] ? 'cancel' : 'psychology'"
+                        :label="summarizing[item.entry.id] ? 'Cancel' : 'Summarize'"
+                        @click="
+                          summarizing[item.entry.id]
+                            ? cancelSummarization(item.entry.id)
+                            : summarizeEntry(item.entry.id)
+                        "
                       />
                     </q-btn-group>
                   </q-card-section>
@@ -576,10 +580,14 @@ const rightDrawerOpen = ref(false);
 const saving = ref({});
 /** @type {Ref<Record<string,boolean>>} */
 const scrapping = ref({});
+/** @type {Ref<Record<string,AbortController|undefined>>} */
+const scrappingControllers = ref({});
 /** @type {Ref<{ [key: string]: string }>} */
 const summarizations = ref({});
 /** @type {Ref<Record<string,boolean>>} */
 const summarizing = ref({});
+/** @type {Ref<Record<string,AbortController|undefined>>} */
+const summarizingControllers = ref({});
 
 /** @type {Ref<"asc"|"desc">} */
 const categoriesDirection = useRouteQuery("categoriesDirection", "desc");
@@ -668,6 +676,24 @@ function categoryUnreadCount(categoryId) {
   return feedIds.reduce((sum, feedId) => sum + (feedsData.value?.feeds[feedId]?.unreadCount ?? 0), 0);
 }
 
+/**
+ * @param {number} entryId
+ */
+function cancelScraping(entryId) {
+  const controller = scrappingControllers.value[entryId];
+  if (!controller) return;
+  controller.abort();
+}
+
+/**
+ * @param {number} entryId
+ */
+function cancelSummarization(entryId) {
+  const controller = summarizingControllers.value[entryId];
+  if (!controller) return;
+  controller.abort();
+}
+
 function collapseOpenItem() {
   const index = expanded.value.findIndex((v) => v);
   if (index === -1) return;
@@ -745,17 +771,31 @@ function getFilteredFeedTitle() {
  * @param {number} entryId
  */
 async function getFullContent(entryId) {
+  if (fullContents.value[entryId]) return;
+
+  const controller = new AbortController();
+  scrappingControllers.value[entryId] = controller;
+
+  scrapping.value[entryId] = true;
   try {
-    if (fullContents.value[entryId]) return;
-    scrapping.value[entryId] = true;
-    const parsed = await requestFetch(`/api/entries/${entryId}/full-content`);
+    const parsed = await requestFetch(`/api/entries/${entryId}/full-content`, {
+      signal: controller.signal,
+    });
     if (parsed && parsed.content) fullContents.value[entryId] = parsed.content;
   } catch (err) {
-    $q.notify({
-      type: "negative",
-      message: `Failed to download full content: ${err}`,
-      actions: [{ icon: "close", color: "white" }],
-    });
+    if (scrappingControllers.value[entryId]?.signal.aborted) {
+      $q.notify({
+        type: "info",
+        message: "Full content download cancelled.",
+        actions: [{ icon: "close", color: "white" }],
+      });
+    } else {
+      $q.notify({
+        type: "negative",
+        message: `Failed to download full content: ${err}`,
+        actions: [{ icon: "close", color: "white" }],
+      });
+    }
   } finally {
     scrapping.value[entryId] = false;
   }
@@ -950,20 +990,33 @@ async function onLoad(_index, done) {
  * @param {(stop?:boolean) => void} [done]
  */
 async function resetThenLoad(done) {
-  contents.value = {};
-  fullContents.value = {};
-  expanded.value = [];
-  hasMore.value = true;
-  items.value = [];
-  offset.value = 0;
+  // @ts-expect-error: stop exists
+  infiniteScroll.value?.stop();
+  try {
+    contents.value = {};
+    fullContents.value = {};
+    entryRead.value = {};
+    entryStar.value = {};
+    expanded.value = [];
+    hasMore.value = true;
+    items.value = [];
+    offset.value = 0;
+    saving.value = {};
+    scrapping.value = {};
+    scrappingControllers.value = {};
+    summarizations.value = {};
+    summarizing.value = {};
+    summarizingControllers.value = {};
 
-  refresh();
-  await load();
-
-  // @ts-expect-error: resume exists
-  infiniteScroll.value?.resume();
-
-  if (done) done();
+    refresh();
+    await load();
+  } catch (e) {
+    console.error("Error in resetThenLoad:", e);
+  } finally {
+    // @ts-expect-error: resume exists
+    infiniteScroll.value?.resume();
+    if (done) done();
+  }
 }
 watch(
   [loggedIn, itemsDirection, itemsLimit, itemsOrder, itemsStatus, selectedCategoryId, selectedFeedId, searchQuery],
@@ -1061,24 +1114,35 @@ async function summarizeEntry(entryId) {
   const entry = items.value.find((i) => i.entry.id === entryId);
   if (!entry) return;
 
+  const controller = new AbortController();
+  summarizingControllers.value[entryId] = controller;
+
   summarizing.value[entryId] = true;
   try {
-    const text = await requestFetch(`/api/entries/${entryId}/summarize`);
+    const text = await requestFetch(`/api/entries/${entryId}/summarize`, { signal: controller.signal });
 
     const [prefixedTitle, content] = text.split("\n\n");
     const title = (prefixedTitle ?? "").replace("Title: ", "").trim();
 
     summarizations.value[entryId] = `${pangu.spacingText(title)}
-    
+
 ${entry.entry.link}
 
 ${pangu.spacingText(content ?? "")}`;
   } catch (err) {
-    $q.notify({
-      type: "negative",
-      message: `Failed to summarize entry ${entryId}: ${err}`,
-      actions: [{ icon: "close", color: "white" }],
-    });
+    if (summarizingControllers.value[entryId]?.signal.aborted) {
+      $q.notify({
+        type: "info",
+        message: `Summarization for entry ${entryId} was canceled.`,
+        actions: [{ icon: "close", color: "white" }],
+      });
+    } else {
+      $q.notify({
+        type: "negative",
+        message: `Failed to summarize entry ${entryId}: ${err}`,
+        actions: [{ icon: "close", color: "white" }],
+      });
+    }
   } finally {
     summarizing.value[entryId] = false;
   }

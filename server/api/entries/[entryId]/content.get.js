@@ -31,18 +31,23 @@ const srcPattern = /^https?:\/\//;
 
 /**
  * @param {string} content
+ * @param {string} baseUrl
  * @return {string}
  */
-function proxyImages(content) {
+function proxyImages(content, baseUrl) {
   const config = useRuntimeConfig();
 
   const $ = cheerio.load(content);
   $("img").each(function () {
-    const src = $(this).attr("src");
-    if (src && srcPattern.test(src)) {
-      const digest = digestUrl(config.imageDigestSecret, src);
-      const proxiedUrl = `/api/images/proxy/${digest}?url=${encodeURIComponent(src)}`;
-      $(this).attr("src", proxiedUrl);
+    let src = $(this).attr("src");
+    if (src) {
+      // some src are relative paths, convert them to absolute using the feed's base URL
+      if (!srcPattern.test(src)) src = String(new URL(src, baseUrl));
+      if (srcPattern.test(src)) {
+        const digest = digestUrl(config.imageDigestSecret, src);
+        const proxiedUrl = `/api/images/proxy/${digest}?url=${encodeURIComponent(src)}`;
+        $(this).attr("src", proxiedUrl);
+      }
     }
 
     const srcset = $(this).attr("srcset");
@@ -77,6 +82,12 @@ export default defineEventHandler(async (event) => {
   /** @type {Repository} */
   const repository = container.resolve("repository");
 
+  const entry = await repository.findEntryById(userId, entryId);
+  if (!entry) throw createError({ statusCode: 404, message: "Entry not found" });
+
+  const feed = await repository.findFeedById(userId, entry.feedId);
+  if (!feed) throw createError({ statusCode: 404, message: "Feed not found" });
+
   const content = await repository.findEntryContentById(userId, entryId);
   if (!content && content !== "") throw createError({ statusCode: 404, message: "Entry not found" });
 
@@ -87,7 +98,7 @@ export default defineEventHandler(async (event) => {
     allowedAttributes,
     allowedTags,
   });
-  const proxied = proxyImages(sanitized);
+  const proxied = proxyImages(sanitized, feed.htmlUrl);
 
   return {
     content: proxied,
