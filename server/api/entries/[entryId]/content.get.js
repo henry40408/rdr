@@ -20,11 +20,50 @@ const allowedTags = [...defaults.allowedTags, "img"];
  */
 function rewriteContent(content) {
   // Open links in a new tab and add noopener noreferrer for security
-  const parsed = cheerio.load(content);
-  parsed("a").replaceWith(function () {
-    return parsed(this).attr("rel", "noopener noreferrer").attr("target", "_blank").clone();
+  const $ = cheerio.load(content);
+  $("a").replaceWith(function () {
+    return $(this).attr("rel", "noopener noreferrer").attr("target", "_blank").clone();
   });
-  return parsed.html();
+  return $.html();
+}
+
+const srcPattern = /^https?:\/\//;
+
+/**
+ * @param {string} content
+ * @return {string}
+ */
+function proxyImages(content) {
+  const config = useRuntimeConfig();
+
+  const $ = cheerio.load(content);
+  $("img").each(function () {
+    const src = $(this).attr("src");
+    if (src && srcPattern.test(src)) {
+      const digest = digestUrl(config.imageDigestSecret, src);
+      const proxiedUrl = `/api/images/proxy/${digest}?url=${encodeURIComponent(src)}`;
+      $(this).attr("src", proxiedUrl);
+    }
+
+    const srcset = $(this).attr("srcset");
+    if (srcset) {
+      const entries = srcset.split(",").map((entry) => entry.trim());
+      const proxiedEntries = entries.map((entry) => {
+        const [url, descriptor] = entry.split(" ");
+        if (srcPattern.test(url)) {
+          const digest = digestUrl(config.imageDigestSecret, url);
+          const proxiedUrl = `/api/images/proxy/${digest}?url=${encodeURIComponent(url)}`;
+          return descriptor ? `${proxiedUrl} ${descriptor}` : proxiedUrl;
+        }
+        return entry;
+      });
+      $(this).attr("srcset", proxiedEntries.join(", "));
+    }
+
+    $(this).attr("loading", "lazy").attr("decoding", "async");
+  });
+
+  return $.html();
 }
 
 export default defineEventHandler(async (event) => {
@@ -44,10 +83,13 @@ export default defineEventHandler(async (event) => {
   const trimmed = content.trim();
   if (trimmed === "") return { content: "" };
 
+  const sanitized = sanitizeHtml(rewriteContent(trimmed), {
+    allowedAttributes,
+    allowedTags,
+  });
+  const proxied = proxyImages(sanitized);
+
   return {
-    content: sanitizeHtml(rewriteContent(trimmed), {
-      allowedAttributes,
-      allowedTags,
-    }),
+    content: proxied,
   };
 });
