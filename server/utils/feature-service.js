@@ -1,6 +1,7 @@
 /**
  * @typedef {object} UserFeatures
  * @property {boolean} summarization
+ * @property {boolean} linkding
  */
 
 export class FeatureService {
