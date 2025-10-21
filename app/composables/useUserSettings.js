@@ -1,14 +1,9 @@
 export default function () {
   const requestFetch = useRequestFetch();
-  const { data: settings } = useAsyncData(() => requestFetch("/api/user-settings"), { deep: true });
-
-  watch(
-    settings,
-    async (newValue) => {
-      if (newValue) await requestFetch("/api/user-settings", { method: "POST", body: newValue });
-    },
-    { deep: true },
-  );
-
-  return settings;
+  const { data, refresh } = useAsyncData(() => requestFetch("/api/user-settings"));
+  async function update(newSettings) {
+    await requestFetch("/api/user-settings", { method: "POST", body: newSettings });
+    refresh();
+  }
+  return { data, refresh, update };
 }

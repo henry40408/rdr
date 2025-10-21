@@ -273,7 +273,7 @@
         </q-list>
         <q-card v-if="loading" flat>
           <q-card-section class="row justify-center">
-            <q-spinner color="primary" />
+            <q-spinner size="lg" color="primary" />
           </q-card-section>
         </q-card>
         <q-banner
@@ -525,7 +525,7 @@ import pangu from "pangu";
 import { useQuasar } from "quasar";
 import { useRouteQuery } from "@vueuse/router";
 
-const features = useFeatures();
+const { data: features } = useFeatures();
 const requestFetch = useRequestFetch();
 const { hideEmpty } = useLocalSettings();
 const { loggedIn, session, clear: logout } = useUserSession();
