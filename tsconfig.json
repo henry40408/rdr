@@ -11,7 +11,8 @@
     "noImplicitReturns": true,
     "noImplicitThis": true,
     "skipLibCheck": true,
-    "strict": true
+    "strict": true,
+    "target": "esnext"
   },
   "include": [".nuxt/**/*.d.ts", "**/*.js", "**/*.ts", "**/*.vue", "nuxt.config.*"],
   "exclude": [".output", "coverage", "dist", "node_modules"]

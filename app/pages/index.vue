@@ -273,7 +273,7 @@
         </q-list>
         <q-card v-if="loading" flat>
           <q-card-section class="row justify-center">
-            <q-spinner color="primary" />
+            <q-spinner size="lg" color="primary" />
           </q-card-section>
         </q-card>
         <q-banner
@@ -361,7 +361,7 @@
                           </span>
                         </q-item-label>
                       </q-item-section>
-                      <q-item-section v-if="features?.summarization" top side>
+                      <q-item-section v-if="summarizationEnabled" top side>
                         <q-icon v-if="summarizations[item.entry.id]" size="xs" color="positive" name="psychology" />
                         <q-spinner v-if="summarizing[item.entry.id]" />
                       </q-item-section>
@@ -410,16 +410,38 @@
                       </q-chip>
                     </div>
                   </q-card-section>
-                  <q-card-section v-if="features?.summarization">
-                    <q-btn
-                      v-if="!summarizations[item.entry.id]"
-                      color="primary"
-                      icon="psychology"
-                      label="Summarize"
-                      :loading="summarizing[item.entry.id]"
-                      @click="summarizeEntry(item.entry.id)"
-                    />
-                    <UseClipboard v-else v-slot="{ copy, copied }" :source="summarizations[item.entry.id]">
+                  <q-card-section>
+                    <q-btn-group push>
+                      <q-btn
+                        v-if="!fullContents[item.entry.id]"
+                        icon="file_download"
+                        label="Full Content"
+                        :loading="scrapping[item.entry.id]"
+                        @click="getFullContent(item.entry.id)"
+                      />
+                      <q-btn v-else icon="undo" label="See original" @click="delete fullContents[item.entry.id]" />
+                      <q-btn
+                        v-if="saveEnabled"
+                        icon="save"
+                        label="Save"
+                        :loading="saving[item.entry.id]"
+                        @click="saveEntry(item.entry.id)"
+                      />
+                      <q-btn
+                        v-if="summarizationEnabled && !summarizations[item.entry.id]"
+                        icon="psychology"
+                        label="Summarize"
+                        :loading="summarizing[item.entry.id]"
+                        @click="summarizeEntry(item.entry.id)"
+                      />
+                    </q-btn-group>
+                  </q-card-section>
+                  <q-card-section v-if="summarizationEnabled">
+                    <UseClipboard
+                      v-if="summarizations[item.entry.id]"
+                      v-slot="{ copy, copied }"
+                      :source="summarizations[item.entry.id]"
+                    >
                       <div
                         class="entry-summary q-pa-md q-mb-sm"
                         :class="{ 'bg-grey-2': !isDark, 'bg-grey-8 text-white': isDark }"
@@ -436,23 +458,6 @@
                       class="col entry-content"
                       style="max-width: 1000vw"
                       :text="getContent(item.entry.id)"
-                    />
-                  </q-card-section>
-                  <q-card-section>
-                    <q-btn
-                      v-if="!fullContents[item.entry.id]"
-                      color="secondary"
-                      icon="file_download"
-                      label="Full Content"
-                      :loading="scrapping[item.entry.id]"
-                      @click="getFullContent(item.entry.id)"
-                    />
-                    <q-btn
-                      v-else
-                      icon="undo"
-                      color="secondary"
-                      label="See original"
-                      @click="delete fullContents[item.entry.id]"
                     />
                   </q-card-section>
                 </q-card>
@@ -525,7 +530,7 @@ import pangu from "pangu";
 import { useQuasar } from "quasar";
 import { useRouteQuery } from "@vueuse/router";
 
-const features = useFeatures();
+const { data: features } = useFeatures();
 const requestFetch = useRequestFetch();
 const { hideEmpty } = useLocalSettings();
 const { loggedIn, session, clear: logout } = useUserSession();
@@ -562,6 +567,8 @@ const leftDrawerOpen = ref(false);
 const loading = ref(false);
 const offset = ref(0);
 const rightDrawerOpen = ref(false);
+/** @type {Ref<Record<string,boolean>>} */
+const saving = ref({});
 /** @type {Ref<Record<string,boolean>>} */
 const scrapping = ref({});
 /** @type {Ref<{ [key: string]: string }>} */
@@ -603,6 +610,8 @@ const countQuery = computed(() => {
   return query;
 });
 const filtersEnabled = computed(() => !!selectedFeedId.value || !!selectedCategoryId.value || !!searchQuery.value);
+const summarizationEnabled = computed(() => !!features.value?.summarization);
+const saveEnabled = computed(() => !!features.value?.save);
 
 const { data, refresh } = await useAsyncData("initial", async () =>
   Promise.all([
@@ -780,7 +789,6 @@ async function load() {
           type: "info",
           icon: "search_off",
           message: `No entries found for the selected ${getFilteredFeedTitle()}.`,
-          progress: true,
           actions: [{ icon: "close", color: "white" }],
         });
         selectedFeedId.value = undefined;
@@ -792,7 +800,6 @@ async function load() {
           type: "info",
           icon: "search_off",
           message: `No entries found for the selected ${getFilteredCategoryName()}.`,
-          progress: true,
           actions: [{ icon: "close", color: "white" }],
         });
         selectedCategoryId.value = undefined;
@@ -959,6 +966,31 @@ watch(
     if (loggedIn.value) resetThenLoad();
   },
 );
+
+/**
+ * @param {number} entryId
+ */
+async function saveEntry(entryId) {
+  if (saving.value[entryId]) return;
+
+  saving.value[entryId] = true;
+  try {
+    await requestFetch(`/api/entries/${entryId}/save`, { method: "POST" });
+    $q.notify({
+      type: "positive",
+      message: `Entry ${entryId} saved successfully.`,
+      actions: [{ icon: "close", color: "white" }],
+    });
+  } catch (err) {
+    $q.notify({
+      type: "negative",
+      message: `Failed to save entry ${entryId}: ${err}`,
+      actions: [{ icon: "close", color: "white" }],
+    });
+  } finally {
+    saving.value[entryId] = false;
+  }
+}
 
 /**
  * @param {number} index

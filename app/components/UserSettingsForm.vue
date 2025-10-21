@@ -1,12 +1,51 @@
 <template>
   <q-form class="q-gutter-md" @submit="onSubmit">
+    <div>
+      <q-icon :name="features?.summarization ? 'check' : 'close'" />
+      Kagi Summarization
+    </div>
     <q-input
       v-model="kagiSessionLink"
       filled
       label="Kagi session link"
       hint="Enter your Kagi session link to enable summarization features."
     />
-    <q-select v-model="kagiLanguage" filled emit-value map-options label="Target Language" :options="languageOptions" />
+    <q-select
+      v-model="kagiLanguage"
+      filled
+      emit-value
+      map-options
+      label="Target Language"
+      :options="LANGUAGE_OPTIONS"
+      hint="Select the target language for Kagi summarization."
+    />
+    <div>
+      <q-icon :name="features?.linkding ? 'check' : 'close'" />
+      Linkding Bookmarking
+    </div>
+    <q-input
+      v-model="linkdingApiUrl"
+      filled
+      label="Linkding API URL"
+      hint="Enter your Linkding API URL to enable bookmarking features."
+    />
+    <q-input
+      v-model="linkdingApiToken"
+      filled
+      type="password"
+      label="Linkding API Token"
+      hint="Enter your Linkding API token to enable bookmarking features."
+    />
+    <q-select
+      v-model="linkdingDefaultTags"
+      filled
+      multiple
+      use-chips
+      use-input
+      label="Default Tags"
+      new-value-mode="add-unique"
+      hint="Select default tags to apply to new bookmarks."
+    />
     <q-btn label="Save" type="submit" color="primary" />
   </q-form>
 </template>
@@ -14,7 +53,7 @@
 <script setup>
 import { useQuasar } from "quasar";
 
-const languageOptions = [
+const LANGUAGE_OPTIONS = [
   { label: "English", value: "EN" },
   { label: "Bulgarian", value: "BG" },
   { label: "Czech", value: "CS" },
@@ -49,29 +88,48 @@ const languageOptions = [
 
 const $q = useQuasar();
 
-const userSettings = useUserSettings();
+const { data: features, refresh: refreshFeatures } = useFeatures();
+const { data: userSettings, update: updateUserSettings } = useUserSettings();
 
 const kagiSessionLink = ref("");
 const kagiLanguage = ref("EN");
+const linkdingApiUrl = ref("");
+const linkdingApiToken = ref("");
+const linkdingDefaultTags = ref([]);
 watchEffect(
   () => {
     if (!userSettings.value) return;
     kagiLanguage.value = userSettings.value.kagiLanguage ?? "EN";
     kagiSessionLink.value = userSettings.value.kagiSessionLink ?? "";
+    linkdingApiUrl.value = userSettings.value.linkdingApiUrl ?? "";
+    linkdingApiToken.value = userSettings.value.linkdingApiToken ?? "";
+    linkdingDefaultTags.value = JSON.parse(userSettings.value.linkdingDefaultTags ?? "[]") ?? [];
   },
   { flush: "post" },
 );
 
 async function onSubmit() {
-  if (!userSettings.value) return;
-
-  userSettings.value.kagiLanguage = kagiLanguage.value;
-  userSettings.value.kagiSessionLink = kagiSessionLink.value;
-
-  $q.notify({
-    message: "Settings saved",
-    color: "positive",
-    actions: [{ label: "OK", color: "white" }],
-  });
+  try {
+    if (!userSettings.value) return;
+    await updateUserSettings({
+      kagiLanguage: kagiLanguage.value,
+      kagiSessionLink: kagiSessionLink.value,
+      linkdingApiUrl: linkdingApiUrl.value,
+      linkdingApiToken: linkdingApiToken.value,
+      linkdingDefaultTags: JSON.stringify(linkdingDefaultTags.value),
+    });
+    await refreshFeatures();
+    $q.notify({
+      message: "Settings saved",
+      color: "positive",
+      actions: [{ label: "OK", color: "white" }],
+    });
+  } catch {
+    $q.notify({
+      message: "Failed to save settings",
+      color: "negative",
+      actions: [{ label: "OK", color: "white" }],
+    });
+  }
 }
 </script>

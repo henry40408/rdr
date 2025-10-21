@@ -1,6 +1,6 @@
 export default function () {
   const requestFetch = useRequestFetch();
   const { loggedIn } = useUserSession();
-  const { data: features } = useAsyncData(() => requestFetch("/api/features"), { watch: [loggedIn] });
-  return features;
+  const { data, refresh } = useAsyncData(() => requestFetch("/api/features"), { watch: [loggedIn] });
+  return { data, refresh };
 }
