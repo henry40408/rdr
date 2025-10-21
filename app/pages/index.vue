@@ -100,7 +100,7 @@
                       alt="Feed image"
                       decoding="async"
                       :class="{ 'bg-white': isDark }"
-                      :src="`/api/images/${buildFeedImageKey(feed.id)}`"
+                      :src="`/api/images/external/${buildFeedImageKey(feed.id)}`"
                     />
                   </q-avatar>
                   <q-icon v-else name="rss_feed" />
@@ -352,7 +352,7 @@
                               loading="lazy"
                               alt="Feed image"
                               decoding="async"
-                              :src="`/api/images/${buildFeedImageKey(item.feed.id)}`"
+                              :src="`/api/images/external/${buildFeedImageKey(item.feed.id)}`"
                             />
                           </q-avatar>
                           <span>
