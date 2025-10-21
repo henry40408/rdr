@@ -21,7 +21,7 @@
               <q-item-label caption>Manage your feed subscriptions</q-item-label>
             </q-item-section>
             <q-item-section side>
-              <q-btn flat round icon="refresh" :disable="refreshingCategoryIds.size > 0" @click="refreshAll">
+              <q-btn flat round icon="refresh" :loading="refreshingCategoryIds.size > 0" @click="refreshAll">
                 <q-tooltip self="center right" anchor="center left">Refresh all</q-tooltip>
               </q-btn>
             </q-item-section>
