@@ -1,6 +1,14 @@
 {
-  "extends": "./.nuxt/tsconfig.json",
   "compilerOptions": {
-    "checkJs": true
-  }
+    "allowJs": true,
+    "checkJs": true,
+    "esModuleInterop": true,
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "noEmit": true,
+    "skipLibCheck": true,
+    "strict": true
+  },
+  "include": [".nuxt/**/*.d.ts", "**/*.js", "**/*.ts", "**/*.vue", "nuxt.config.*"],
+  "exclude": [".output", "coverage", "dist", "node_modules"]
 }
