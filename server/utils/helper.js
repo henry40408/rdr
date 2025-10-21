@@ -1,12 +1,14 @@
 import { createHash } from "node:crypto";
 
+export const DIGEST_CONTENT_LENGTH = 16;
+
 /**
  * @param {string} secret
  * @param {string} url
  * @return {string}
  */
 export function digestUrl(secret, url) {
-  const hasher = createHash("shake256", { outputLength: 8 });
+  const hasher = createHash("shake256", { outputLength: DIGEST_CONTENT_LENGTH });
   hasher.update(url);
   hasher.update(secret);
   return hasher.digest("hex");

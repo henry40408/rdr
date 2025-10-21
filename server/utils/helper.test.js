@@ -10,7 +10,7 @@ describe("digestUrl", () => {
   it("should produce a valid hex string of length 16", () => {
     const url = "https://example.com/some/path";
     const hash = digestUrl(secret, url);
-    assert.match(hash, /^[a-f0-9]{16}$/);
+    assert.match(hash, /^[a-f0-9]{32}$/);
   });
 
   it("should produce consistent hashes for the same URL", () => {
@@ -37,7 +37,7 @@ describe("digestUrl", () => {
 
   it("should generate the expected hash for a known input", () => {
     const url = "https://nuxt.com/icon.png";
-    const expectedHash = "d63a2d96471d54a7";
+    const expectedHash = "d63a2d96471d54a7b2f6570e47df312b";
     const actualHash = digestUrl(secret, url);
     assert.strictEqual(actualHash, expectedHash);
   });

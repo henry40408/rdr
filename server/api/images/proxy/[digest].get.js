@@ -3,7 +3,7 @@ import { pipeline as streamPipeline } from "node:stream/promises";
 import { z } from "zod";
 
 const schema = z.object({
-  digest: z.string().length(16),
+  digest: z.string().length(DIGEST_CONTENT_LENGTH * 2),
 });
 
 const querySchema = z.object({
