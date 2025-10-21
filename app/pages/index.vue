@@ -780,7 +780,6 @@ async function load() {
           type: "info",
           icon: "search_off",
           message: `No entries found for the selected ${getFilteredFeedTitle()}.`,
-          progress: true,
           actions: [{ icon: "close", color: "white" }],
         });
         selectedFeedId.value = undefined;
@@ -792,7 +791,6 @@ async function load() {
           type: "info",
           icon: "search_off",
           message: `No entries found for the selected ${getFilteredCategoryName()}.`,
-          progress: true,
           actions: [{ icon: "close", color: "white" }],
         });
         selectedCategoryId.value = undefined;

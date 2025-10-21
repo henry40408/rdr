@@ -251,7 +251,6 @@ async function refreshCategory(category) {
     $q.notify({
       type: "negative",
       message: `Error refreshing category ${category.name}: ${err}`,
-      progress: true,
       actions: [{ icon: "close", color: "white" }],
     });
   } finally {
@@ -273,7 +272,6 @@ async function refreshFeed(feed) {
     $q.notify({
       type: "negative",
       message: `Error refreshing feed ${feed.title}: ${err}`,
-      progress: true,
       actions: [{ icon: "close", color: "white" }],
     });
   } finally {
