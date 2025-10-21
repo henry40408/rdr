@@ -6,6 +6,10 @@
     "module": "preserve",
     "moduleResolution": "bundler",
     "noEmit": true,
+    "noImplicitAny": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
     "skipLibCheck": true,
     "strict": true
   },
