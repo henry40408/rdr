@@ -34,6 +34,13 @@ describe("digestUrl", () => {
     const hash2 = digestUrl("secret_two", url);
     assert.notStrictEqual(hash1, hash2);
   });
+
+  it("should generate the expected hash for a known input", () => {
+    const url = "https://nuxt.com/icon.png";
+    const expectedHash = "d63a2d96471d54a7";
+    const actualHash = digestUrl(secret, url);
+    assert.strictEqual(actualHash, expectedHash);
+  });
 });
 
 describe("normalizeDatetime", () => {
