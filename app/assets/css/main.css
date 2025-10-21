@@ -1,0 +1,8 @@
+html,
+body {
+  /*
+    disable pull to refresh on iOS
+    ref: https://www.matuzo.at/blog/2022/100daysof-day53
+    */
+  overscroll-behavior: none;
+}
