@@ -276,22 +276,24 @@
             <q-spinner size="lg" color="primary" />
           </q-card-section>
         </q-card>
-        <q-banner
-          v-if="!loading && items.length === 0"
-          class="q-pa-md q-mb-md"
-          :class="{ 'bg-grey-9': isDark, 'bg-grey-3': !isDark }"
-        >
-          <template #avatar>
-            <q-icon name="info" />
-          </template>
-          <div>No entries found.</div>
-          <div class="text-caption">
-            Try adjusting your filters or <router-link to="/settings">add new feeds</router-link>.
-          </div>
-        </q-banner>
         <q-pull-to-refresh @refresh="resetThenLoad">
           <q-infinite-scroll ref="infinite-scroll" :offset="250" @load="onLoad">
             <q-list separator>
+              <q-item
+                v-if="!loading && items.length === 0"
+                class="q-pa-md q-mb-md"
+                :class="{ 'bg-grey-9': isDark, 'bg-grey-3': !isDark }"
+              >
+                <q-item-section side>
+                  <q-icon name="info" />
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label>No entries found.</q-item-label>
+                  <q-item-label caption>
+                    Try adjusting your filters or <router-link to="/settings">add new feeds</router-link>.
+                  </q-item-label>
+                </q-item-section>
+              </q-item>
               <q-expansion-item
                 v-for="(item, index) in items"
                 ref="item-list"
