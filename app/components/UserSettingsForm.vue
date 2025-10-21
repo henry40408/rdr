@@ -36,6 +36,16 @@
       label="Linkding API Token"
       hint="Enter your Linkding API token to enable bookmarking features."
     />
+    <q-select
+      v-model="linkdingDefaultTags"
+      filled
+      multiple
+      use-chips
+      use-input
+      label="Default Tags"
+      new-value-mode="add-unique"
+      hint="Select default tags to apply to new bookmarks."
+    />
     <q-btn label="Save" type="submit" color="primary" />
   </q-form>
 </template>
@@ -85,6 +95,7 @@ const kagiSessionLink = ref("");
 const kagiLanguage = ref("EN");
 const linkdingApiUrl = ref("");
 const linkdingApiToken = ref("");
+const linkdingDefaultTags = ref([]);
 watchEffect(
   () => {
     if (!userSettings.value) return;
@@ -92,6 +103,7 @@ watchEffect(
     kagiSessionLink.value = userSettings.value.kagiSessionLink ?? "";
     linkdingApiUrl.value = userSettings.value.linkdingApiUrl ?? "";
     linkdingApiToken.value = userSettings.value.linkdingApiToken ?? "";
+    linkdingDefaultTags.value = JSON.parse(userSettings.value.linkdingDefaultTags ?? "[]") ?? [];
   },
   { flush: "post" },
 );
@@ -104,6 +116,7 @@ async function onSubmit() {
       kagiSessionLink: kagiSessionLink.value,
       linkdingApiUrl: linkdingApiUrl.value,
       linkdingApiToken: linkdingApiToken.value,
+      linkdingDefaultTags: JSON.stringify(linkdingDefaultTags.value),
     });
     await refreshFeatures();
     $q.notify({
