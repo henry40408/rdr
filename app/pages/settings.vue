@@ -52,8 +52,9 @@
                   <span v-else>Never</span> </span
                 >,
                 <span>
-                  Last duration: {{ job.lastDurationMs ? `${millisecondsToSeconds(job.lastDurationMs)}s` : "-" }}
-                </span>
+                  Last duration: {{ job.lastDurationMs ? `${millisecondsToSeconds(job.lastDurationMs)}s` : "-" }} </span
+                >,
+                <span>Last error: {{ job.lastError ? job.lastError : "-" }}</span>
               </q-item-label>
             </q-item-section>
             <q-item-section side>
