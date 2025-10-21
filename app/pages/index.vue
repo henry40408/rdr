@@ -403,7 +403,10 @@
                         color="primary"
                         icon="rss_feed"
                         :outline="!isDark"
-                        @click="selectedFeedId = String(item.feed.id)"
+                        @click="
+                          selectedCategoryId = String(item.category.id);
+                          selectedFeedId = String(item.feed.id);
+                        "
                       >
                         Feed: {{ item.feed.title }}
                       </q-chip>
