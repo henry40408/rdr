@@ -1003,8 +1003,10 @@ async function resetThenLoad(done) {
     offset.value = 0;
     saving.value = {};
     scrapping.value = {};
+    scrappingControllers.value = {};
     summarizations.value = {};
     summarizing.value = {};
+    summarizingControllers.value = {};
 
     refresh();
     await load();
