@@ -1,3 +1,17 @@
+import { createHash } from "node:crypto";
+
+/**
+ * @param {string} secret
+ * @param {string} url
+ * @return {string}
+ */
+export function digestUrl(secret, url) {
+  const hasher = createHash("shake256", { outputLength: 8 });
+  hasher.update(url);
+  hasher.update(secret);
+  return hasher.digest("hex");
+}
+
 const replacements = {
   週日: "Sun",
   週一: "Mon",

@@ -1,8 +1,40 @@
 // @ts-check
 
 import { describe, it } from "vitest";
-import { normalizeDatetime, parseDataURL } from "./helper.js";
+import { digestUrl, normalizeDatetime, parseDataURL } from "./helper.js";
 import assert from "node:assert";
+
+describe("digestUrl", () => {
+  const secret = "my_secret_key";
+
+  it("should produce a valid hex string of length 16", () => {
+    const url = "https://example.com/some/path";
+    const hash = digestUrl(secret, url);
+    assert.match(hash, /^[a-f0-9]{16}$/);
+  });
+
+  it("should produce consistent hashes for the same URL", () => {
+    const url = "https://example.com/some/path";
+    const hash1 = digestUrl(secret, url);
+    const hash2 = digestUrl(secret, url);
+    assert.strictEqual(hash1, hash2);
+  });
+
+  it("should produce different hashes for different URLs", () => {
+    const url1 = "https://example.com/some/path";
+    const url2 = "https://example.com/another/path";
+    const hash1 = digestUrl(secret, url1);
+    const hash2 = digestUrl(secret, url2);
+    assert.notStrictEqual(hash1, hash2);
+  });
+
+  it("should produce different hashes for the same URL with different secrets", () => {
+    const url = "https://example.com/some/path";
+    const hash1 = digestUrl("secret_one", url);
+    const hash2 = digestUrl("secret_two", url);
+    assert.notStrictEqual(hash1, hash2);
+  });
+});
 
 describe("normalizeDatetime", () => {
   it("should parse standard date strings", () => {
