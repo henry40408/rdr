@@ -35,6 +35,8 @@ export default defineNitroPlugin(
       logger: asValue(logger),
       opmlService: asClass(OpmlService).singleton(),
       repository: asClass(Repository, { asyncInit: "init", asyncInitPriority: 0 }).singleton(),
+      // external services
+      linkdingService: asClass(LinkdingService).singleton(),
       // jobs
       fetchEntriesJob: asClass(FetchEntriesJob, { asyncInit: "init", asyncDispose: "dispose" }).singleton(),
       fetchImagesJob: asClass(FetchImagesJob, { asyncInit: "init", asyncDispose: "dispose" }).singleton(),
