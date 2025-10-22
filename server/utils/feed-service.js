@@ -37,6 +37,7 @@ export class FeedService {
         url: feed.xmlUrl,
         etag: feed.etag,
         lastModified: feed.lastModified,
+        priority: Number.MIN_SAFE_INTEGER, // lowest priority
       });
       logger.info("Fetched feed");
 
