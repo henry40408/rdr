@@ -40,18 +40,20 @@ export class FetchEntriesJob extends BaseJob {
       const categories = await this.repository.findCategoriesWithFeed(user.id);
       const feeds = categories.flatMap((category) => category.feeds);
       return await Promise.allSettled(
-        feeds.map(async (feed) => {
-          try {
-            return await this.feedService.fetchAndSaveEntries(user.id, feed);
-          } finally {
-            this.logger.debug({
-              msg: "Fetched entries for feed",
-              feedId: feed.id,
-              counter: ++counter,
-              total: feeds.length,
-            });
-          }
-        }),
+        feeds
+          .filter((f) => !f.lastError) // only fetch feeds without lastError
+          .map(async (feed) => {
+            try {
+              return await this.feedService.fetchAndSaveEntries(user.id, feed);
+            } finally {
+              this.logger.debug({
+                msg: "Fetched entries for feed",
+                feedId: feed.id,
+                counter: ++counter,
+                total: feeds.length,
+              });
+            }
+          }),
       );
     });
     await Promise.allSettled(tasks);
