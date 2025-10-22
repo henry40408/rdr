@@ -170,6 +170,7 @@ export class Repository {
         this.knex.ref("feeds.fetched_at").as("feed_fetched_at"),
         this.knex.ref("feeds.etag").as("feed_etag"),
         this.knex.ref("feeds.last_modified").as("feed_last_modified"),
+        this.knex.ref("feeds.last_error").as("feed_last_error"),
       )
       .where("categories.user_id", userId);
 
@@ -189,6 +190,7 @@ export class Repository {
             fetchedAt: row.feed_fetched_at,
             etag: row.feed_etag,
             lastModified: row.feed_last_modified,
+            lastError: row.feed_last_error,
           }),
         );
       } else {
@@ -207,6 +209,7 @@ export class Repository {
             fetchedAt: row.feed_fetched_at,
             etag: row.feed_etag,
             lastModified: row.feed_last_modified,
+            lastError: row.feed_last_error,
           }),
         );
         categories.push(newCategory);
@@ -368,6 +371,7 @@ export class Repository {
       fetchedAt: row.fetched_at,
       etag: row.etag,
       lastModified: row.last_modified,
+      lastError: row.last_error,
     });
   }
 
@@ -387,6 +391,7 @@ export class Repository {
           fetchedAt: row.fetched_at,
           etag: row.etag,
           lastModified: row.last_modified,
+          lastError: row.last_error,
         }),
     );
   }
@@ -414,6 +419,7 @@ export class Repository {
           fetchedAt: row.fetched_at,
           etag: row.etag,
           lastModified: row.last_modified,
+          lastError: row.last_error,
         }),
     );
   }
@@ -640,16 +646,19 @@ export class Repository {
   }
 
   /**
-   * @param {number} userId
-   * @param {FeedEntity} feed
+   * @param {object} opts
+   * @param {number} opts.userId
+   * @param {FeedEntity} opts.feed
+   * @param {string} [opts.error]
    * @returns {Promise<number>}
    */
-  async updateFeedMetadata(userId, feed) {
+  async updateFeedMetadata({ userId, feed, error }) {
     const logger = this.logger.child({ feedId: feed.id, userId });
 
     const update = {};
     if ("etag" in feed && feed.etag) update.etag = feed.etag;
     if ("lastModified" in feed && feed.lastModified) update.last_modified = feed.lastModified;
+    if (typeof error !== "undefined") update.last_error = error;
     if (Object.keys(update).length === 0) {
       logger.debug("No metadata to update");
       return 0;
@@ -732,8 +741,9 @@ export class Repository {
    * @param {number} userId
    * @param {FeedEntity} feed
    * @param {FeedItem[]} items
+   * @param {import('feedparser').Meta|undefined} [meta]
    */
-  async upsertEntries(userId, feed, items) {
+  async upsertEntries(userId, feed, items, meta) {
     const logger = this.logger.child({ feedId: feed.id, userId });
 
     if (items.length === 0) {
@@ -762,7 +772,7 @@ export class Repository {
               guid: e.guid,
               title: e.title ?? "(no title)",
               link: e.link,
-              date: this._itemDate(e).toISOString(),
+              date: this._itemDate(e, meta).toISOString(),
               summary: e.summary ?? "(no summary)",
               description: e.description,
               author: e.author,
@@ -829,9 +839,10 @@ export class Repository {
 
   /**
    * @param {FeedItem} item
+   * @param {import('feedparser').Meta|undefined} meta
    * @returns {Date}
    */
-  _itemDate(item) {
+  _itemDate(item, meta) {
     if (item.pubdate && !isNaN(item.pubdate.valueOf())) return item.pubdate;
     if (item.date && !isNaN(item.date.valueOf())) return item.date;
 
@@ -844,6 +855,12 @@ export class Repository {
       return normalized;
     }
 
-    throw new Error("Item has no pubdate or date");
+    const date = meta?.date ?? meta?.pubdate;
+    if (date) {
+      this.logger.debug({ msg: "Using feed date as fallback", date });
+      return date;
+    }
+
+    throw new Error("Item has no pubdate or date and feed has no date");
   }
 }

@@ -745,14 +745,14 @@ describe("Repository", () => {
 
       // no-op
       {
-        const updated = await repository.updateFeedMetadata(feedId, feed);
+        const updated = await repository.updateFeedMetadata({ userId: user.id, feed });
         assert.strictEqual(updated, 0);
       }
 
       feed.etag = "new-etag-456";
       feed.lastModified = "Fri, 23 Oct 2015 09:31:00 GMT";
 
-      const updated = await repository.updateFeedMetadata(feedId, feed);
+      const updated = await repository.updateFeedMetadata({ userId: user.id, feed });
       assert.strictEqual(updated, 1);
 
       const updatedFeed = await repository.findFeedById(user.id, feedId);

@@ -103,22 +103,25 @@
                   </template>
 
                   <q-card>
-                    <q-card-section class="row items-center q-gutter-sm">
-                      <q-btn
-                        icon="refresh"
-                        color="primary"
-                        label="Refresh"
-                        :loading="refreshingFeedIds.has(feed.id)"
-                        @click="refreshFeed(feed)"
-                      />
-                      <q-btn
-                        color="primary"
-                        target="_blank"
-                        icon="open_in_new"
-                        :href="feed.htmlUrl"
-                        label="Go to website"
-                        rel="noopener noreferrer"
-                      />
+                    <q-card-section class="text-caption">
+                      <div>Last error: {{ feedDataByFeedId[feed.id]?.lastError || "-" }}</div>
+                    </q-card-section>
+                    <q-card-section>
+                      <q-btn-group push>
+                        <q-btn
+                          icon="refresh"
+                          label="Refresh"
+                          :loading="refreshingFeedIds.has(feed.id)"
+                          @click="refreshFeed(feed)"
+                        />
+                        <q-btn
+                          target="_blank"
+                          icon="open_in_new"
+                          :href="feed.htmlUrl"
+                          label="Go to website"
+                          rel="noopener noreferrer"
+                        />
+                      </q-btn-group>
                     </q-card-section>
                   </q-card>
                 </q-expansion-item>
