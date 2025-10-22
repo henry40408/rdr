@@ -29,6 +29,7 @@
           <q-item>
             <q-item-section>
               <q-toggle v-model="hideEmpty" label="Hide empty" />
+              <q-toggle v-model="showErrorOnly" label="Show error only" />
             </q-item-section>
           </q-item>
           <template v-for="category in filteredCategories" :key="category.id">
@@ -65,13 +66,9 @@
             </q-expansion-item>
             <q-list separator>
               <template v-for="feed in category.feeds" :key="feed.id">
-                <q-expansion-item
-                  v-if="!hideEmpty || feedUnreadCount(feed.id) > 0"
-                  expand-icon-toggle
-                  :group="`category-${category.id}`"
-                >
+                <q-expansion-item expand-icon-toggle :group="`category-${category.id}`">
                   <template #header>
-                    <q-item-section side>
+                    <q-item-section avatar>
                       <q-avatar v-if="imageExists(feed.id)" square>
                         <img
                           loading="lazy"
@@ -89,7 +86,12 @@
                       @click="() => $router.push({ path: '/', query: { feedId: feed.id } })"
                     >
                       <q-item-label lines="1">
-                        {{ feed.title }}
+                        <span
+                          :class="{
+                            'text-negative': feedDataByFeedId[feed.id]?.lastError,
+                          }"
+                          >{{ feed.title }}</span
+                        >
                       </q-item-label>
                     </q-item-section>
                     <q-item-section top side>
@@ -102,25 +104,35 @@
                     </q-item-section>
                   </template>
 
-                  <q-card>
-                    <q-card-section class="row items-center q-gutter-sm">
-                      <q-btn
-                        icon="refresh"
-                        color="primary"
-                        label="Refresh"
-                        :loading="refreshingFeedIds.has(feed.id)"
-                        @click="refreshFeed(feed)"
-                      />
-                      <q-btn
-                        color="primary"
-                        target="_blank"
-                        icon="open_in_new"
-                        :href="feed.htmlUrl"
-                        label="Go to website"
-                        rel="noopener noreferrer"
-                      />
-                    </q-card-section>
-                  </q-card>
+                  <q-list padding>
+                    <q-item>
+                      <q-item-section>
+                        <q-item-label overline>LAST ERROR</q-item-label>
+                        <q-item-label>{{ feedDataByFeedId[feed.id]?.lastError || "-" }}</q-item-label>
+                      </q-item-section>
+                    </q-item>
+                    <q-item>
+                      <q-item-section>
+                        <div>
+                          <q-btn-group push>
+                            <q-btn
+                              icon="refresh"
+                              label="Refresh"
+                              :loading="refreshingFeedIds.has(feed.id)"
+                              @click="refreshFeed(feed)"
+                            />
+                            <q-btn
+                              target="_blank"
+                              icon="open_in_new"
+                              :href="feed.htmlUrl"
+                              label="Go to website"
+                              rel="noopener noreferrer"
+                            />
+                          </q-btn-group>
+                        </div>
+                      </q-item-section>
+                    </q-item>
+                  </q-list>
                 </q-expansion-item>
               </template>
             </q-list>
@@ -168,17 +180,25 @@ const { hideEmpty } = useLocalSettings();
 const refreshingCategoryIds = ref(new Set());
 /** @type {Ref<Set<number>>} */
 const refreshingFeedIds = ref(new Set());
+/** @type {Ref<boolean>} */
+const showErrorOnly = ref(false);
 
 const { data: categories, execute: refreshCategories } = await useFetch("/api/categories");
 const { data: feedData, execute: refreshFeedData } = await useFetch("/api/feeds/data");
 
 const feedDataByFeedId = computed(() => feedData.value?.feeds ?? {});
 const filteredCategories = computed(() => {
-  const original = structuredClone(categories.value ?? []);
-  return original.filter((category) => {
-    if (!hideEmpty.value) return true;
-    return category.feeds.some((feed) => feedDataByFeedId.value[feed.id]?.unreadCount ?? 0);
-  });
+  let original = structuredClone(categories.value ?? []);
+
+  for (const category of original)
+    category.feeds = category.feeds.filter((feed) => {
+      if (showErrorOnly.value) return !!feedDataByFeedId.value[feed.id]?.lastError;
+      if (!hideEmpty.value) return true;
+      return feedDataByFeedId.value[feed.id]?.unreadCount ?? 0;
+    });
+
+  original = original.filter((category) => category.feeds.length > 0);
+  return original;
 });
 
 async function afterRefresh() {

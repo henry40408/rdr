@@ -125,10 +125,18 @@ export class FeedService {
    * @param {FeedEntity} feed
    */
   async fetchAndSaveEntries(userId, feed) {
-    const result = await this.fetchEntries(feed);
-    if (result.type === "ok") {
-      await this.repository.upsertEntries(userId, feed, result.items);
-      await this.repository.updateFeedMetadata(userId, result.feed);
+    try {
+      const result = await this.fetchEntries(feed);
+      if (result.type === "ok") {
+        await this.repository.upsertEntries(userId, feed, result.items, result.meta);
+        await this.repository.updateFeedMetadata({ userId, feed: result.feed, error: "" });
+      }
+    } catch (e) {
+      const err = /** @type {Error} */ (e);
+      await this.repository.updateFeedMetadata({ userId, feed, error: err.message }).catch((err) => {
+        this.logger.error(err);
+        this.logger.error({ msg: "Failed to update feed metadata with error", feedId: feed.id });
+      });
     }
   }
 }
