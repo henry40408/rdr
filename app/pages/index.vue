@@ -78,8 +78,8 @@
                 <q-item-label>{{ category.name }}</q-item-label>
               </q-item-section>
               <q-item-section side>
-                <q-badge color="primary" :outline="!categoryUnreadCount(category.id)">
-                  {{ categoryUnreadCount(category.id) }}
+                <q-badge color="primary" :outline="getCategoryUnreadCount(category.id) === 0">
+                  {{ getCategoryUnreadCount(category.id) }}
                 </q-badge>
               </q-item-section>
             </q-item>
@@ -94,7 +94,7 @@
                 "
               >
                 <q-item-section avatar>
-                  <q-avatar v-if="imageExists(feed.id)" square>
+                  <q-avatar v-if="isImageExists(feed.id)" square>
                     <img
                       loading="lazy"
                       alt="Feed image"
@@ -109,8 +109,8 @@
                   <q-item-label lines="1">{{ feed.title }}</q-item-label>
                 </q-item-section>
                 <q-item-section side>
-                  <q-badge color="primary" :outline="!feedUnreadCount(feed.id)">
-                    {{ feedUnreadCount(feed.id) }}
+                  <q-badge color="primary" :outline="getFeedUnreadCount(feed.id) === 0">
+                    {{ getFeedUnreadCount(feed.id) }}
                   </q-badge>
                 </q-item-section>
               </q-item>
@@ -350,7 +350,7 @@
                         <q-item-label caption lines="3">
                           <q-avatar square size="xs" class="bg-white q-mr-sm">
                             <img
-                              v-if="imageExists(item.feed.id)"
+                              v-if="isImageExists(item.feed.id)"
                               loading="lazy"
                               alt="Feed image"
                               decoding="async"
@@ -639,15 +639,15 @@ const filteredCategories = computed(() => {
   let original = structuredClone(categories.value);
 
   if (hideEmpty.value) {
-    for (const category of original) category.feeds = category.feeds.filter((feed) => feedUnreadCount(feed.id) > 0);
+    for (const category of original) category.feeds = category.feeds.filter((feed) => getFeedUnreadCount(feed.id) > 0);
     original = original.filter((category) => category.feeds.length > 0);
   }
 
   return original.slice().sort((a, b) => {
     let compare = 0;
     if (categoriesOrder.value === "unread_count") {
-      const aCount = categoryUnreadCount(a.id);
-      const bCount = categoryUnreadCount(b.id);
+      const aCount = getCategoryUnreadCount(a.id);
+      const bCount = getCategoryUnreadCount(b.id);
       compare = aCount - bCount;
     } else if (categoriesOrder.value === "category_name") {
       compare = a.name.localeCompare(b.name);
@@ -665,16 +665,6 @@ useHead(() => ({
 }));
 const feedsData = computed(() => data.value?.[3]);
 const imagePks = computed(() => data.value?.[2] ?? []);
-
-/**
- * @param {number} categoryId
- * @returns {number}
- */
-function categoryUnreadCount(categoryId) {
-  if (!feedsData.value) return 0;
-  const feedIds = categories.value?.filter((c) => c.id === categoryId).flatMap((c) => c.feeds.map((f) => f.id)) ?? [];
-  return feedIds.reduce((sum, feedId) => sum + (feedsData.value?.feeds[feedId]?.unreadCount ?? 0), 0);
-}
 
 /**
  * @param {number} entryId
@@ -737,12 +727,13 @@ async function doMarkManyAsRead(olderThan) {
 }
 
 /**
- * @param {number} feedId
+ * @param {number} categoryId
  * @returns {number}
  */
-function feedUnreadCount(feedId) {
+function getCategoryUnreadCount(categoryId) {
   if (!feedsData.value) return 0;
-  return feedsData.value?.feeds[feedId]?.unreadCount ?? 0;
+  const feedIds = categories.value?.filter((c) => c.id === categoryId).flatMap((c) => c.feeds.map((f) => f.id)) ?? [];
+  return feedIds.reduce((sum, feedId) => sum + (feedsData.value?.feeds[feedId]?.unreadCount ?? 0), 0);
 }
 
 /**
@@ -751,6 +742,15 @@ function feedUnreadCount(feedId) {
  */
 function getContent(entryId) {
   return fullContents.value[entryId] ?? contents.value[entryId] ?? "";
+}
+
+/**
+ * @param {number} feedId
+ * @returns {number}
+ */
+function getFeedUnreadCount(feedId) {
+  if (!feedsData.value) return 0;
+  return feedsData.value?.feeds[feedId]?.unreadCount ?? 0;
 }
 
 function getFilteredCategoryName() {
@@ -817,7 +817,9 @@ async function load() {
   query.limit = itemsLimit.value;
   query.offset = offset.value;
 
+  if (loading.value) return;
   loading.value = true;
+
   try {
     const newItems = await requestFetch("/api/entries", { query });
     for (const item of newItems) {
@@ -885,7 +887,7 @@ async function loadContent(entryId) {
  * @param {number} feedId
  * @returns {boolean}
  */
-function imageExists(feedId) {
+function isImageExists(feedId) {
   const key = buildFeedImageKey(feedId);
   return imagePks.value?.includes(key) ?? false;
 }
@@ -1030,8 +1032,8 @@ watch(
  */
 async function saveEntry(entryId) {
   if (saving.value[entryId]) return;
-
   saving.value[entryId] = true;
+
   try {
     await requestFetch(`/api/entries/${entryId}/save`, { method: "POST" });
     $q.notify({
@@ -1117,7 +1119,9 @@ async function summarizeEntry(entryId) {
   const controller = new AbortController();
   summarizingControllers.value[entryId] = controller;
 
+  if (summarizing.value[entryId]) return;
   summarizing.value[entryId] = true;
+
   try {
     const text = await requestFetch(`/api/entries/${entryId}/summarize`, { signal: controller.signal });
 
@@ -1154,11 +1158,10 @@ ${pangu.spacingText(content ?? "")}`;
  */
 async function toggleReadEntry(entryId, index) {
   if (entryRead.value[entryId] === "toggling") return;
-
   // status of checkbox is already changed by the time this function is called
   const value = entryRead.value[entryId];
-
   entryRead.value[entryId] = "toggling";
+
   try {
     await requestFetch(`/api/entries/${entryId}/read`, { method: "PUT" });
     refresh();
@@ -1179,11 +1182,10 @@ async function toggleReadEntry(entryId, index) {
  */
 async function toggleStarEntry(entryId) {
   if (entryStar.value[entryId] === "starring") return;
-
   // status of checkbox is already changed by the time this function is called
   const value = entryStar.value[entryId];
-
   entryStar.value[entryId] = "starring";
+
   try {
     await requestFetch(`/api/entries/${entryId}/star`, { method: "PUT" });
     refresh();
