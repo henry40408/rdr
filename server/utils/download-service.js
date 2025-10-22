@@ -25,15 +25,16 @@ export class DownloadService {
    * @param {string} params.url
    * @param {string} [params.etag]
    * @param {string} [params.lastModified]
+   * @param {number} [params.priority=0]
    */
-  async downloadBinary({ url, etag, lastModified }) {
+  async downloadBinary({ url, etag, lastModified, priority = 0 }) {
     /** @type {Record<string, string>} */
     const headers = {};
     if (etag || lastModified) {
       if (etag) headers["If-None-Match"] = etag;
       if (lastModified) headers["If-Modified-Since"] = lastModified;
     }
-    return await this.queue.add(() => this.client.get(url, { responseType: "buffer", headers }));
+    return await this.queue.add(() => this.client.get(url, { responseType: "buffer", headers }), { priority });
   }
 
   /**
@@ -41,15 +42,16 @@ export class DownloadService {
    * @param {string} params.url
    * @param {string} [params.etag]
    * @param {string} [params.lastModified]
+   * @param {number} [params.priority=0]
    */
-  async downloadText({ url, etag, lastModified }) {
+  async downloadText({ url, etag, lastModified, priority = 0 }) {
     /** @type {Record<string, string>} */
     const headers = {};
     if (etag || lastModified) {
       if (etag) headers["If-None-Match"] = etag;
       if (lastModified) headers["If-Modified-Since"] = lastModified;
     }
-    return await this.queue.add(() => this.client.get(url, { responseType: "text", headers }));
+    return await this.queue.add(() => this.client.get(url, { responseType: "text", headers }), { priority });
   }
 
   /**

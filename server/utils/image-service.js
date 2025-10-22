@@ -40,6 +40,7 @@ export class ImageService {
         url,
         etag: existing?.etag,
         lastModified: existing?.lastModified,
+        priority: Number.MIN_SAFE_INTEGER, // lowerest priority
       });
       if (!res) {
         logger.warn({ msg: "Response is undefined", url });
