@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 const schema = z.object({
-  feedId: z.coerce.number(),
+  categoryId: z.coerce.number(),
 });
 
 export default defineEventHandler(async (event) => {
@@ -10,15 +10,12 @@ export default defineEventHandler(async (event) => {
   const session = await requireUserSession(event);
   const userId = session.user.id;
 
+  const { categoryId } = await getValidatedRouterParams(event, (params) => schema.parse(params));
+
   /** @type {Repository} */
   const repository = container.resolve("repository");
 
-  const { feedId } = await getValidatedRouterParams(event, (params) => schema.parse(params));
-
-  const feed = await repository.findFeedById(userId, feedId);
-  if (!feed) throw createError({ statusCode: 404, statusMessage: "Feed not found" });
-
-  await repository.deleteFeed(userId, feedId);
+  await repository.deleteCategory(userId, categoryId);
 
   setResponseStatus(event, 204);
 });

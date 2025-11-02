@@ -129,6 +129,31 @@ export class Repository {
   }
 
   /**
+   * @param {number} userId
+   * @param {string} categoryName
+   * @param {FeedEntity} feed
+   * @returns {Promise<number>}
+   */
+  async createFeed(userId, categoryName, feed) {
+    return await this.knex.transaction(async (tx) => {
+      await tx("categories").insert({ user_id: userId, name: categoryName }).onConflict(["user_id", "name"]).ignore();
+
+      const category = await tx("categories").where({ user_id: userId, name: categoryName }).first();
+      if (!category) throw new Error("Failed to find or create category");
+      const categoryId = category.id;
+
+      await tx("feeds")
+        .insert({ category_id: categoryId, title: feed.title, xml_url: feed.xmlUrl, html_url: feed.htmlUrl })
+        .onConflict(["category_id", "xml_url"])
+        .ignore();
+
+      const created = await tx("feeds").where({ category_id: categoryId, xml_url: feed.xmlUrl }).first();
+      if (!created) throw new Error("Failed to find or create feed");
+      return created.id;
+    });
+  }
+
+  /**
    * @param {UserEntity} user
    * @param {string} password
    * @returns {Promise<UserEntity>}
@@ -150,6 +175,33 @@ export class Repository {
       this.logger.info({ msg: "Created user", username: user.username, id: user.id, isAdmin: isFirstUser });
       return user;
     });
+  }
+
+  /**
+   * @param {number} userId
+   * @param {number} categoryId
+   */
+  async deleteCategory(userId, categoryId) {
+    const logger = this.logger.child({ userId, categoryId });
+
+    await this.knex.transaction(async (tx) => {
+      const feeds = await tx("feeds").where({ category_id: categoryId });
+      for (const feed of feeds) {
+        const deletedEntries = await tx("entries").where({ feed_id: feed.id }).del();
+        logger.info({ msg: "Deleted entries for feed", feedId: feed.id, deletedEntries });
+
+        const imageExternalId = buildFeedImageKey(feed.id);
+        const deletedImage = await tx("images").where({ user_id: userId, external_id: imageExternalId }).del();
+        logger.info({ msg: "Deleted feed image", feedId: feed.id, deletedImage });
+      }
+
+      const deletedFeeds = await tx("feeds").where({ category_id: categoryId }).del();
+      logger.info({ msg: "Deleted feeds for category", categoryId, deletedFeeds });
+
+      const deletedCategory = await tx("categories").where({ id: categoryId }).del();
+      logger.info({ msg: "Deleted category", categoryId, deletedCategory });
+    });
+    logger.info({ msg: "Deleted category transaction completed" });
   }
 
   /**
@@ -179,6 +231,12 @@ export class Repository {
       const imageExternalId = buildFeedImageKey(feed.id);
       const deletedImage = await tx("images").where({ user_id: userId, external_id: imageExternalId }).del();
       logger.info({ msg: "Deleted feed image", deletedImage });
+
+      const remainingFeeds = await tx("feeds").where({ category_id: feed.category_id }).count({ count: "*" }).first();
+      if (!remainingFeeds) {
+        await tx("categories").where({ id: feed.category_id }).del();
+        logger.info({ msg: "Deleted empty category", categoryId: feed.category_id });
+      }
     });
     logger.info({ msg: "Deleted feed transaction completed" });
   }
