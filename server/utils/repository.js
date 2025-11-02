@@ -1,6 +1,7 @@
 import { CategoryEntity, EntryEntity, FeedEntity, ImageEntity, JobEntity, UserEntity } from "./entities.js";
 import { compare, hash } from "bcrypt";
 import { add } from "date-fns";
+import { buildFeedImageKey } from "../../shared/utils/index.js";
 import chunk from "lodash/chunk.js";
 import get from "lodash/get.js";
 import { normalizeDatetime } from "./helper.js";
@@ -180,11 +181,12 @@ export class Repository {
   /**
    * @param {number} userId
    * @param {number} categoryId
+   * @return {Promise<number|undefined>}
    */
   async deleteCategory(userId, categoryId) {
     const logger = this.logger.child({ userId, categoryId });
 
-    await this.knex.transaction(async (tx) => {
+    const deletedCount = await this.knex.transaction(async (tx) => {
       const feeds = await tx("feeds").where({ category_id: categoryId });
       for (const feed of feeds) {
         const deletedEntries = await tx("entries").where({ feed_id: feed.id }).del();
@@ -200,17 +202,23 @@ export class Repository {
 
       const deletedCategory = await tx("categories").where({ id: categoryId }).del();
       logger.info({ msg: "Deleted category", categoryId, deletedCategory });
+
+      return deletedCategory;
     });
+
     logger.info({ msg: "Deleted category transaction completed" });
+    return deletedCount;
   }
 
   /**
    * @param {number} userId
    * @param {number} feedId
+   * @return {Promise<number|undefined>}
    */
   async deleteFeed(userId, feedId) {
     const logger = this.logger.child({ userId, feedId });
-    await this.knex.transaction(async (tx) => {
+
+    const deletedFeeds = await this.knex.transaction(async (tx) => {
       const feed = await tx("feeds")
         .whereIn("category_id", (builder) => {
           builder.select("id").from("categories").where("user_id", userId);
@@ -237,8 +245,12 @@ export class Repository {
         await tx("categories").where({ id: feed.category_id }).del();
         logger.info({ msg: "Deleted empty category", categoryId: feed.category_id });
       }
+
+      return deletedFeed;
     });
+
     logger.info({ msg: "Deleted feed transaction completed" });
+    return deletedFeeds;
   }
 
   /**
