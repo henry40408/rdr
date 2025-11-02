@@ -1,9 +1,16 @@
 // @ts-check
 
-import { CategoryEntity, EntryEntity, FeedEntity, ImageEntity, JobEntity, UserEntity } from "./entities.js";
+import {
+  CategoryEntity,
+  EntryEntity,
+  FeedEntity,
+  ImageEntity,
+  JobEntity,
+  UserEntity,
+} from "../../server/utils/entities.js";
 import { afterEach, beforeEach, describe, it } from "vitest";
-import { MigrationSource } from "./migration-source.js";
-import { Repository } from "./repository.js";
+import { MigrationSource } from "../../server/utils/migration-source.js";
+import { Repository } from "../../server/utils/repository.js";
 import assert from "node:assert";
 import knex from "knex";
 import pino from "pino";
@@ -586,7 +593,7 @@ describe("Repository", () => {
 
       const now = new Date();
 
-      /** @type {import('./repository.js').FeedItem[]} */
+      /** @type {import('../../server/utils/repository.js').FeedItem[]} */
       const items = [
         {
           guid: "new-entry-1",
@@ -637,7 +644,7 @@ describe("Repository", () => {
 
       // upsert entries with date instead of pubdate
       {
-        /** @type {import('./repository.js').FeedItem[]} */
+        /** @type {import('../../server/utils/repository.js').FeedItem[]} */
         const itemsWithDateOnly = [
           {
             guid: "new-entry-2",
@@ -663,7 +670,7 @@ describe("Repository", () => {
 
       // upsert entries with weird date formats
       {
-        /** @type {import('./repository.js').FeedItem[]} */
+        /** @type {import('../../server/utils/repository.js').FeedItem[]} */
         const itemsWithWeirdDates = [
           {
             guid: "new-entry-3",

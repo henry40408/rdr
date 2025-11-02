@@ -1,7 +1,6 @@
 import { CategoryEntity, EntryEntity, FeedEntity, ImageEntity, JobEntity, UserEntity } from "./entities.js";
 import { compare, hash } from "bcrypt";
 import { add } from "date-fns";
-import { buildFeedImageKey } from "../../shared/utils/index.js";
 import chunk from "lodash/chunk.js";
 import get from "lodash/get.js";
 import { normalizeDatetime } from "./helper.js";
