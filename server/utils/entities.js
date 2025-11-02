@@ -59,8 +59,21 @@ export class FeedEntity {
    * @param {string} [opts.lastModified]
    * @param {string} [opts.lastError]
    * @param {string} [opts.date]
+   * @param {number} [opts.errorCount]
    */
-  constructor({ id, categoryId, title, xmlUrl, htmlUrl, fetchedAt, etag, lastModified, lastError, date }) {
+  constructor({
+    id,
+    categoryId,
+    title,
+    xmlUrl,
+    htmlUrl,
+    fetchedAt,
+    etag,
+    lastModified,
+    lastError,
+    date,
+    errorCount = 0,
+  }) {
     this.id = id;
     this.categoryId = categoryId;
     this.title = title;
@@ -70,6 +83,7 @@ export class FeedEntity {
     this.etag = etag;
     this.lastModified = lastModified;
     this.lastError = lastError;
+    this.errorCount = errorCount;
 
     // virtual field, should not be stored in the database
     this.date = date;

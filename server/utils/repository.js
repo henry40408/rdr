@@ -472,6 +472,7 @@ export class Repository {
       etag: row.etag,
       lastModified: row.last_modified,
       lastError: row.last_error,
+      errorCount: row.error_count,
     });
   }
 
@@ -765,12 +766,21 @@ export class Repository {
     }
 
     logger.debug({ msg: "Update feed metadata", feed });
-    const updated = await this.knex("feeds")
-      .whereIn("category_id", (builder) => {
-        builder.select("id").from("categories").where("user_id", userId);
-      })
-      .where({ id: feed.id })
-      .update(update);
+    const updated = await this.knex.transaction(async (tx) => {
+      const updated = await tx("feeds")
+        .whereIn("category_id", (builder) => {
+          builder.select("id").from("categories").where("user_id", userId);
+        })
+        .where({ id: feed.id })
+        .update(update);
+
+      // Increment error_count if there was an error, otherwise reset it to 0
+      if (error) await tx("feeds").where({ id: feed.id }).increment("error_count");
+      else await tx("feeds").where({ id: feed.id }).update({ error_count: 0 });
+
+      return updated;
+    });
+
     logger.info({ msg: "Updated feed metadata", feedId: feed.id, updated });
     return updated;
   }
