@@ -154,6 +154,37 @@ export class Repository {
 
   /**
    * @param {number} userId
+   * @param {number} feedId
+   */
+  async deleteFeed(userId, feedId) {
+    const logger = this.logger.child({ userId, feedId });
+    await this.knex.transaction(async (tx) => {
+      const feed = await tx("feeds")
+        .whereIn("category_id", (builder) => {
+          builder.select("id").from("categories").where("user_id", userId);
+        })
+        .where({ id: feedId })
+        .first();
+      if (!feed) {
+        logger.warn({ msg: "Feed not found" });
+        return;
+      }
+
+      const deletedEntries = await tx("entries").where({ feed_id: feedId }).del();
+      logger.info({ msg: "Deleted entries for feed", deletedEntries });
+
+      const deletedFeed = await tx("feeds").where({ id: feedId }).del();
+      logger.info({ msg: "Deleted feed", deletedFeed });
+
+      const imageExternalId = buildFeedImageKey(feed.id);
+      const deletedImage = await tx("images").where({ user_id: userId, external_id: imageExternalId }).del();
+      logger.info({ msg: "Deleted feed image", deletedImage });
+    });
+    logger.info({ msg: "Deleted feed transaction completed" });
+  }
+
+  /**
+   * @param {number} userId
    * @returns {Promise<CategoryEntity[]>}
    */
   async findCategoriesWithFeed(userId) {

@@ -128,6 +128,7 @@
                               label="Go to website"
                               rel="noopener noreferrer"
                             />
+                            <q-btn icon="delete" label="Delete" color="negative" @click="deleteFeedDialog(feed.id)" />
                           </q-btn-group>
                         </div>
                       </q-item-section>
@@ -216,6 +217,34 @@ function categoryUnreadCount(categoryId) {
     const feedData = feedDataByFeedId.value[feed.id];
     return sum + (feedData?.unreadCount ?? 0);
   }, 0);
+}
+
+/**
+ * @param {number} feedId
+ */
+function deleteFeedDialog(feedId) {
+  $q.dialog({
+    title: "Delete Feed",
+    message: "Are you sure you want to delete this feed? This action cannot be undone.",
+    cancel: true,
+    persistent: true,
+  }).onOk(async () => {
+    try {
+      await requestFetch(`/api/feeds/${feedId}`, { method: "DELETE" });
+      await afterRefresh();
+      $q.notify({
+        type: "positive",
+        message: "Feed deleted successfully",
+        actions: [{ icon: "close", color: "white" }],
+      });
+    } catch (err) {
+      $q.notify({
+        type: "negative",
+        message: `Error deleting feed: ${err}`,
+        actions: [{ icon: "close", color: "white" }],
+      });
+    }
+  });
 }
 
 /**
