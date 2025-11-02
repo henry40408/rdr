@@ -45,11 +45,6 @@
               <q-item-label>Feeds</q-item-label>
               <q-item-label caption>Manage your feed subscriptions</q-item-label>
             </q-item-section>
-            <q-item-section side>
-              <q-btn flat round icon="refresh" :loading="refreshingCategoryIds.size > 0" @click="refreshAll">
-                <q-tooltip self="center right" anchor="center left">Refresh all</q-tooltip>
-              </q-btn>
-            </q-item-section>
           </q-item>
           <q-item>
             <q-item-section>
@@ -156,10 +151,10 @@
                               @click="refreshFeed(feed)"
                             />
                             <q-btn
+                              label="Website"
                               target="_blank"
                               icon="open_in_new"
                               :href="feed.htmlUrl"
-                              label="Go to website"
                               rel="noopener noreferrer"
                             />
                             <q-btn icon="delete" label="Delete" color="negative" @click="deleteFeedDialog(feed.id)" />
@@ -184,6 +179,10 @@
             <router-link to="/settings">add new feeds</router-link>.
           </div>
         </q-banner>
+
+        <q-page-sticky :offset="[18, 18]" position="bottom-right">
+          <q-btn fab icon="refresh" color="primary" @click="refreshAll()" />
+        </q-page-sticky>
       </q-page>
     </q-page-container>
   </q-layout>

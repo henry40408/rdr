@@ -495,36 +495,7 @@
         </q-page-sticky>
 
         <q-page-sticky :offset="[18, 18]" position="bottom-right">
-          <q-fab direction="up" color="primary" icon="keyboard_arrow_up">
-            <q-fab-action
-              external-label
-              icon="refresh"
-              label="Refresh"
-              color="secondary"
-              label-position="left"
-              @click="resetThenLoad()"
-            />
-            <q-fab-action
-              external-label
-              color="secondary"
-              label="Reset filters"
-              label-position="left"
-              icon="filter_list_off"
-              @click="
-                selectedCategoryId = undefined;
-                selectedFeedId = undefined;
-                searchQuery = '';
-              "
-            />
-            <q-fab-action
-              external-label
-              icon="done_all"
-              color="secondary"
-              label="Mark as read"
-              label-position="left"
-              @click="markManyAsReadDialog()"
-            />
-          </q-fab>
+          <q-btn fab color="primary" icon="done_all" @click="markManyAsReadDialog()" />
         </q-page-sticky>
       </q-page>
     </q-page-container>
@@ -926,7 +897,6 @@ function markManyAsReadDialog() {
     },
     ok: { color: "negative" },
     cancel: true,
-    persistent: true,
   }).onOk(
     /** @param {"day"|"week"|"month"|"year"|"all"} data */
     async (data) => {
