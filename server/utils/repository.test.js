@@ -838,5 +838,86 @@ describe("Repository", () => {
       assert.strictEqual(jobs[0].name, job.name);
       assert.strictEqual(jobs[0].pausedAt, null);
     });
+
+    it("should delete feed and its entries", async () => {
+      const user = await createUser("deletefeeduser", "deletefeedpassword");
+      const { feedId } = await createEntries(repository, user);
+
+      const feedBeforeDelete = await repository.findFeedById(user.id, feedId);
+      assert.ok(feedBeforeDelete);
+
+      const entriesBeforeDelete = await repository.findEntries({ userId: user.id, feedIds: [feedId] });
+      assert.strictEqual(entriesBeforeDelete.length, 3);
+
+      const deletedCount = await repository.deleteFeed(user.id, feedId);
+      assert.strictEqual(deletedCount, 1);
+
+      const feedAfterDelete = await repository.findFeedById(user.id, feedId);
+      assert.strictEqual(feedAfterDelete, undefined);
+
+      const entriesAfterDelete = await repository.findEntries({ userId: user.id, feedIds: [feedId] });
+      assert.strictEqual(entriesAfterDelete.length, 0);
+    });
+
+    it("should delete category and its feeds and entries", async () => {
+      const user = await createUser("deletecategoryuser", "deletecategorypassword");
+      const { categoryId, feedId } = await createEntries(repository, user);
+
+      const categoriesBeforeDelete = await repository.findCategoriesWithFeed(user.id);
+      assert.strictEqual(categoriesBeforeDelete.length, 1);
+
+      const feedBeforeDelete = await repository.findFeedById(user.id, feedId);
+      assert.ok(feedBeforeDelete);
+
+      const entriesBeforeDelete = await repository.findEntries({ userId: user.id, feedIds: [feedId] });
+      assert.strictEqual(entriesBeforeDelete.length, 3);
+
+      const deletedCount = await repository.deleteCategory(user.id, categoryId);
+      assert.strictEqual(deletedCount, 1);
+
+      const categoriesAfterDelete = await repository.findCategoriesWithFeed(user.id);
+      assert.strictEqual(categoriesAfterDelete.length, 0);
+
+      const feedAfterDelete = await repository.findFeedById(user.id, feedId);
+      assert.strictEqual(feedAfterDelete, undefined);
+
+      const entriesAfterDelete = await repository.findEntries({ userId: user.id, feedIds: [feedId] });
+      assert.strictEqual(entriesAfterDelete.length, 0);
+    });
+
+    it("should create feed", async () => {
+      const user = await createUser("createfeeduser", "createfeedpassword");
+
+      const category = new CategoryEntity({
+        id: 0,
+        userId: user.id,
+        name: "News",
+      });
+      await repository.upsertCategories(user.id, [category]);
+
+      const feed = new FeedEntity({
+        id: 0,
+        categoryId: category.id,
+        title: "New Feed",
+        xmlUrl: "http://example.com/new-feed.xml",
+        htmlUrl: "http://example.com/new-feed",
+      });
+
+      const id = await repository.createFeed(user.id, category.name, feed);
+      assert.ok(id !== 0);
+
+      const createdFeed = await repository.findFeedById(user.id, id);
+      assert.ok(createdFeed);
+      assert.strictEqual(createdFeed.title, "New Feed");
+      assert.strictEqual(createdFeed.xmlUrl, "http://example.com/new-feed.xml");
+      assert.strictEqual(createdFeed.htmlUrl, "http://example.com/new-feed");
+
+      // duplicate feed creation should not fail or create duplicates
+      const duplicateId = await repository.createFeed(user.id, category.name, feed);
+      assert.strictEqual(duplicateId, id);
+
+      const feeds = await repository.findFeedsWithCategoryId(user.id, category.id);
+      assert.strictEqual(feeds.length, 1);
+    });
   });
 });

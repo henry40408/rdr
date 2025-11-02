@@ -15,6 +15,31 @@
     <q-page-container>
       <q-page>
         <q-list padding>
+          <q-item header>New Feed</q-item>
+          <q-item>
+            <q-item-section>
+              <q-select
+                v-model="categoryName"
+                outlined
+                clearable
+                use-input
+                label="Category Name"
+                :options="categoryOptions"
+                hint="Create a new category by typing a name and pressing Enter. Clear to select existing."
+                @new-value="addCategory"
+              />
+              <q-input v-model="xmlUrl" outlined class="q-mt-sm" label="Feed URL" />
+              <q-input v-model="htmlUrl" outlined class="q-mt-sm" label="Website URL (Optional)" />
+              <q-btn
+                class="q-mt-sm"
+                color="primary"
+                label="Add Feed"
+                :loading="adding"
+                :disable="!(categoryName && xmlUrl)"
+                @click="addFeed()"
+              />
+            </q-item-section>
+          </q-item>
           <q-item>
             <q-item-section>
               <q-item-label>Feeds</q-item-label>
@@ -54,13 +79,16 @@
 
               <q-card>
                 <q-card-section class="row items-center q-gutter-sm">
-                  <q-btn
-                    icon="refresh"
-                    color="primary"
-                    label="Refresh"
-                    :loading="refreshingCategoryIds.has(category.id)"
-                    @click="refreshCategory(category)"
-                  />
+                  <q-btn-group push>
+                    <q-btn
+                      icon="refresh"
+                      color="primary"
+                      label="Refresh"
+                      :loading="refreshingCategoryIds.has(category.id)"
+                      @click="refreshCategory(category)"
+                    />
+                    <q-btn icon="delete" label="Delete" color="negative" @click="deleteCategoryDialog(category.id)" />
+                  </q-btn-group>
                 </q-card-section>
               </q-card>
             </q-expansion-item>
@@ -128,6 +156,7 @@
                               label="Go to website"
                               rel="noopener noreferrer"
                             />
+                            <q-btn icon="delete" label="Delete" color="negative" @click="deleteFeedDialog(feed.id)" />
                           </q-btn-group>
                         </div>
                       </q-item-section>
@@ -176,6 +205,12 @@ watchEffect(
 
 const { hideEmpty } = useLocalSettings();
 
+// New feed form fields
+const adding = ref(false);
+const categoryName = ref("");
+const htmlUrl = ref("");
+const xmlUrl = ref("");
+
 /** @type {Ref<Set<number>>} */
 const refreshingCategoryIds = ref(new Set());
 /** @type {Ref<Set<number>>} */
@@ -184,6 +219,8 @@ const refreshingFeedIds = ref(new Set());
 const showErrorOnly = ref(false);
 
 const { data: categories, execute: refreshCategories } = await useFetch("/api/categories");
+const categoryOptions = computed(() => (categories.value ?? []).map((category) => category.name));
+
 const { data: feedData, execute: refreshFeedData } = await useFetch("/api/feeds/data");
 
 const feedDataByFeedId = computed(() => feedData.value?.feeds ?? {});
@@ -201,6 +238,46 @@ const filteredCategories = computed(() => {
   return original;
 });
 
+/**
+ * @param {string} val
+ * @param {(val: string) => void} done
+ */
+function addCategory(val, done) {
+  categoryName.value = val;
+  done(val);
+}
+
+async function addFeed() {
+  adding.value = true;
+  try {
+    await requestFetch("/api/feeds", {
+      method: "POST",
+      body: {
+        categoryName: categoryName.value,
+        htmlUrl: htmlUrl.value || undefined, // treat empty string as undefined
+        xmlUrl: xmlUrl.value,
+      },
+    });
+    categoryName.value = "";
+    htmlUrl.value = "";
+    xmlUrl.value = "";
+    await afterRefresh();
+    $q.notify({
+      type: "positive",
+      message: "Feed added successfully",
+      actions: [{ icon: "close", color: "white" }],
+    });
+  } catch (e) {
+    $q.notify({
+      type: "negative",
+      message: `Error adding feed: ${e}`,
+      actions: [{ icon: "close", color: "white" }],
+    });
+  } finally {
+    adding.value = false;
+  }
+}
+
 async function afterRefresh() {
   await Promise.all([refreshCategories(), refreshFeedData()]);
 }
@@ -216,6 +293,62 @@ function categoryUnreadCount(categoryId) {
     const feedData = feedDataByFeedId.value[feed.id];
     return sum + (feedData?.unreadCount ?? 0);
   }, 0);
+}
+
+/**
+ * @param {number} categoryId
+ */
+function deleteCategoryDialog(categoryId) {
+  $q.dialog({
+    title: "Delete Category",
+    message: "Are you sure you want to delete this category and all its feeds? This action cannot be undone.",
+    cancel: true,
+    persistent: true,
+  }).onOk(async () => {
+    try {
+      await requestFetch(`/api/categories/${categoryId}`, { method: "DELETE" });
+      await afterRefresh();
+      $q.notify({
+        type: "positive",
+        message: "Category deleted successfully",
+        actions: [{ icon: "close", color: "white" }],
+      });
+    } catch (err) {
+      $q.notify({
+        type: "negative",
+        message: `Error deleting category: ${err}`,
+        actions: [{ icon: "close", color: "white" }],
+      });
+    }
+  });
+}
+
+/**
+ * @param {number} feedId
+ */
+function deleteFeedDialog(feedId) {
+  $q.dialog({
+    title: "Delete Feed",
+    message: "Are you sure you want to delete this feed? This action cannot be undone.",
+    cancel: true,
+    persistent: true,
+  }).onOk(async () => {
+    try {
+      await requestFetch(`/api/feeds/${feedId}`, { method: "DELETE" });
+      await afterRefresh();
+      $q.notify({
+        type: "positive",
+        message: "Feed deleted successfully",
+        actions: [{ icon: "close", color: "white" }],
+      });
+    } catch (err) {
+      $q.notify({
+        type: "negative",
+        message: `Error deleting feed: ${err}`,
+        actions: [{ icon: "close", color: "white" }],
+      });
+    }
+  });
 }
 
 /**

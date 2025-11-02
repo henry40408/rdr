@@ -1,6 +1,7 @@
 import { CategoryEntity, EntryEntity, FeedEntity, ImageEntity, JobEntity, UserEntity } from "./entities.js";
 import { compare, hash } from "bcrypt";
 import { add } from "date-fns";
+import { buildFeedImageKey } from "../../shared/utils/index.js";
 import chunk from "lodash/chunk.js";
 import get from "lodash/get.js";
 import { normalizeDatetime } from "./helper.js";
@@ -129,6 +130,31 @@ export class Repository {
   }
 
   /**
+   * @param {number} userId
+   * @param {string} categoryName
+   * @param {FeedEntity} feed
+   * @returns {Promise<number>}
+   */
+  async createFeed(userId, categoryName, feed) {
+    return await this.knex.transaction(async (tx) => {
+      await tx("categories").insert({ user_id: userId, name: categoryName }).onConflict(["user_id", "name"]).ignore();
+
+      const category = await tx("categories").where({ user_id: userId, name: categoryName }).first();
+      if (!category) throw new Error("Failed to find or create category");
+      const categoryId = category.id;
+
+      await tx("feeds")
+        .insert({ category_id: categoryId, title: feed.title, xml_url: feed.xmlUrl, html_url: feed.htmlUrl })
+        .onConflict(["category_id", "xml_url"])
+        .ignore();
+
+      const created = await tx("feeds").where({ category_id: categoryId, xml_url: feed.xmlUrl }).first();
+      if (!created) throw new Error("Failed to find or create feed");
+      return created.id;
+    });
+  }
+
+  /**
    * @param {UserEntity} user
    * @param {string} password
    * @returns {Promise<UserEntity>}
@@ -150,6 +176,81 @@ export class Repository {
       this.logger.info({ msg: "Created user", username: user.username, id: user.id, isAdmin: isFirstUser });
       return user;
     });
+  }
+
+  /**
+   * @param {number} userId
+   * @param {number} categoryId
+   * @return {Promise<number|undefined>}
+   */
+  async deleteCategory(userId, categoryId) {
+    const logger = this.logger.child({ userId, categoryId });
+
+    const deletedCount = await this.knex.transaction(async (tx) => {
+      const feeds = await tx("feeds").where({ category_id: categoryId });
+      for (const feed of feeds) {
+        const deletedEntries = await tx("entries").where({ feed_id: feed.id }).del();
+        logger.info({ msg: "Deleted entries for feed", feedId: feed.id, deletedEntries });
+
+        const imageExternalId = buildFeedImageKey(feed.id);
+        const deletedImage = await tx("images").where({ user_id: userId, external_id: imageExternalId }).del();
+        logger.info({ msg: "Deleted feed image", feedId: feed.id, deletedImage });
+      }
+
+      const deletedFeeds = await tx("feeds").where({ category_id: categoryId }).del();
+      logger.info({ msg: "Deleted feeds for category", categoryId, deletedFeeds });
+
+      const deletedCategory = await tx("categories").where({ id: categoryId }).del();
+      logger.info({ msg: "Deleted category", categoryId, deletedCategory });
+
+      return deletedCategory;
+    });
+
+    logger.info({ msg: "Deleted category transaction completed" });
+    return deletedCount;
+  }
+
+  /**
+   * @param {number} userId
+   * @param {number} feedId
+   * @return {Promise<number|undefined>}
+   */
+  async deleteFeed(userId, feedId) {
+    const logger = this.logger.child({ userId, feedId });
+
+    const deletedFeeds = await this.knex.transaction(async (tx) => {
+      const feed = await tx("feeds")
+        .whereIn("category_id", (builder) => {
+          builder.select("id").from("categories").where("user_id", userId);
+        })
+        .where({ id: feedId })
+        .first();
+      if (!feed) {
+        logger.warn({ msg: "Feed not found" });
+        return;
+      }
+
+      const deletedEntries = await tx("entries").where({ feed_id: feedId }).del();
+      logger.info({ msg: "Deleted entries for feed", deletedEntries });
+
+      const deletedFeed = await tx("feeds").where({ id: feedId }).del();
+      logger.info({ msg: "Deleted feed", deletedFeed });
+
+      const imageExternalId = buildFeedImageKey(feed.id);
+      const deletedImage = await tx("images").where({ user_id: userId, external_id: imageExternalId }).del();
+      logger.info({ msg: "Deleted feed image", deletedImage });
+
+      const remainingFeeds = await tx("feeds").where({ category_id: feed.category_id }).count({ count: "*" }).first();
+      if (!remainingFeeds) {
+        await tx("categories").where({ id: feed.category_id }).del();
+        logger.info({ msg: "Deleted empty category", categoryId: feed.category_id });
+      }
+
+      return deletedFeed;
+    });
+
+    logger.info({ msg: "Deleted feed transaction completed" });
+    return deletedFeeds;
   }
 
   /**

@@ -25,7 +25,14 @@
               </q-file>
             </q-item-section>
             <q-item-section side>
-              <q-btn label="Import" class="q-ml-sm" color="primary" :disabled="!uploadedFile" @click="importOPML" />
+              <q-btn
+                label="Import"
+                class="q-ml-sm"
+                color="primary"
+                :loading="uploading"
+                :disabled="!uploadedFile"
+                @click="importOPML"
+              />
             </q-item-section>
             <q-item-section side>
               <q-btn label="Export" color="primary" href="/api/opml" />
@@ -116,6 +123,7 @@ watchEffect(
 
 const triggeringJobs = ref(new Set());
 const uploadedFile = ref(null);
+const uploading = ref(false);
 
 const { data: jobsData, refresh: refreshJobs } = await useAsyncData(() => requestFetch("/api/jobs"));
 const jobPaused = computed(() => {
@@ -129,6 +137,10 @@ async function importOPML() {
   if (!uploadedFile.value) return;
   const formData = new FormData();
   formData.append("file", uploadedFile.value);
+
+  if (uploading.value) return;
+  uploading.value = true;
+
   try {
     await requestFetch("/api/opml", { method: "POST", body: formData });
     $q.notify({
@@ -140,6 +152,8 @@ async function importOPML() {
       type: "negative",
       message: `Failed to import OPML file: ${err}`,
     });
+  } finally {
+    uploading.value = false;
   }
 }
 
