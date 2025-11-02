@@ -143,6 +143,7 @@ async function importOPML() {
 
   try {
     await requestFetch("/api/opml", { method: "POST", body: formData });
+    uploadedFile.value = null;
     $q.notify({
       type: "positive",
       message: "OPML file imported successfully",

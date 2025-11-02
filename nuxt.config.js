@@ -16,10 +16,11 @@ export default defineNuxtConfig({
     },
   },
   css: ["@/assets/css/main.css"],
-  modules: ["@nuxt/eslint", "@vueuse/nuxt", "nuxt-auth-utils", "nuxt-quasar-ui"],
+  modules: ["@nuxt/eslint", "@nuxt/test-utils/module", "@vueuse/nuxt", "nuxt-auth-utils", "nuxt-quasar-ui"],
   runtimeConfig: {
     dbPath: "./data/db.sqlite3",
     disableSignUp: false,
+    errorThreshold: 5,
     httpTimeoutMs: 90000,
     imageDigestSecret: "",
     logLevel: "",

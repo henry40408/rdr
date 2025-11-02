@@ -1,9 +1,16 @@
 // @ts-check
 
-import { CategoryEntity, EntryEntity, FeedEntity, ImageEntity, JobEntity, UserEntity } from "./entities.js";
+import {
+  CategoryEntity,
+  EntryEntity,
+  FeedEntity,
+  ImageEntity,
+  JobEntity,
+  UserEntity,
+} from "../../server/utils/entities.js";
 import { afterEach, beforeEach, describe, it } from "vitest";
-import { MigrationSource } from "./migration-source.js";
-import { Repository } from "./repository.js";
+import { MigrationSource } from "../../server/utils/migration-source.js";
+import { Repository } from "../../server/utils/repository.js";
 import assert from "node:assert";
 import knex from "knex";
 import pino from "pino";
@@ -586,7 +593,7 @@ describe("Repository", () => {
 
       const now = new Date();
 
-      /** @type {import('./repository.js').FeedItem[]} */
+      /** @type {import('../../server/utils/repository.js').FeedItem[]} */
       const items = [
         {
           guid: "new-entry-1",
@@ -637,7 +644,7 @@ describe("Repository", () => {
 
       // upsert entries with date instead of pubdate
       {
-        /** @type {import('./repository.js').FeedItem[]} */
+        /** @type {import('../../server/utils/repository.js').FeedItem[]} */
         const itemsWithDateOnly = [
           {
             guid: "new-entry-2",
@@ -663,7 +670,7 @@ describe("Repository", () => {
 
       // upsert entries with weird date formats
       {
-        /** @type {import('./repository.js').FeedItem[]} */
+        /** @type {import('../../server/utils/repository.js').FeedItem[]} */
         const itemsWithWeirdDates = [
           {
             guid: "new-entry-3",
@@ -759,6 +766,44 @@ describe("Repository", () => {
       assert.ok(updatedFeed);
       assert.strictEqual(updatedFeed.etag, "new-etag-456");
       assert.strictEqual(updatedFeed.lastModified, "Fri, 23 Oct 2015 09:31:00 GMT");
+
+      // feed error count should be reset to zero
+      {
+        await repository.knex("feeds").where({ id: feedId }).update({ error_count: 3 });
+
+        const feedWithErrors = await repository.findFeedById(user.id, feedId);
+        assert.ok(feedWithErrors);
+        assert.strictEqual(feedWithErrors.errorCount, 3);
+
+        feed.etag = "another-etag-789";
+        const updatedAgain = await repository.updateFeedMetadata({ userId: user.id, feed: feedWithErrors });
+        assert.strictEqual(updatedAgain, 1);
+
+        const resetFeed = await repository.findFeedById(user.id, feedId);
+        assert.ok(resetFeed);
+        assert.strictEqual(resetFeed.errorCount, 0);
+      }
+
+      // feed error count should be incremented if error occurs
+      {
+        await repository.knex("feeds").where({ id: feedId }).update({ error_count: 0 });
+
+        const feedNoErrors = await repository.findFeedById(user.id, feedId);
+        assert.ok(feedNoErrors);
+        assert.strictEqual(feedNoErrors.errorCount, 0);
+
+        const updatedWithError = await repository.updateFeedMetadata({
+          userId: user.id,
+          feed: feedNoErrors,
+          error: "Failed to fetch feed",
+        });
+        assert.strictEqual(updatedWithError, 1);
+
+        const erroredFeed = await repository.findFeedById(user.id, feedId);
+        assert.ok(erroredFeed);
+        assert.strictEqual(erroredFeed.errorCount, 1);
+        assert.strictEqual(erroredFeed.lastError, "Failed to fetch feed");
+      }
     });
 
     it("should upsert job", async () => {

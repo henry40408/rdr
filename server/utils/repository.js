@@ -1,7 +1,6 @@
 import { CategoryEntity, EntryEntity, FeedEntity, ImageEntity, JobEntity, UserEntity } from "./entities.js";
 import { compare, hash } from "bcrypt";
 import { add } from "date-fns";
-import { buildFeedImageKey } from "../../shared/utils/index.js";
 import chunk from "lodash/chunk.js";
 import get from "lodash/get.js";
 import { normalizeDatetime } from "./helper.js";
@@ -272,6 +271,7 @@ export class Repository {
         this.knex.ref("feeds.etag").as("feed_etag"),
         this.knex.ref("feeds.last_modified").as("feed_last_modified"),
         this.knex.ref("feeds.last_error").as("feed_last_error"),
+        this.knex.ref("feeds.error_count").as("feed_error_count"),
       )
       .where("categories.user_id", userId);
 
@@ -292,6 +292,7 @@ export class Repository {
             etag: row.feed_etag,
             lastModified: row.feed_last_modified,
             lastError: row.feed_last_error,
+            errorCount: row.feed_error_count,
           }),
         );
       } else {
@@ -473,6 +474,7 @@ export class Repository {
       etag: row.etag,
       lastModified: row.last_modified,
       lastError: row.last_error,
+      errorCount: row.error_count,
     });
   }
 
@@ -766,12 +768,21 @@ export class Repository {
     }
 
     logger.debug({ msg: "Update feed metadata", feed });
-    const updated = await this.knex("feeds")
-      .whereIn("category_id", (builder) => {
-        builder.select("id").from("categories").where("user_id", userId);
-      })
-      .where({ id: feed.id })
-      .update(update);
+    const updated = await this.knex.transaction(async (tx) => {
+      const updated = await tx("feeds")
+        .whereIn("category_id", (builder) => {
+          builder.select("id").from("categories").where("user_id", userId);
+        })
+        .where({ id: feed.id })
+        .update(update);
+
+      // Increment error_count if there was an error, otherwise reset it to 0
+      if (error) await tx("feeds").where({ id: feed.id }).increment("error_count");
+      else await tx("feeds").where({ id: feed.id }).update({ error_count: 0 });
+
+      return updated;
+    });
+
     logger.info({ msg: "Updated feed metadata", feedId: feed.id, updated });
     return updated;
   }

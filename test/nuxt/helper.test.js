@@ -1,7 +1,7 @@
 // @ts-check
 
 import { describe, it } from "vitest";
-import { digestUrl, normalizeDatetime, parseDataURL } from "./helper.js";
+import { digestUrl, normalizeDatetime, parseDataURL } from "../../server/utils/helper.js";
 import assert from "node:assert";
 
 describe("digestUrl", () => {
