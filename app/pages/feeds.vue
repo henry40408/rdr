@@ -135,6 +135,12 @@
                   <q-list padding>
                     <q-item>
                       <q-item-section>
+                        <q-item-label overline>ERROR COUNT</q-item-label>
+                        <q-item-label>{{ feedDataByFeedId[feed.id]?.errorCount }}</q-item-label>
+                      </q-item-section>
+                    </q-item>
+                    <q-item>
+                      <q-item-section>
                         <q-item-label overline>LAST ERROR</q-item-label>
                         <q-item-label>{{ feedDataByFeedId[feed.id]?.lastError || "-" }}</q-item-label>
                       </q-item-section>

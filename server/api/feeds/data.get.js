@@ -1,6 +1,7 @@
 /**
  * @typedef {object} FeedData
  * @property {number} count
+ * @property {number} errorCount
  * @property {string} [fetchedAt]
  * @property {boolean} imageExists
  * @property {number} unreadCount
@@ -31,10 +32,11 @@ export default defineEventHandler(async (event) => {
   for (const row of rows) {
     feeds[row.id] = {
       count: counts[row.id]?.total ?? 0,
+      errorCount: row.errorCount,
       fetchedAt: row.fetchedAt?.toString(),
       imageExists: imagePks.includes(buildFeedImageKey(row.id)),
-      unreadCount: counts[row.id]?.unread ?? 0,
       lastError: row.lastError,
+      unreadCount: counts[row.id]?.unread ?? 0,
     };
   }
 

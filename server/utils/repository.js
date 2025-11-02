@@ -271,6 +271,7 @@ export class Repository {
         this.knex.ref("feeds.etag").as("feed_etag"),
         this.knex.ref("feeds.last_modified").as("feed_last_modified"),
         this.knex.ref("feeds.last_error").as("feed_last_error"),
+        this.knex.ref("feeds.error_count").as("feed_error_count"),
       )
       .where("categories.user_id", userId);
 
@@ -291,6 +292,7 @@ export class Repository {
             etag: row.feed_etag,
             lastModified: row.feed_last_modified,
             lastError: row.feed_last_error,
+            errorCount: row.feed_error_count,
           }),
         );
       } else {
