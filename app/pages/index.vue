@@ -65,8 +65,9 @@
           </q-item-section>
         </q-item>
         <ClientOnly>
-          <template v-for="category in filteredCategories" :key="category.id">
+          <template v-for="category in categories" :key="category.id">
             <q-item
+              v-show="!hideEmpty || getCategoryUnreadCount(category.id) > 0"
               v-ripple
               clickable
               @click="
@@ -83,9 +84,10 @@
                 </q-badge>
               </q-item-section>
             </q-item>
-            <q-separator />
+            <q-separator v-if="!hideEmpty || getCategoryUnreadCount(category.id) > 0" />
             <template v-for="feed in category.feeds" :key="feed.id">
               <q-item
+                v-show="!hideEmpty || getFeedUnreadCount(feed.id) > 0"
                 v-ripple
                 clickable
                 @click="
@@ -116,7 +118,7 @@
               </q-item>
             </template>
           </template>
-          <q-banner v-if="filteredCategories.length <= 0" :class="{ 'bg-grey-9': isDark, 'bg-grey-3': !isDark }">
+          <q-banner v-if="categories.length <= 0" :class="{ 'bg-grey-9': isDark, 'bg-grey-3': !isDark }">
             <div>No categories found</div>
             <div class="text-caption">
               Try adjusting your filters or
@@ -606,26 +608,6 @@ const { data, refresh } = await useAsyncData("initial", async () =>
   ]),
 );
 const categories = computed(() => data.value?.[0] ?? []);
-const filteredCategories = computed(() => {
-  let original = structuredClone(categories.value);
-
-  if (hideEmpty.value) {
-    for (const category of original) category.feeds = category.feeds.filter((feed) => getFeedUnreadCount(feed.id) > 0);
-    original = original.filter((category) => category.feeds.length > 0);
-  }
-
-  return original.slice().sort((a, b) => {
-    let compare = 0;
-    if (categoriesOrder.value === "unread_count") {
-      const aCount = getCategoryUnreadCount(a.id);
-      const bCount = getCategoryUnreadCount(b.id);
-      compare = aCount - bCount;
-    } else if (categoriesOrder.value === "category_name") {
-      compare = a.name.localeCompare(b.name);
-    }
-    return categoriesDirection.value === "asc" ? compare : -compare;
-  });
-});
 const countData = computed(() => data.value?.[1] ?? { count: 0 });
 useHead(() => ({
   title: selectedFeedId.value
