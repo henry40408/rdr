@@ -47,6 +47,7 @@
     "sanitize-html": "^2.17.0",
     "sqlite3": "^5.1.7",
     "uuid": "^13.0.0",
+    "vuetify-nuxt-module": "^0.18.8",
     "xml2js": "^0.6.2",
     "zod": "^4.1.11"
   },
