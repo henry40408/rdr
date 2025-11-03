@@ -52,8 +52,8 @@
               <q-toggle v-model="showErrorOnly" label="Show error only" />
             </q-item-section>
           </q-item>
-          <template v-for="category in filteredCategories" :key="category.id">
-            <q-expansion-item group="category">
+          <template v-for="category in categories" :key="category.id">
+            <q-expansion-item v-show="shouldShowCategory(category.id)" group="category">
               <template #header>
                 <q-item-section
                   v-ripple
@@ -65,9 +65,9 @@
                 <q-item-section top side>
                   <q-item-label caption>{{ category.feeds.length }} feeds</q-item-label>
                   <div class="q-mt-xs">
-                    <q-badge color="primary" :outline="!categoryUnreadCount(category.id)">{{
-                      categoryUnreadCount(category.id)
-                    }}</q-badge>
+                    <q-badge color="primary" :outline="!getCategoryUnreadCount(category.id)">
+                      {{ getCategoryUnreadCount(category.id) }}
+                    </q-badge>
                   </div>
                 </q-item-section>
               </template>
@@ -89,7 +89,11 @@
             </q-expansion-item>
             <q-list separator>
               <template v-for="feed in category.feeds" :key="feed.id">
-                <q-expansion-item expand-icon-toggle :group="`category-${category.id}`">
+                <q-expansion-item
+                  v-show="shouldShowFeed(feed.id)"
+                  expand-icon-toggle
+                  :group="`category-${category.id}`"
+                >
                   <template #header>
                     <q-item-section avatar>
                       <q-avatar v-if="imageExists(feed.id)" square>
@@ -120,8 +124,8 @@
                     <q-item-section top side>
                       <q-item-label caption>{{ formatFetchedAtToNow(feed.id) }}</q-item-label>
                       <div class="q-mt-xs">
-                        <q-badge color="primary" :outline="!feedUnreadCount(feed.id)">{{
-                          feedUnreadCount(feed.id)
+                        <q-badge color="primary" :outline="!getFeedUnreadCount(feed.id)">{{
+                          getFeedUnreadCount(feed.id)
                         }}</q-badge>
                       </div>
                     </q-item-section>
@@ -168,7 +172,7 @@
             </q-list>
           </template>
         </q-list>
-        <q-banner v-if="filteredCategories.length <= 0" :class="{ 'bg-grey-9': isDark, 'bg-grey-3': !isDark }">
+        <q-banner v-if="categories.length <= 0" :class="{ 'bg-grey-9': isDark, 'bg-grey-3': !isDark }">
           <template #avatar>
             <q-icon name="info" />
           </template>
@@ -223,25 +227,12 @@ const refreshingFeedIds = ref(new Set());
 /** @type {Ref<boolean>} */
 const showErrorOnly = ref(false);
 
-const { data: categories, execute: refreshCategories } = await useFetch("/api/categories");
+const { data, refresh } = await useAsyncData(() =>
+  Promise.all([requestFetch("/api/categories"), requestFetch("/api/feeds/data")]),
+);
+const categories = computed(() => data.value?.[0] ?? []);
 const categoryOptions = computed(() => (categories.value ?? []).map((category) => category.name));
-
-const { data: feedData, execute: refreshFeedData } = await useFetch("/api/feeds/data");
-
-const feedDataByFeedId = computed(() => feedData.value?.feeds ?? {});
-const filteredCategories = computed(() => {
-  let original = structuredClone(categories.value ?? []);
-
-  for (const category of original)
-    category.feeds = category.feeds.filter((feed) => {
-      if (showErrorOnly.value) return !!feedDataByFeedId.value[feed.id]?.lastError;
-      if (!hideEmpty.value) return true;
-      return feedDataByFeedId.value[feed.id]?.unreadCount ?? 0;
-    });
-
-  original = original.filter((category) => category.feeds.length > 0);
-  return original;
-});
+const feedDataByFeedId = computed(() => data.value?.[1]?.feeds ?? {});
 
 /**
  * @param {string} val
@@ -266,7 +257,7 @@ async function addFeed() {
     categoryName.value = "";
     htmlUrl.value = "";
     xmlUrl.value = "";
-    await afterRefresh();
+    await refresh();
     $q.notify({
       type: "positive",
       message: "Feed added successfully",
@@ -283,23 +274,6 @@ async function addFeed() {
   }
 }
 
-async function afterRefresh() {
-  await Promise.all([refreshCategories(), refreshFeedData()]);
-}
-
-/**
- * @param {number} categoryId
- * @returns {number}
- */
-function categoryUnreadCount(categoryId) {
-  const category = categories.value?.find((c) => c.id === categoryId);
-  if (!category) return 0;
-  return category.feeds.reduce((sum, feed) => {
-    const feedData = feedDataByFeedId.value[feed.id];
-    return sum + (feedData?.unreadCount ?? 0);
-  }, 0);
-}
-
 /**
  * @param {number} categoryId
  */
@@ -312,7 +286,7 @@ function deleteCategoryDialog(categoryId) {
   }).onOk(async () => {
     try {
       await requestFetch(`/api/categories/${categoryId}`, { method: "DELETE" });
-      await afterRefresh();
+      await refresh();
       $q.notify({
         type: "positive",
         message: "Category deleted successfully",
@@ -340,7 +314,7 @@ function deleteFeedDialog(feedId) {
   }).onOk(async () => {
     try {
       await requestFetch(`/api/feeds/${feedId}`, { method: "DELETE" });
-      await afterRefresh();
+      await refresh();
       $q.notify({
         type: "positive",
         message: "Feed deleted successfully",
@@ -358,20 +332,33 @@ function deleteFeedDialog(feedId) {
 
 /**
  * @param {number} feedId
+ * @returns {string}
+ */
+function formatFetchedAtToNow(feedId) {
+  const fetchedAt = feedDataByFeedId.value?.[feedId]?.fetchedAt;
+  if (!fetchedAt) return "never";
+  return formatDistanceToNow(new Date(fetchedAt), { addSuffix: true });
+}
+
+/**
+ * @param {number} categoryId
  * @returns {number}
  */
-function feedUnreadCount(feedId) {
-  return feedDataByFeedId.value[feedId]?.unreadCount ?? 0;
+function getCategoryUnreadCount(categoryId) {
+  const category = categories.value?.find((c) => c.id === categoryId);
+  if (!category) return 0;
+  return category.feeds.reduce((sum, feed) => {
+    const feedData = feedDataByFeedId.value[feed.id];
+    return sum + (feedData?.unreadCount ?? 0);
+  }, 0);
 }
 
 /**
  * @param {number} feedId
- * @returns {string}
+ * @returns {number}
  */
-function formatFetchedAtToNow(feedId) {
-  const fetchedAt = feedData.value?.feeds[feedId]?.fetchedAt;
-  if (!fetchedAt) return "never";
-  return formatDistanceToNow(new Date(fetchedAt), { addSuffix: true });
+function getFeedUnreadCount(feedId) {
+  return feedDataByFeedId.value[feedId]?.unreadCount ?? 0;
 }
 
 /**
@@ -379,7 +366,7 @@ function formatFetchedAtToNow(feedId) {
  * @returns {boolean}
  */
 function imageExists(feedId) {
-  return feedData.value?.feeds[feedId]?.imageExists ?? false;
+  return feedDataByFeedId.value[feedId]?.imageExists ?? false;
 }
 
 async function refreshAll() {
@@ -404,7 +391,7 @@ async function refreshCategory(category) {
     const tasks = [];
     for (const feedId of feedIds) tasks.push(requestFetch(`/api/feeds/${feedId}/refresh`, { method: "POST" }));
     await Promise.all(tasks);
-    await afterRefresh();
+    await refresh();
   } catch (err) {
     $q.notify({
       type: "negative",
@@ -425,7 +412,7 @@ async function refreshFeed(feed) {
   refreshingFeedIds.value.add(feed.id);
   try {
     await requestFetch(`/api/feeds/${feed.id}/refresh`, { method: "POST" });
-    await afterRefresh();
+    await refresh();
   } catch (err) {
     $q.notify({
       type: "negative",
@@ -435,5 +422,39 @@ async function refreshFeed(feed) {
   } finally {
     refreshingFeedIds.value.delete(feed.id);
   }
+}
+
+/**
+ * @param {number} categoryId
+ */
+function shouldShowCategory(categoryId) {
+  if (!hideEmpty.value && !showErrorOnly.value) return true;
+
+  const category = categories.value?.find((c) => c.id === categoryId);
+  if (!category) return false;
+
+  if (showErrorOnly.value) {
+    for (const feed of category.feeds) {
+      const feedData = feedDataByFeedId.value[feed.id];
+      if (feedData?.lastError) return true;
+    }
+    return false;
+  }
+
+  return getCategoryUnreadCount(categoryId) > 0;
+}
+
+/**
+ * @param {number} feedId
+ */
+function shouldShowFeed(feedId) {
+  if (!hideEmpty.value && !showErrorOnly.value) return true;
+
+  if (showErrorOnly.value) {
+    const feedData = feedDataByFeedId.value[feedId];
+    return !!feedData?.lastError;
+  }
+
+  return getFeedUnreadCount(feedId) > 0;
 }
 </script>
