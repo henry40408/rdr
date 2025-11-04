@@ -1,0 +1,26 @@
+a:not([class*="q-"]) {
+  color: #3182ce;
+  text-decoration: underline;
+  transition: color 0.2s ease;
+}
+
+a:not([class*="q-"]):hover {
+  color: #2c5aa0;
+}
+
+a:not([class*="q-"]):visited {
+  color: #805ad5;
+}
+
+/* Dark mode */
+body.body--dark a:not([class*="q-"]) {
+  color: #63b3ed;
+}
+
+body.body--dark a:not([class*="q-"]):hover {
+  color: #90cdf4;
+}
+
+body.body--dark a:not([class*="q-"]):visited {
+  color: #b794f6;
+}
