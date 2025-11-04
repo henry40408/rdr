@@ -49,12 +49,8 @@
         </q-item>
         <q-item>
           <q-item-section>
-            <q-radio v-model="categoriesDirection" dense val="desc" label="Descending" />
-          </q-item-section>
-        </q-item>
-        <q-item>
-          <q-item-section>
-            <q-radio v-model="categoriesDirection" dense val="asc" label="Ascending" />
+            <q-radio v-model="categoriesDirection" val="desc" label="Descending" />
+            <q-radio v-model="categoriesDirection" val="asc" label="Ascending" />
           </q-item-section>
         </q-item>
         <q-item>
@@ -151,36 +147,12 @@
         </q-item>
         <q-separator spaced />
         <q-item-label header>Filters</q-item-label>
-        <q-item v-ripple tag="label">
-          <q-item-section top side>
-            <q-radio v-model="itemsStatus" val="unread" />
-          </q-item-section>
+        <q-item>
           <q-item-section>
-            <q-item-label>Unread</q-item-label>
-          </q-item-section>
-        </q-item>
-        <q-item v-ripple tag="label">
-          <q-item-section top side>
-            <q-radio v-model="itemsStatus" val="all" />
-          </q-item-section>
-          <q-item-section>
-            <q-item-label>All</q-item-label>
-          </q-item-section>
-        </q-item>
-        <q-item v-ripple tag="label">
-          <q-item-section top side>
-            <q-radio v-model="itemsStatus" val="read" />
-          </q-item-section>
-          <q-item-section>
-            <q-item-label>Read</q-item-label>
-          </q-item-section>
-        </q-item>
-        <q-item v-ripple tag="label">
-          <q-item-section top side>
-            <q-radio v-model="itemsStatus" val="starred" />
-          </q-item-section>
-          <q-item-section>
-            <q-item-label>Starred</q-item-label>
+            <q-radio v-model="itemsStatus" val="unread" label="Unread" />
+            <q-radio v-model="itemsStatus" val="all" label="All" />
+            <q-radio v-model="itemsStatus" val="read" label="Read" />
+            <q-radio v-model="itemsStatus" val="starred" label="Starred" />
           </q-item-section>
         </q-item>
         <q-separator spaced />
@@ -190,7 +162,7 @@
             {{ itemsLimit }}
           </q-item-section>
           <q-item-section>
-            <q-slider v-model.number="itemsLimit" filled markers :min="30" :max="300" :step="30" type="number" />
+            <q-slider v-model.number="itemsLimit" dense filled markers :min="30" :max="300" :step="30" type="number" />
           </q-item-section>
         </q-item>
         <q-separator spaced />
@@ -199,6 +171,7 @@
           <q-item-section>
             <q-select
               v-model="itemsOrder"
+              dense
               filled
               emit-value
               map-options
@@ -210,10 +183,6 @@
         <q-item>
           <q-item-section>
             <q-radio v-model="itemsDirection" val="desc" label="Descending" />
-          </q-item-section>
-        </q-item>
-        <q-item>
-          <q-item-section>
             <q-radio v-model="itemsDirection" val="asc" label="Ascending" />
           </q-item-section>
         </q-item>
