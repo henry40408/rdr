@@ -514,7 +514,7 @@ import { useRouteQuery } from "@vueuse/router";
 
 const { data: features } = useFeatures();
 const requestFetch = useRequestFetch();
-const { hideEmpty } = useLocalSettings();
+const { categoriesDirection, categoriesOrder, hideEmpty } = useLocalSettings();
 const { loggedIn, session, clear: logout } = useUserSession();
 
 const $q = useQuasar();
@@ -562,10 +562,6 @@ const summarizing = ref({});
 /** @type {Ref<Record<string,AbortController|undefined>>} */
 const summarizingControllers = ref({});
 
-/** @type {Ref<"asc"|"desc">} */
-const categoriesDirection = useRouteQuery("categoriesDirection", "desc");
-/** @type {Ref<"category_name"|"unread_count">} */
-const categoriesOrder = useRouteQuery("categoriesOrder", "unread_count");
 /** @type {Ref<"asc"|"desc">} */
 const itemsDirection = useRouteQuery("direction", "desc");
 /** @type {Ref<number>} */
