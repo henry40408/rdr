@@ -184,7 +184,7 @@ body.body--dark .entry-content strong {
 @media (max-width: 768px) {
   .entry-content {
     font-size: 16px;
-    padding: .5rem;
+    padding: 0.5rem;
     margin: 0 auto;
     line-height: 1.5;
   }
