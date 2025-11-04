@@ -387,7 +387,7 @@
                     </div>
                   </q-card-section>
                   <q-card-section>
-                    <q-btn-group push>
+                    <div class="q-gutter-sm">
                       <q-btn
                         v-if="!fullContents[item.entry.id]"
                         :icon="scrapping[item.entry.id] ? 'cancel' : 'article'"
@@ -414,7 +414,7 @@
                             : summarizeEntry(item.entry.id)
                         "
                       />
-                    </q-btn-group>
+                    </div>
                   </q-card-section>
                   <q-card-section v-if="summarizationEnabled">
                     <UseClipboard
