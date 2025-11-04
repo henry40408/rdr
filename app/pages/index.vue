@@ -35,8 +35,8 @@
           <q-item-section>
             <q-select
               v-model="categoriesOrder"
+              dense
               filled
-              size="xs"
               emit-value
               map-options
               label="Sort by"
@@ -49,23 +49,23 @@
         </q-item>
         <q-item>
           <q-item-section>
-            <q-radio v-model="categoriesDirection" size="xs" val="desc" label="Descending" />
+            <q-radio v-model="categoriesDirection" dense val="desc" label="Descending" />
           </q-item-section>
         </q-item>
         <q-item>
           <q-item-section>
-            <q-radio v-model="categoriesDirection" size="xs" val="asc" label="Ascending" />
+            <q-radio v-model="categoriesDirection" dense val="asc" label="Ascending" />
           </q-item-section>
         </q-item>
         <q-item>
           <q-item-section>
             <ClientOnly>
-              <q-toggle v-model="hideEmpty" label="Hide empty" />
+              <q-toggle v-model="hideEmpty" dense label="Hide empty" />
             </ClientOnly>
           </q-item-section>
         </q-item>
         <ClientOnly>
-          <template v-for="category in categories" :key="category.id">
+          <template v-for="category in sortedCategories" :key="category.id">
             <q-item
               v-show="!hideEmpty || getCategoryUnreadCount(category.id) > 0"
               v-ripple
@@ -608,6 +608,22 @@ const { data, refresh } = await useAsyncData("initial", async () =>
   ]),
 );
 const categories = computed(() => data.value?.[0] ?? []);
+const sortedCategories = computed(() => {
+  const cats = structuredClone(categories.value);
+  cats.sort((a, b) => {
+    let comp = 0;
+    if (categoriesOrder.value === "unread_count") {
+      const aCount = a.feeds.reduce((sum, f) => sum + getFeedUnreadCount(f.id), 0);
+      const bCount = b.feeds.reduce((sum, f) => sum + getFeedUnreadCount(f.id), 0);
+      comp = aCount - bCount;
+    } else if (categoriesOrder.value === "category_name") {
+      comp = a.name.localeCompare(b.name);
+    }
+    if (categoriesDirection.value === "desc") comp = -comp;
+    return comp;
+  });
+  return cats;
+});
 const countData = computed(() => data.value?.[1] ?? { count: 0 });
 useHead(() => ({
   title: selectedFeedId.value
