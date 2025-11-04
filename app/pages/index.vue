@@ -434,8 +434,8 @@
                   <q-card-section>
                     <MarkedText
                       v-if="getContent(item.entry.id)"
+                      class="entry-content"
                       :keyword="searchQuery"
-                      class="col entry-content"
                       style="max-width: 1000vw"
                       :text="getContent(item.entry.id)"
                     />
@@ -1145,4 +1145,7 @@ async function toggleStarOpenEntry() {
 }
 </script>
 
-<style></style>
+<style>
+@import url("~/assets/css/entry-content.css");
+@import url("~/assets/css/entry-summary.css");
+</style>

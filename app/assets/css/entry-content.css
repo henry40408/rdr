@@ -2,7 +2,7 @@
   /* Base layout */
   max-width: 65ch;
   margin: 0 auto;
-  padding: 1.5rem;
+  padding: 1rem;
 
   /* Base typography */
   font-size: 18px;
@@ -184,8 +184,8 @@ body.body--dark .entry-content strong {
 @media (max-width: 768px) {
   .entry-content {
     font-size: 16px;
-    padding: 1rem;
-    margin: 0 10px;
+    padding: 0.5rem;
+    margin: 0 auto;
     line-height: 1.5;
   }
 }
@@ -245,6 +245,17 @@ body.body--dark .entry-content strong {
   margin: 1.5em 0;
   border-radius: 8px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.entry-content iframe {
+  max-width: 100%;
+  margin: 1.5em 0;
+}
+
+.entry-content video {
+  max-width: 100%;
+  height: auto;
+  margin: 1.5em 0;
 }
 
 /* Dark Mode - Image shadow adjustment */
