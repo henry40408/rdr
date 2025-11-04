@@ -15,7 +15,12 @@ export default defineNuxtConfig({
       ],
     },
   },
-  css: ["@/assets/css/main.css"],
+  css: [
+    "@/assets/css/main.css",
+    "@/assets/css/anchor.css",
+    "@/assets/css/entry-content.css",
+    "@/assets/css/entry-summary.css",
+  ],
   modules: ["@nuxt/eslint", "@nuxt/test-utils/module", "@vueuse/nuxt", "nuxt-auth-utils", "nuxt-quasar-ui"],
   runtimeConfig: {
     dbPath: "./data/db.sqlite3",

@@ -1,0 +1,11 @@
+.entry-summary {
+  width: 100%;
+  overflow: hidden;
+}
+
+.entry-summary pre {
+  margin: 0;
+  overflow-wrap: break-word;
+  text-wrap: break-word;
+  white-space: pre-wrap;
+}

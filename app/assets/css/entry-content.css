@@ -1,0 +1,284 @@
+.entry-content {
+  /* Base layout */
+  max-width: 65ch;
+  margin: 0 auto;
+  padding: 1.5rem;
+
+  /* Base typography */
+  font-size: 18px;
+  line-height: 1.6;
+  font-weight: 400;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  /* Text handling */
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  text-rendering: optimizeLegibility;
+}
+
+/* ===== LIGHT MODE STYLES ===== */
+.entry-content {
+  color: #2c3e50;
+  background-color: #ffffff;
+}
+
+/* Light Mode - Headings */
+.entry-content h1,
+.entry-content h2,
+.entry-content h3,
+.entry-content h4,
+.entry-content h5,
+.entry-content h6 {
+  font-weight: 700;
+  color: #1a202c;
+  margin-top: 2em;
+  margin-bottom: 0.5em;
+  line-height: 1.3;
+}
+
+/* Light Mode - Links */
+.entry-content a {
+  color: #3182ce;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  transition: color 0.2s ease;
+}
+
+.entry-content a:hover {
+  color: #2c5aa0;
+  text-decoration-thickness: 2px;
+}
+
+/* Light Mode - Blockquotes */
+.entry-content blockquote {
+  margin: 1.5em 0;
+  padding: 1em 1.5em;
+  border-left: 4px solid #e2e8f0;
+  background-color: #f8fafc;
+  font-style: italic;
+  color: #4a5568;
+}
+
+/* Light Mode - Code */
+.entry-content code {
+  background-color: #f1f5f9;
+  padding: 0.125em 0.25em;
+  border-radius: 4px;
+  font-size: 0.875em;
+  font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
+  color: #e53e3e;
+}
+
+.entry-content pre {
+  background-color: #1a202c;
+  color: #e2e8f0;
+  padding: 1em;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 1.5em 0;
+}
+
+.entry-content pre code {
+  background-color: transparent;
+  padding: 0;
+  color: inherit;
+  font-size: 0.875em;
+}
+
+/* Light Mode - Tables */
+.entry-content th,
+.entry-content td {
+  padding: 0.75em;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.entry-content th {
+  font-weight: 600;
+  background-color: #f8fafc;
+  color: #2d3748;
+}
+
+/* Light Mode - Horizontal rules */
+.entry-content hr {
+  border: none;
+  height: 1px;
+  background-color: #e2e8f0;
+  margin: 2em 0;
+}
+
+/* Light Mode - Emphasis */
+.entry-content strong {
+  font-weight: 600;
+  color: #1a202c;
+}
+
+/* ===== DARK MODE STYLES ===== */
+body.body--dark .entry-content {
+  color: #e2e8f0;
+  background-color: transparent;
+}
+
+/* Dark Mode - Headings */
+body.body--dark .entry-content h1,
+body.body--dark .entry-content h2,
+body.body--dark .entry-content h3,
+body.body--dark .entry-content h4,
+body.body--dark .entry-content h5,
+body.body--dark .entry-content h6 {
+  color: #f7fafc;
+}
+
+/* Dark Mode - Links */
+body.body--dark .entry-content a {
+  color: #63b3ed;
+}
+
+body.body--dark .entry-content a:hover {
+  color: #90cdf4;
+}
+
+/* Dark Mode - Blockquotes */
+body.body--dark .entry-content blockquote {
+  border-left-color: #4a5568;
+  background-color: #2d3748;
+  color: #cbd5e0;
+}
+
+/* Dark Mode - Code */
+body.body--dark .entry-content code {
+  background-color: #2d3748;
+  color: #f56565;
+}
+
+body.body--dark .entry-content pre {
+  background-color: #1a202c;
+  color: #e2e8f0;
+}
+
+/* Dark Mode - Tables */
+body.body--dark .entry-content th,
+body.body--dark .entry-content td {
+  border-bottom-color: #4a5568;
+}
+
+body.body--dark .entry-content th {
+  background-color: #2d3748;
+  color: #f7fafc;
+}
+
+/* Dark Mode - Horizontal rules */
+body.body--dark .entry-content hr {
+  background-color: #4a5568;
+}
+
+/* Dark Mode - Emphasis */
+body.body--dark .entry-content strong {
+  color: #f7fafc;
+}
+
+/* ===== SHARED STYLES ===== */
+/* Responsive design */
+@media (max-width: 768px) {
+  .entry-content {
+    font-size: 16px;
+    padding: 1rem;
+    margin: 0 10px;
+    line-height: 1.5;
+  }
+}
+
+/* Heading sizes */
+.entry-content h1 {
+  font-size: 2.25em;
+  margin-top: 0;
+}
+
+.entry-content h2 {
+  font-size: 1.875em;
+}
+
+.entry-content h3 {
+  font-size: 1.5em;
+}
+
+.entry-content h4 {
+  font-size: 1.25em;
+}
+
+/* Paragraph styles */
+.entry-content p {
+  margin-bottom: 1.25em;
+  text-align: justify;
+}
+
+.entry-content p:last-child {
+  margin-bottom: 0;
+}
+
+/* List styles */
+.entry-content ul,
+.entry-content ol {
+  margin: 1.25em 0;
+  padding-left: 1.5em;
+}
+
+.entry-content li {
+  margin-bottom: 0.5em;
+}
+
+.entry-content li:last-child {
+  margin-bottom: 0;
+}
+
+/* Blockquote base styles */
+.entry-content blockquote p {
+  margin-bottom: 0;
+}
+
+/* Image styles */
+.entry-content img {
+  max-width: 100%;
+  height: auto;
+  margin: 1.5em 0;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Dark Mode - Image shadow adjustment */
+body.body--dark .entry-content img {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+}
+
+/* Table base styles */
+.entry-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5em 0;
+  font-size: 0.875em;
+}
+
+/* Emphasis base styles */
+.entry-content em {
+  font-style: italic;
+}
+
+/* Vertical spacing optimization */
+.entry-content > *:first-child {
+  margin-top: 0;
+}
+
+.entry-content > *:last-child {
+  margin-bottom: 0;
+}
+
+/* Quasar integration */
+.entry-content.q-pa-md {
+  padding: 1rem;
+}
+
+.entry-content.q-pa-lg {
+  padding: 1.5rem;
+}

@@ -387,7 +387,7 @@
                     </div>
                   </q-card-section>
                   <q-card-section>
-                    <q-btn-group push>
+                    <div class="q-gutter-sm">
                       <q-btn
                         v-if="!fullContents[item.entry.id]"
                         :icon="scrapping[item.entry.id] ? 'cancel' : 'article'"
@@ -414,7 +414,7 @@
                             : summarizeEntry(item.entry.id)
                         "
                       />
-                    </q-btn-group>
+                    </div>
                   </q-card-section>
                   <q-card-section v-if="summarizationEnabled">
                     <UseClipboard
@@ -1145,43 +1145,4 @@ async function toggleStarOpenEntry() {
 }
 </script>
 
-<style>
-.body--dark a {
-  color: white;
-}
-
-.body--dark .entry-content a {
-  color: white;
-}
-
-.entry-summary {
-  width: 100%;
-  overflow: hidden;
-}
-
-.entry-summary pre {
-  margin: 0;
-  overflow-wrap: break-word;
-  text-wrap: break-word;
-  white-space: pre-wrap;
-}
-
-.entry-content img {
-  max-width: 100%;
-  height: auto;
-}
-
-.entry-content mark {
-  background-color: yellow;
-  color: black;
-}
-
-.entry-content pre {
-  overflow-x: auto;
-}
-
-.entry-content video {
-  max-width: 100%;
-  height: auto;
-}
-</style>
+<style></style>
