@@ -432,13 +432,19 @@
                     </UseClipboard>
                   </q-card-section>
                   <q-card-section>
-                    <div class="entry-content">
+                    <div v-if="!contentLoading[item.entry.id]" class="entry-content">
                       <MarkedText
                         v-if="getContent(item.entry.id)"
                         :keyword="searchQuery"
                         style="max-width: 1000vw"
                         :text="getContent(item.entry.id)"
                       />
+                      <q-banner v-else :class="isDark ? 'bg-grey-8 text-white' : 'bg-grey-2'">
+                        No content available for this entry.
+                      </q-banner>
+                    </div>
+                    <div v-else class="text-center">
+                      <q-spinner size="lg" />
                     </div>
                   </q-card-section>
                 </q-card>
@@ -504,6 +510,8 @@ const itemRefs = useTemplateRef("item-list");
 
 /** @type {Ref<{ [key: string]: string }> } */
 const contents = ref({});
+/** @type {Ref<{ [key: string]: boolean }> } */
+const contentLoading = ref({});
 /** @type {Ref<{ [key: string]: string }> } */
 const fullContents = ref({});
 /** @type {Ref<Record<string,"read"|"toggling"|"unread">>} */
@@ -805,8 +813,12 @@ async function load() {
  * @param {number} entryId
  */
 async function loadContent(entryId) {
+  if (contents.value[entryId]) return;
+
+  if (contentLoading.value[entryId]) return;
+  contentLoading.value[entryId] = true;
+
   try {
-    if (contents.value[entryId]) return;
     const { content } = await requestFetch(`/api/entries/${entryId}/content`);
     contents.value[entryId] = content;
   } catch (err) {
@@ -815,6 +827,8 @@ async function loadContent(entryId) {
       message: `Failed to load entry content: ${err}`,
       actions: [{ icon: "close", color: "white" }],
     });
+  } finally {
+    contentLoading.value[entryId] = false;
   }
 }
 
