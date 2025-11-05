@@ -32,8 +32,8 @@
 .entry-content h6 {
   font-weight: 700;
   color: #1a202c;
-  margin-top: 2em;
-  margin-bottom: 0.5em;
+  margin-top: 2rem;
+  margin-bottom: 0.5rem;
   line-height: 1.3;
 }
 
@@ -53,8 +53,8 @@
 
 /* Light Mode - Blockquotes */
 .entry-content blockquote {
-  margin: 1.5em 0;
-  padding: 1em 1.5em;
+  margin: 1.5rem 0;
+  padding: 1rem 1.5rem;
   border-left: 4px solid #e2e8f0;
   background-color: #f8fafc;
   font-style: italic;
@@ -64,9 +64,9 @@
 /* Light Mode - Code */
 .entry-content code {
   background-color: #f1f5f9;
-  padding: 0.125em 0.25em;
+  padding: 0.125rem 0.25rem;
   border-radius: 4px;
-  font-size: 0.875em;
+  font-size: 0.875rem;
   font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
   color: #e53e3e;
 }
@@ -74,23 +74,23 @@
 .entry-content pre {
   background-color: #1a202c;
   color: #e2e8f0;
-  padding: 1em;
+  padding: 1rem;
   border-radius: 8px;
   overflow-x: auto;
-  margin: 1.5em 0;
+  margin: 1.5rem 0;
 }
 
 .entry-content pre code {
   background-color: transparent;
   padding: 0;
   color: inherit;
-  font-size: 0.875em;
+  font-size: 0.875rem;
 }
 
 /* Light Mode - Tables */
 .entry-content th,
 .entry-content td {
-  padding: 0.75em;
+  padding: 0.75rem;
   text-align: left;
   border-bottom: 1px solid #e2e8f0;
 }
@@ -106,7 +106,7 @@
   border: none;
   height: 1px;
   background-color: #e2e8f0;
-  margin: 2em 0;
+  margin: 2rem 0;
 }
 
 /* Light Mode - Emphasis */
@@ -192,26 +192,27 @@ body.body--dark .entry-content strong {
 
 /* Heading sizes */
 .entry-content h1 {
-  font-size: 2.25em;
+  font-size: 2.25rem;
   margin-top: 0;
 }
 
 .entry-content h2 {
-  font-size: 1.875em;
+  font-size: 1.875rem;
 }
 
 .entry-content h3 {
-  font-size: 1.5em;
+  font-size: 1.5rem;
 }
 
 .entry-content h4 {
-  font-size: 1.25em;
+  font-size: 1.25rem;
 }
 
 /* Paragraph styles */
 .entry-content p {
-  margin-bottom: 1.25em;
-  text-align: justify;
+  margin-bottom: 1.25rem;
+  text-align: left;
+  text-wrap: balance; /* Use balanced ragged-right in modern browsers to avoid large word gaps */
 }
 
 .entry-content p:last-child {
@@ -221,12 +222,12 @@ body.body--dark .entry-content strong {
 /* List styles */
 .entry-content ul,
 .entry-content ol {
-  margin: 1.25em 0;
-  padding-left: 1.5em;
+  margin: 1.25rem 0;
+  padding-left: 1.5rem;
 }
 
 .entry-content li {
-  margin-bottom: 0.5em;
+  margin-bottom: 0.5rem;
 }
 
 .entry-content li:last-child {
@@ -242,20 +243,20 @@ body.body--dark .entry-content strong {
 .entry-content img {
   max-width: 100%;
   height: auto;
-  margin: 1.5em 0;
+  margin: 1.5rem 0;
   border-radius: 8px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 .entry-content iframe {
   max-width: 100%;
-  margin: 1.5em 0;
+  margin: 1.5rem 0;
 }
 
 .entry-content video {
   max-width: 100%;
   height: auto;
-  margin: 1.5em 0;
+  margin: 1.5rem 0;
 }
 
 /* Dark Mode - Image shadow adjustment */
@@ -267,8 +268,8 @@ body.body--dark .entry-content img {
 .entry-content table {
   width: 100%;
   border-collapse: collapse;
-  margin: 1.5em 0;
-  font-size: 0.875em;
+  margin: 1.5rem 0;
+  font-size: 0.875rem;
 }
 
 /* Emphasis base styles */
