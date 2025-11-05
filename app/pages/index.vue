@@ -238,11 +238,6 @@
             </q-item-section>
           </q-item>
         </q-list>
-        <q-card v-if="loading" flat>
-          <q-card-section class="row justify-center">
-            <q-spinner size="lg" color="primary" />
-          </q-card-section>
-        </q-card>
         <q-pull-to-refresh @refresh="resetThenLoad">
           <q-infinite-scroll ref="infinite-scroll" :offset="250" @load="onLoad">
             <q-list separator>
@@ -283,7 +278,7 @@
                     left-color="secondary"
                     :class="{
                       'bg-grey-9': isDark && isRead(item.entry.id),
-                      'bg-grey-1': !isDark && isRead(item.entry.id),
+                      'bg-grey-3': !isDark && isRead(item.entry.id),
                     }"
                     @left="({ reset }) => slideLeft(item.entry.id, index, reset)"
                     @right="({ reset }) => slideRight(item.entry.id, index, reset)"
@@ -456,7 +451,7 @@
                 </q-card>
               </q-expansion-item>
               <q-item v-if="!hasMore && items.length > 0">
-                <q-item-section>
+                <q-item-section class="q-pb-md">
                   <q-item-label header class="text-center">End of list</q-item-label>
                 </q-item-section>
               </q-item>
@@ -464,22 +459,20 @@
           </q-infinite-scroll>
         </q-pull-to-refresh>
 
-        <q-page-sticky v-if="anyExpanded" :offset="[0, 18]" position="bottom">
-          <div class="q-gutter-md">
-            <q-btn
-              fab
-              padding="sm"
-              color="secondary"
-              :icon="isOpenEntryStarred() ? 'star' : 'star_border'"
-              @click="toggleStarOpenEntry()"
-            />
-            <q-btn fab icon="close" padding="sm" color="primary" @click="collapseOpenItem()" />
-            <q-btn fab icon="done" padding="sm" color="secondary" @click="markOpenAsReadAndCollapse()" />
-          </div>
-        </q-page-sticky>
-
         <q-page-sticky :offset="[18, 18]" position="bottom-right">
-          <q-btn fab color="primary" icon="done_all" @click="markManyAsReadDialog()" />
+          <div class="column q-gutter-md">
+            <template v-if="anyExpanded">
+              <q-btn
+                fab
+                color="secondary"
+                :icon="isOpenEntryStarred() ? 'star' : 'star_border'"
+                @click="toggleStarOpenEntry()"
+              />
+              <q-btn fab icon="done" color="secondary" @click="markOpenAsReadAndCollapse()" />
+              <q-btn fab icon="close" color="primary" @click="collapseOpenItem()" />
+            </template>
+            <q-btn v-else fab color="primary" icon="done_all" @click="markManyAsReadDialog()" />
+          </div>
         </q-page-sticky>
       </q-page>
     </q-page-container>
@@ -500,6 +493,12 @@ const { categoriesDirection, categoriesOrder, hideEmpty } = useLocalSettings();
 const { loggedIn, session, clear: logout } = useUserSession();
 
 const $q = useQuasar();
+$q.loadingBar.setDefaults({
+  color: "accent",
+  size: "3px",
+  position: "bottom",
+});
+
 const isDark = useDark();
 onMounted(() => {
   $q.dark.set(isDark.value);
@@ -767,6 +766,7 @@ async function load() {
   query.offset = offset.value;
 
   if (loading.value) return;
+  $q.loadingBar.start();
   loading.value = true;
 
   try {
@@ -812,6 +812,7 @@ async function load() {
     hasMore.value = false;
   } finally {
     loading.value = false;
+    $q.loadingBar.stop();
   }
 }
 

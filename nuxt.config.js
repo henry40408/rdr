@@ -41,6 +41,6 @@ export default defineNuxtConfig({
     singleUser: true,
   },
   quasar: {
-    plugins: ["Dialog", "Notify"],
+    plugins: ["Dialog", "LoadingBar", "Notify"],
   },
 });
