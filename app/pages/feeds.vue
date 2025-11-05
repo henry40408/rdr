@@ -8,8 +8,8 @@
           </q-avatar>
           rdr
         </q-toolbar-title>
+        <NavTabs />
       </q-toolbar>
-      <NavTabs />
     </q-header>
 
     <q-page-container>
