@@ -384,22 +384,31 @@
                       <q-btn-group :spread="$q.screen.lt.sm" :class="{ column: $q.screen.lt.sm }">
                         <q-btn
                           v-if="!fullContents[item.entry.id]"
+                          :padding="$q.screen.lt.sm ? 'md sm' : 'sm'"
                           :icon="scrapping[item.entry.id] ? 'cancel' : 'article'"
                           :label="scrapping[item.entry.id] ? 'Cancel' : 'Full Content'"
                           @click="
                             scrapping[item.entry.id] ? cancelScraping(item.entry.id) : getFullContent(item.entry.id)
                           "
                         />
-                        <q-btn v-else icon="undo" label="See original" @click="delete fullContents[item.entry.id]" />
+                        <q-btn
+                          v-else
+                          icon="undo"
+                          label="See original"
+                          :padding="$q.screen.lt.sm ? 'md sm' : 'sm'"
+                          @click="delete fullContents[item.entry.id]"
+                        />
                         <q-btn
                           v-if="saveEnabled"
                           icon="save"
                           label="Save"
                           :loading="saving[item.entry.id]"
+                          :padding="$q.screen.lt.sm ? 'md sm' : 'sm'"
                           @click="saveEntry(item.entry.id)"
                         />
                         <q-btn
                           v-if="summarizationEnabled && !summarizations[item.entry.id]"
+                          :padding="$q.screen.lt.sm ? 'md sm' : 'sm'"
                           :icon="summarizing[item.entry.id] ? 'cancel' : 'psychology'"
                           :label="summarizing[item.entry.id] ? 'Cancel' : 'Summarize'"
                           @click="
@@ -412,6 +421,7 @@
                           v-else
                           icon="delete"
                           label="Remove summary"
+                          :padding="$q.screen.lt.sm ? 'md sm' : 'sm'"
                           @click="delete summarizations[item.entry.id]"
                         />
                       </q-btn-group>
