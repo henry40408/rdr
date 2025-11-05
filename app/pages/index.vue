@@ -9,23 +9,15 @@
           </q-avatar>
           rdr
         </q-toolbar-title>
-        <q-input
-          v-model="searchQuery"
-          dark
-          dense
-          borderless
-          debounce="500"
-          placeholder="Search"
-          input-class="text-right"
-        >
+        <q-input v-model="searchQuery" dark dense filled debounce="500" placeholder="Search" input-class="text-right">
           <template #append>
             <q-icon v-if="!searchQuery" name="search" />
             <q-icon v-else name="clear" class="cursor-pointer" @click="searchQuery = ''" />
           </template>
         </q-input>
+        <NavTabs />
         <q-btn flat dense round icon="menu" @click="rightDrawerOpen = !rightDrawerOpen" />
       </q-toolbar>
-      <NavTabs />
     </q-header>
 
     <q-drawer v-model="leftDrawerOpen" bordered persistent side="left" show-if-above>
