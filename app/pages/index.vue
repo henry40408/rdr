@@ -25,24 +25,28 @@
         <q-item-label header>Categories</q-item-label>
         <q-item>
           <q-item-section>
-            <q-select
-              v-model="categoriesOrder"
-              dense
-              filled
-              emit-value
-              map-options
-              label="Sort by"
-              :options="[
-                { label: 'Unread count', value: 'unread_count' },
-                { label: 'Name', value: 'category_name' },
-              ]"
-            />
+            <ClientOnly>
+              <q-select
+                v-model="categoriesOrder"
+                dense
+                filled
+                emit-value
+                map-options
+                label="Sort by"
+                :options="[
+                  { label: 'Unread count', value: 'unread_count' },
+                  { label: 'Name', value: 'category_name' },
+                ]"
+              />
+            </ClientOnly>
           </q-item-section>
         </q-item>
         <q-item>
           <q-item-section>
-            <q-radio v-model="categoriesDirection" val="desc" label="Descending" />
-            <q-radio v-model="categoriesDirection" val="asc" label="Ascending" />
+            <ClientOnly>
+              <q-radio v-model="categoriesDirection" val="desc" label="Descending" />
+              <q-radio v-model="categoriesDirection" val="asc" label="Ascending" />
+            </ClientOnly>
           </q-item-section>
         </q-item>
         <q-item>
