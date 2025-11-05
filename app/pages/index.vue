@@ -387,36 +387,44 @@
                     </div>
                   </q-card-section>
                   <q-card-section>
-                    <div class="q-gutter-sm">
-                      <q-btn
-                        v-if="!fullContents[item.entry.id]"
-                        :icon="scrapping[item.entry.id] ? 'cancel' : 'article'"
-                        :label="scrapping[item.entry.id] ? 'Cancel' : 'Full Content'"
-                        @click="
-                          scrapping[item.entry.id] ? cancelScraping(item.entry.id) : getFullContent(item.entry.id)
-                        "
-                      />
-                      <q-btn v-else icon="undo" label="See original" @click="delete fullContents[item.entry.id]" />
-                      <q-btn
-                        v-if="saveEnabled"
-                        icon="save"
-                        label="Save"
-                        :loading="saving[item.entry.id]"
-                        @click="saveEntry(item.entry.id)"
-                      />
-                      <q-btn
-                        v-if="summarizationEnabled && !summarizations[item.entry.id]"
-                        :icon="summarizing[item.entry.id] ? 'cancel' : 'psychology'"
-                        :label="summarizing[item.entry.id] ? 'Cancel' : 'Summarize'"
-                        @click="
-                          summarizing[item.entry.id]
-                            ? cancelSummarization(item.entry.id)
-                            : summarizeEntry(item.entry.id)
-                        "
-                      />
+                    <div class="text-center">
+                      <q-btn-group :spread="$q.screen.lt.sm" :class="{ column: $q.screen.lt.sm }">
+                        <q-btn
+                          v-if="!fullContents[item.entry.id]"
+                          :icon="scrapping[item.entry.id] ? 'cancel' : 'article'"
+                          :label="scrapping[item.entry.id] ? 'Cancel' : 'Full Content'"
+                          @click="
+                            scrapping[item.entry.id] ? cancelScraping(item.entry.id) : getFullContent(item.entry.id)
+                          "
+                        />
+                        <q-btn v-else icon="undo" label="See original" @click="delete fullContents[item.entry.id]" />
+                        <q-btn
+                          v-if="saveEnabled"
+                          icon="save"
+                          label="Save"
+                          :loading="saving[item.entry.id]"
+                          @click="saveEntry(item.entry.id)"
+                        />
+                        <q-btn
+                          v-if="summarizationEnabled && !summarizations[item.entry.id]"
+                          :icon="summarizing[item.entry.id] ? 'cancel' : 'psychology'"
+                          :label="summarizing[item.entry.id] ? 'Cancel' : 'Summarize'"
+                          @click="
+                            summarizing[item.entry.id]
+                              ? cancelSummarization(item.entry.id)
+                              : summarizeEntry(item.entry.id)
+                          "
+                        />
+                        <q-btn
+                          v-else
+                          icon="delete"
+                          label="Remove summary"
+                          @click="delete summarizations[item.entry.id]"
+                        />
+                      </q-btn-group>
                     </div>
                   </q-card-section>
-                  <q-card-section v-if="summarizationEnabled">
+                  <q-card-section v-if="summarizations[item.entry.id]">
                     <UseClipboard
                       v-if="summarizations[item.entry.id]"
                       v-slot="{ copy, copied }"
@@ -432,13 +440,14 @@
                     </UseClipboard>
                   </q-card-section>
                   <q-card-section>
-                    <MarkedText
-                      v-if="getContent(item.entry.id)"
-                      class="entry-content"
-                      :keyword="searchQuery"
-                      style="max-width: 1000vw"
-                      :text="getContent(item.entry.id)"
-                    />
+                    <div class="entry-content">
+                      <MarkedText
+                        v-if="getContent(item.entry.id)"
+                        :keyword="searchQuery"
+                        style="max-width: 1000vw"
+                        :text="getContent(item.entry.id)"
+                      />
+                    </div>
                   </q-card-section>
                 </q-card>
               </q-expansion-item>
@@ -875,6 +884,7 @@ function markManyAsReadDialog() {
 async function markAsRead(entryId) {
   if (entryRead.value[entryId] === "read") return;
   const value = entryRead.value[entryId];
+  const title = items.value.find((i) => i.entry.id === entryId)?.entry.title ?? "";
   try {
     entryRead.value[entryId] = "toggling";
     await requestFetch(`/api/entries/${entryId}/read`, { method: "PUT" });
@@ -883,7 +893,7 @@ async function markAsRead(entryId) {
   } catch (err) {
     $q.notify({
       type: "negative",
-      message: `Failed to mark entry ${entryId} as read: ${err}`,
+      message: `Failed to mark entry "${title}" as read: ${err}`,
       actions: [{ icon: "close", color: "white" }],
     });
     if (value) entryRead.value[entryId] = value;
@@ -967,17 +977,18 @@ async function saveEntry(entryId) {
   if (saving.value[entryId]) return;
   saving.value[entryId] = true;
 
+  const title = items.value.find((i) => i.entry.id === entryId)?.entry.title ?? "";
   try {
     await requestFetch(`/api/entries/${entryId}/save`, { method: "POST" });
     $q.notify({
       type: "positive",
-      message: `Entry ${entryId} saved successfully.`,
+      message: `Entry "${title}" saved successfully.`,
       actions: [{ icon: "close", color: "white" }],
     });
   } catch (err) {
     $q.notify({
       type: "negative",
-      message: `Failed to save entry ${entryId}: ${err}`,
+      message: `Failed to save entry "${title}": ${err}`,
       actions: [{ icon: "close", color: "white" }],
     });
   } finally {
@@ -1055,6 +1066,7 @@ async function summarizeEntry(entryId) {
   if (summarizing.value[entryId]) return;
   summarizing.value[entryId] = true;
 
+  const entryTitle = entry.entry.title ?? "Untitled";
   try {
     const text = await requestFetch(`/api/entries/${entryId}/summarize`, { signal: controller.signal });
 
@@ -1070,13 +1082,13 @@ ${pangu.spacingText(content ?? "")}`;
     if (summarizingControllers.value[entryId]?.signal.aborted) {
       $q.notify({
         type: "info",
-        message: `Summarization for entry ${entryId} was canceled.`,
+        message: `Summarization for entry ${entryTitle} was canceled.`,
         actions: [{ icon: "close", color: "white" }],
       });
     } else {
       $q.notify({
         type: "negative",
-        message: `Failed to summarize entry ${entryId}: ${err}`,
+        message: `Failed to summarize entry ${entryTitle}: ${err}`,
         actions: [{ icon: "close", color: "white" }],
       });
     }
@@ -1095,13 +1107,14 @@ async function toggleReadEntry(entryId, index) {
   const value = entryRead.value[entryId];
   entryRead.value[entryId] = "toggling";
 
+  const title = items.value.find((i) => i.entry.id === entryId)?.entry.title ?? "";
   try {
     await requestFetch(`/api/entries/${entryId}/read`, { method: "PUT" });
     refresh();
   } catch (err) {
     $q.notify({
       type: "negative",
-      message: `Failed to toggle entry ${entryId}: ${err}`,
+      message: `Failed to toggle entry "${title}": ${err}`,
       actions: [{ icon: "close", color: "white" }],
     });
   } finally {
@@ -1119,6 +1132,7 @@ async function toggleStarEntry(entryId) {
   const value = entryStar.value[entryId];
   entryStar.value[entryId] = "starring";
 
+  const title = items.value.find((i) => i.entry.id === entryId)?.entry.title ?? "";
   try {
     await requestFetch(`/api/entries/${entryId}/star`, { method: "PUT" });
     refresh();
@@ -1126,7 +1140,7 @@ async function toggleStarEntry(entryId) {
   } catch (err) {
     $q.notify({
       type: "negative",
-      message: `Failed to toggle star for entry ${entryId}: ${err}`,
+      message: `Failed to toggle star for entry "${title}": ${err}`,
       actions: [{ icon: "close", color: "white" }],
     });
   }

@@ -1,6 +1,6 @@
 <template>
   <!-- eslint-disable-next-line vue/no-v-html -->
-  <div v-html="processed" />
+  <span v-html="processed" />
 </template>
 
 <script setup>
