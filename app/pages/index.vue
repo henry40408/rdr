@@ -327,7 +327,9 @@
                         </q-item-label>
                       </q-item-section>
                       <q-item-section v-if="summarizationEnabled" top side>
-                        <q-icon v-if="summarizations[item.entry.id]" size="xs" color="positive" name="psychology" />
+                        <q-icon v-if="fullContents[item.entry.id]" size="xs" name="article" />
+                        <q-spinner v-if="scrapping[item.entry.id]" />
+                        <q-icon v-if="summarizations[item.entry.id]" size="xs" name="psychology" />
                         <q-spinner v-if="summarizing[item.entry.id]" />
                       </q-item-section>
                     </q-item>
@@ -955,7 +957,8 @@ async function resetThenLoad(done) {
     saving.value = {};
     scrapping.value = {};
     scrappingControllers.value = {};
-    summarizations.value = {};
+    // intentionally not resetting summarizations to preserve cached data
+    // summarizations.value = {};
     summarizing.value = {};
     summarizingControllers.value = {};
 
