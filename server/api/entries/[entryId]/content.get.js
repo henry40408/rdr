@@ -89,7 +89,7 @@ export default defineEventHandler(async (event) => {
   if (!feed) throw createError({ statusCode: 404, message: "Feed not found" });
 
   const content = await repository.findEntryContentById(userId, entryId);
-  if (!content && content !== "") throw createError({ statusCode: 404, message: "Entry not found" });
+  if (!content) return { content: "" };
 
   const trimmed = content.trim();
   if (trimmed === "") return { content: "" };

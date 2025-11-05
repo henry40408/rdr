@@ -25,24 +25,28 @@
         <q-item-label header>Categories</q-item-label>
         <q-item>
           <q-item-section>
-            <q-select
-              v-model="categoriesOrder"
-              dense
-              filled
-              emit-value
-              map-options
-              label="Sort by"
-              :options="[
-                { label: 'Unread count', value: 'unread_count' },
-                { label: 'Name', value: 'category_name' },
-              ]"
-            />
+            <ClientOnly>
+              <q-select
+                v-model="categoriesOrder"
+                dense
+                filled
+                emit-value
+                map-options
+                label="Sort by"
+                :options="[
+                  { label: 'Unread count', value: 'unread_count' },
+                  { label: 'Name', value: 'category_name' },
+                ]"
+              />
+            </ClientOnly>
           </q-item-section>
         </q-item>
         <q-item>
           <q-item-section>
-            <q-radio v-model="categoriesDirection" val="desc" label="Descending" />
-            <q-radio v-model="categoriesDirection" val="asc" label="Ascending" />
+            <ClientOnly>
+              <q-radio v-model="categoriesDirection" val="desc" label="Descending" />
+              <q-radio v-model="categoriesDirection" val="asc" label="Ascending" />
+            </ClientOnly>
           </q-item-section>
         </q-item>
         <q-item>
@@ -234,11 +238,6 @@
             </q-item-section>
           </q-item>
         </q-list>
-        <q-card v-if="loading" flat>
-          <q-card-section class="row justify-center">
-            <q-spinner size="lg" color="primary" />
-          </q-card-section>
-        </q-card>
         <q-pull-to-refresh @refresh="resetThenLoad">
           <q-infinite-scroll ref="infinite-scroll" :offset="250" @load="onLoad">
             <q-list separator>
@@ -279,7 +278,7 @@
                     left-color="secondary"
                     :class="{
                       'bg-grey-9': isDark && isRead(item.entry.id),
-                      'bg-grey-1': !isDark && isRead(item.entry.id),
+                      'bg-grey-3': !isDark && isRead(item.entry.id),
                     }"
                     @left="({ reset }) => slideLeft(item.entry.id, index, reset)"
                     @right="({ reset }) => slideRight(item.entry.id, index, reset)"
@@ -327,7 +326,9 @@
                         </q-item-label>
                       </q-item-section>
                       <q-item-section v-if="summarizationEnabled" top side>
-                        <q-icon v-if="summarizations[item.entry.id]" size="xs" color="positive" name="psychology" />
+                        <q-icon v-if="fullContents[item.entry.id]" size="xs" name="article" />
+                        <q-spinner v-if="scrapping[item.entry.id]" />
+                        <q-icon v-if="summarizations[item.entry.id]" size="xs" name="psychology" />
                         <q-spinner v-if="summarizing[item.entry.id]" />
                       </q-item-section>
                     </q-item>
@@ -432,19 +433,25 @@
                     </UseClipboard>
                   </q-card-section>
                   <q-card-section>
-                    <div class="entry-content">
+                    <div v-if="!contentLoading[item.entry.id]" class="entry-content">
                       <MarkedText
                         v-if="getContent(item.entry.id)"
                         :keyword="searchQuery"
                         style="max-width: 1000vw"
                         :text="getContent(item.entry.id)"
                       />
+                      <q-banner v-else :class="isDark ? 'bg-grey-8 text-white' : 'bg-grey-2'">
+                        No content available for this entry.
+                      </q-banner>
+                    </div>
+                    <div v-else class="text-center">
+                      <q-spinner size="lg" />
                     </div>
                   </q-card-section>
                 </q-card>
               </q-expansion-item>
               <q-item v-if="!hasMore && items.length > 0">
-                <q-item-section>
+                <q-item-section class="q-pb-md">
                   <q-item-label header class="text-center">End of list</q-item-label>
                 </q-item-section>
               </q-item>
@@ -452,22 +459,20 @@
           </q-infinite-scroll>
         </q-pull-to-refresh>
 
-        <q-page-sticky v-if="anyExpanded" :offset="[0, 18]" position="bottom">
-          <div class="q-gutter-md">
-            <q-btn
-              fab
-              padding="sm"
-              color="secondary"
-              :icon="isOpenEntryStarred() ? 'star' : 'star_border'"
-              @click="toggleStarOpenEntry()"
-            />
-            <q-btn fab icon="close" padding="sm" color="primary" @click="collapseOpenItem()" />
-            <q-btn fab icon="done" padding="sm" color="secondary" @click="markOpenAsReadAndCollapse()" />
-          </div>
-        </q-page-sticky>
-
         <q-page-sticky :offset="[18, 18]" position="bottom-right">
-          <q-btn fab color="primary" icon="done_all" @click="markManyAsReadDialog()" />
+          <div class="column q-gutter-md">
+            <template v-if="anyExpanded">
+              <q-btn
+                fab
+                color="secondary"
+                :icon="isOpenEntryStarred() ? 'star' : 'star_border'"
+                @click="toggleStarOpenEntry()"
+              />
+              <q-btn fab icon="done" color="secondary" @click="markOpenAsReadAndCollapse()" />
+              <q-btn fab icon="close" color="primary" @click="collapseOpenItem()" />
+            </template>
+            <q-btn v-else fab color="primary" icon="done_all" @click="markManyAsReadDialog()" />
+          </div>
         </q-page-sticky>
       </q-page>
     </q-page-container>
@@ -488,6 +493,12 @@ const { categoriesDirection, categoriesOrder, hideEmpty } = useLocalSettings();
 const { loggedIn, session, clear: logout } = useUserSession();
 
 const $q = useQuasar();
+$q.loadingBar.setDefaults({
+  color: "accent",
+  size: "3px",
+  position: "bottom",
+});
+
 const isDark = useDark();
 onMounted(() => {
   $q.dark.set(isDark.value);
@@ -504,6 +515,8 @@ const itemRefs = useTemplateRef("item-list");
 
 /** @type {Ref<{ [key: string]: string }> } */
 const contents = ref({});
+/** @type {Ref<{ [key: string]: boolean }> } */
+const contentLoading = ref({});
 /** @type {Ref<{ [key: string]: string }> } */
 const fullContents = ref({});
 /** @type {Ref<Record<string,"read"|"toggling"|"unread">>} */
@@ -753,6 +766,7 @@ async function load() {
   query.offset = offset.value;
 
   if (loading.value) return;
+  $q.loadingBar.start();
   loading.value = true;
 
   try {
@@ -798,6 +812,7 @@ async function load() {
     hasMore.value = false;
   } finally {
     loading.value = false;
+    $q.loadingBar.stop();
   }
 }
 
@@ -805,8 +820,12 @@ async function load() {
  * @param {number} entryId
  */
 async function loadContent(entryId) {
+  if (contents.value[entryId]) return;
+
+  if (contentLoading.value[entryId]) return;
+  contentLoading.value[entryId] = true;
+
   try {
-    if (contents.value[entryId]) return;
     const { content } = await requestFetch(`/api/entries/${entryId}/content`);
     contents.value[entryId] = content;
   } catch (err) {
@@ -815,6 +834,8 @@ async function loadContent(entryId) {
       message: `Failed to load entry content: ${err}`,
       actions: [{ icon: "close", color: "white" }],
     });
+  } finally {
+    contentLoading.value[entryId] = false;
   }
 }
 
@@ -941,7 +962,8 @@ async function resetThenLoad(done) {
     saving.value = {};
     scrapping.value = {};
     scrappingControllers.value = {};
-    summarizations.value = {};
+    // intentionally not resetting summarizations to preserve cached data
+    // summarizations.value = {};
     summarizing.value = {};
     summarizingControllers.value = {};
 

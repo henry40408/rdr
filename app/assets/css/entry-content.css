@@ -211,8 +211,6 @@ body.body--dark .entry-content strong {
 /* Paragraph styles */
 .entry-content p {
   margin-bottom: 1.25rem;
-  text-align: left;
-  text-wrap: balance; /* Use balanced ragged-right in modern browsers to avoid large word gaps */
 }
 
 .entry-content p:last-child {
