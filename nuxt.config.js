@@ -43,4 +43,7 @@ export default defineNuxtConfig({
   quasar: {
     plugins: ["Dialog", "LoadingBar", "Notify"],
   },
+  typescript: {
+    typeCheck: true,
+  },
 });
