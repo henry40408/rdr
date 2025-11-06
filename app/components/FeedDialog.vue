@@ -7,13 +7,13 @@
 
       <q-card-section>
         <q-input v-model="xmlUrl" label="Feed XML URL" />
-        <q-input v-model="htmlUrl" label="Feed HTML URL" />
+        <q-input v-model="htmlUrl" label="Feed HTML URL (Optional)" />
         <q-input v-model="title" label="Feed Title" />
       </q-card-section>
 
       <q-card-actions align="right">
+        <q-btn flat label="Cancel" @click="onDialogCancel" />
         <q-btn label="OK" color="primary" :disabled="!valid" @click="onOKClick" />
-        <q-btn label="Cancel" color="primary" @click="onDialogCancel" />
       </q-card-actions>
     </q-card>
   </q-dialog>

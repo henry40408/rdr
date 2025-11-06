@@ -10,8 +10,8 @@
       </q-card-section>
 
       <q-card-actions align="right">
+        <q-btn flat label="Cancel" @click="onDialogCancel" />
         <q-btn label="OK" color="primary" :disabled="!valid" @click="onOKClick" />
-        <q-btn label="Cancel" color="primary" @click="onDialogCancel" />
       </q-card-actions>
     </q-card>
   </q-dialog>
