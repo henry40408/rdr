@@ -3,6 +3,7 @@
 import { describe, it } from "vitest";
 import { digestUrl, normalizeDatetime, parseDataURL } from "../../server/utils/helper.js";
 import assert from "node:assert";
+import { replaceForTiddlyWiki } from "../../shared/utils/index.js";
 
 describe("digestUrl", () => {
   const secret = "my_secret_key";
@@ -72,5 +73,21 @@ describe("parseDataURL", () => {
     assert.strictEqual(result.mediaType, "text/plain");
     assert.strictEqual(result.encoding, "utf8");
     assert.strictEqual(result.data.toString("utf-8"), "Hello, World!");
+  });
+});
+
+describe("replaceForTiddlyWiki", () => {
+  it("should replace pipe and brackets correctly", () => {
+    const input = "This|is[a]{test}";
+    const expected = "This-is(a)(test)";
+    const output = replaceForTiddlyWiki(input);
+    assert.strictEqual(output, expected);
+  });
+
+  it("should handle strings without special characters", () => {
+    const input = "Just a normal string.";
+    const expected = "Just a normal string.";
+    const output = replaceForTiddlyWiki(input);
+    assert.strictEqual(output, expected);
   });
 });

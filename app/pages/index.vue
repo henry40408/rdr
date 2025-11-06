@@ -406,24 +406,26 @@
                           :padding="$q.screen.lt.sm ? 'md sm' : 'sm'"
                           @click="saveEntry(item.entry.id)"
                         />
-                        <q-btn
-                          v-if="summarizationEnabled && !summarizations[item.entry.id]"
-                          :padding="$q.screen.lt.sm ? 'md sm' : 'sm'"
-                          :icon="summarizing[item.entry.id] ? 'cancel' : 'psychology'"
-                          :label="summarizing[item.entry.id] ? 'Cancel' : 'Summarize'"
-                          @click="
-                            summarizing[item.entry.id]
-                              ? cancelSummarization(item.entry.id)
-                              : summarizeEntry(item.entry.id)
-                          "
-                        />
-                        <q-btn
-                          v-else
-                          icon="delete"
-                          label="Remove summary"
-                          :padding="$q.screen.lt.sm ? 'md sm' : 'sm'"
-                          @click="delete summarizations[item.entry.id]"
-                        />
+                        <template v-if="summarizationEnabled">
+                          <q-btn
+                            v-if="!summarizations[item.entry.id]"
+                            :padding="$q.screen.lt.sm ? 'md sm' : 'sm'"
+                            :icon="summarizing[item.entry.id] ? 'cancel' : 'psychology'"
+                            :label="summarizing[item.entry.id] ? 'Cancel' : 'Summarize'"
+                            @click="
+                              summarizing[item.entry.id]
+                                ? cancelSummarization(item.entry.id)
+                                : summarizeEntry(item.entry.id)
+                            "
+                          />
+                          <q-btn
+                            v-else
+                            icon="delete"
+                            label="Remove summary"
+                            :padding="$q.screen.lt.sm ? 'md sm' : 'sm'"
+                            @click="delete summarizations[item.entry.id]"
+                          />
+                        </template>
                       </q-btn-group>
                     </div>
                   </q-card-section>
@@ -1095,7 +1097,7 @@ async function summarizeEntry(entryId) {
     const text = await requestFetch(`/api/entries/${entryId}/summarize`, { signal: controller.signal });
 
     const [prefixedTitle, content] = text.split("\n\n");
-    const title = (prefixedTitle ?? "").replace("Title: ", "").trim();
+    const title = replaceForTiddlyWiki((prefixedTitle ?? "").replace("Title: ", ""));
 
     summarizations.value[entryId] = `${pangu.spacingText(title)}
 
