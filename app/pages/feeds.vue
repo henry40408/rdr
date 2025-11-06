@@ -74,8 +74,14 @@
               </template>
 
               <q-card>
-                <q-card-section class="row items-center q-gutter-sm">
-                  <q-btn-group push>
+                <q-card-section>
+                  <q-btn-group>
+                    <q-btn
+                      icon="edit"
+                      label="Edit"
+                      color="primary"
+                      @click="updateCategoryDialog(category.id, category.name)"
+                    />
                     <q-btn
                       icon="refresh"
                       color="primary"
@@ -195,6 +201,7 @@
 </template>
 
 <script setup>
+import CategoryDialog from "../components/CategoryDialog.vue";
 import { formatDistanceToNow } from "date-fns";
 import { useQuasar } from "quasar";
 
@@ -484,5 +491,44 @@ function shouldShowFeed(feedId) {
   }
 
   return getFeedUnreadCount(feedId) > 0;
+}
+
+/**
+ * @param {number} categoryId
+ * @param {string} name
+ */
+async function updateCategoryDialog(categoryId, name) {
+  $q.dialog({
+    component: CategoryDialog,
+    componentProps: {
+      id: categoryId,
+      name,
+    },
+  }).onOk(
+    /**
+     * @param {object} data
+     * @param {string} data.name
+     */
+    async (data) => {
+      try {
+        await requestFetch(`/api/categories/${categoryId}`, {
+          method: "PATCH",
+          body: { name: data.name },
+        });
+        await refresh();
+        $q.notify({
+          type: "positive",
+          message: "Category updated successfully",
+          actions: [{ icon: "close", color: "white" }],
+        });
+      } catch (err) {
+        $q.notify({
+          type: "negative",
+          message: `Error updating category: ${err}`,
+          actions: [{ icon: "close", color: "white" }],
+        });
+      }
+    },
+  );
 }
 </script>

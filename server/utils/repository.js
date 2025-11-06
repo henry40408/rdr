@@ -749,6 +749,19 @@ export class Repository {
   }
 
   /**
+   * @param {number} userId
+   * @param {CategoryEntity} category
+   * @returns {Promise<number>}
+   */
+  async updateCategory(userId, category) {
+    const updated = await this.knex("categories")
+      .where({ user_id: userId, id: category.id })
+      .update({ name: category.name });
+    this.logger.info({ msg: "Updated category", categoryId: category.id, updated });
+    return updated;
+  }
+
+  /**
    * @param {object} opts
    * @param {number} opts.userId
    * @param {FeedEntity} opts.feed
