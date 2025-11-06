@@ -964,5 +964,24 @@ describe("Repository", () => {
       const feeds = await repository.findFeedsWithCategoryId(user.id, category.id);
       assert.strictEqual(feeds.length, 1);
     });
+
+    it("should update category", async () => {
+      const user = await createUser("updatecategoryuser", "updatecategorypassword");
+
+      const category = new CategoryEntity({
+        id: 0,
+        userId: user.id,
+        name: "Original Name",
+      });
+      await repository.upsertCategories(user.id, [category]);
+
+      category.name = "Updated Name";
+      const updatedCount = await repository.updateCategory(user.id, category);
+      assert.strictEqual(updatedCount, 1);
+
+      const row = await repository.knex("categories").where({ user_id: user.id, id: category.id }).first();
+      assert.ok(row);
+      assert.strictEqual(row.name, "Updated Name");
+    });
   });
 });
