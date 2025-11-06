@@ -14,7 +14,7 @@
 
     <q-page-container>
       <q-page>
-        <q-list padding>
+        <q-list padding class="q-pb-xl">
           <q-item header>New Feed</q-item>
           <q-item>
             <q-item-section>
@@ -80,14 +80,13 @@
               <q-card>
                 <q-card-section>
                   <q-btn-group>
-                    <q-btn icon="edit" label="Edit" @click="updateCategoryDialog(category.id)" />
+                    <q-btn icon="edit" @click="updateCategoryDialog(category.id)" />
                     <q-btn
                       icon="refresh"
-                      label="Refresh"
                       :loading="refreshingCategoryIds.has(category.id)"
                       @click="refreshCategory(category)"
                     />
-                    <q-btn icon="delete" label="Delete" color="negative" @click="deleteCategoryDialog(category.id)" />
+                    <q-btn icon="delete" color="negative" @click="deleteCategoryDialog(category.id)" />
                   </q-btn-group>
                 </q-card-section>
               </q-card>
@@ -155,21 +154,20 @@
                       <q-item-section>
                         <div>
                           <q-btn-group push>
-                            <q-btn icon="edit" label="Edit" @click="updateFeedDialog(feed.id)" />
+                            <q-btn icon="edit" @click="updateFeedDialog(feed.id)" />
                             <q-btn
                               icon="refresh"
-                              label="Refresh"
                               :loading="refreshingFeedIds.has(feed.id)"
                               @click="refreshFeed(feed)"
                             />
+                            <q-btn icon="delete" color="negative" @click="deleteFeedDialog(feed.id)" />
                             <q-btn
+                              icon="web"
                               label="Website"
                               target="_blank"
-                              icon="open_in_new"
                               :href="feed.htmlUrl"
                               rel="noopener noreferrer"
                             />
-                            <q-btn icon="delete" label="Delete" color="negative" @click="deleteFeedDialog(feed.id)" />
                           </q-btn-group>
                         </div>
                       </q-item-section>
@@ -193,7 +191,7 @@
         </q-banner>
 
         <q-page-sticky :offset="[18, 18]" position="bottom-right">
-          <q-btn fab icon="refresh" color="primary" @click="refreshAll()" />
+          <q-btn fab padding="sm" icon="refresh" color="primary" @click="refreshAll()" />
         </q-page-sticky>
       </q-page>
     </q-page-container>
