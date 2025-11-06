@@ -53,7 +53,7 @@ export class FeedEntity {
    * @param {number} opts.categoryId
    * @param {string} opts.title
    * @param {string} opts.xmlUrl
-   * @param {string} [opts.htmlUrl]
+   * @param {string} opts.htmlUrl
    * @param {string} [opts.fetchedAt]
    * @param {string} [opts.etag]
    * @param {string} [opts.lastModified]
