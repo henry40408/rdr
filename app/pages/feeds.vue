@@ -21,15 +21,16 @@
               <q-select
                 v-model="categoryName"
                 outlined
-                clearable
+                use-chips
                 use-input
                 label="Category Name"
-                :options="categoryOptions"
+                :options="filteredCategoryOptions"
                 hint="Create a new category by typing a name and pressing Enter. Clear to select existing."
                 @new-value="addCategory"
+                @filter="filterCategories"
               />
-              <q-input v-model="xmlUrl" outlined class="q-mt-sm" label="Feed URL" />
-              <q-input v-model="htmlUrl" outlined class="q-mt-sm" label="Website URL (Optional)" />
+              <q-input v-model="xmlUrl" outlined type="url" class="q-mt-sm" label="Feed URL" />
+              <q-input v-model="htmlUrl" outlined type="url" class="q-mt-sm" label="Website URL (Optional)" />
               <q-btn
                 class="q-mt-sm"
                 color="primary"
@@ -216,7 +217,10 @@ const { hideEmpty } = useLocalSettings();
 
 // New feed form fields
 const adding = ref(false);
-const categoryName = ref("");
+/** @type {Ref<string|null>} */
+const categoryName = ref(null);
+/** @type {Ref<string[]>} */
+const filteredCategoryOptions = ref([]);
 const htmlUrl = ref("");
 const xmlUrl = ref("");
 
@@ -231,16 +235,23 @@ const { data, refresh } = await useAsyncData(() =>
   Promise.all([requestFetch("/api/categories"), requestFetch("/api/feeds/data")]),
 );
 const categories = computed(() => data.value?.[0] ?? []);
+
 const categoryOptions = computed(() => (categories.value ?? []).map((category) => category.name));
+watchEffect(() => {
+  filteredCategoryOptions.value = categoryOptions.value;
+});
+
 const feedDataByFeedId = computed(() => data.value?.[1]?.feeds ?? {});
 
 /**
- * @param {string} val
- * @param {(val: string) => void} done
+ * @param {string} inputValue
+ * @param {(val: string, mode: 'add'|'add-unique'|'toggle') => void} doneFn
  */
-function addCategory(val, done) {
-  categoryName.value = val;
-  done(val);
+function addCategory(inputValue, doneFn) {
+  if (inputValue && !categoryOptions.value.includes(inputValue)) {
+    categoryName.value = inputValue;
+  }
+  doneFn(inputValue, "toggle");
 }
 
 async function addFeed() {
@@ -326,6 +337,23 @@ function deleteFeedDialog(feedId) {
         message: `Error deleting feed: ${err}`,
         actions: [{ icon: "close", color: "white" }],
       });
+    }
+  });
+}
+
+/**
+ *
+ * @param {string} inputValue
+ * @param {(callbackFn: () => void, afterFn?: (component: import('quasar').QSelect) => void) => void} doneFn
+ * @param {() => void} _abortFn
+ */
+function filterCategories(inputValue, doneFn, _abortFn) {
+  doneFn(() => {
+    if (!inputValue) {
+      filteredCategoryOptions.value = categoryOptions.value;
+    } else {
+      const filter = inputValue.toLowerCase();
+      filteredCategoryOptions.value = categoryOptions.value.filter((option) => option.toLowerCase().includes(filter));
     }
   });
 }

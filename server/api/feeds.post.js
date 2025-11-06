@@ -1,3 +1,4 @@
+import { HTTPError } from "got";
 import { z } from "zod";
 
 const schema = z.object({
@@ -12,10 +13,7 @@ export default defineEventHandler(async (event) => {
   const session = await requireUserSession(event);
   const userId = session.user.id;
 
-  const body = await readValidatedBody(event, (body) => {
-    console.log(">>> body", body);
-    return schema.parse(body);
-  });
+  const body = await readValidatedBody(event, (body) => schema.parse(body));
 
   /** @type {Repository} */
   const repository = container.resolve("repository");
@@ -29,11 +27,15 @@ export default defineEventHandler(async (event) => {
     xmlUrl: body.xmlUrl,
     htmlUrl: body.htmlUrl || "",
   });
+  try {
+    const fetched = await feedService.fetchEntries(feed);
+    feed.title = fetched.meta?.title || "(No title)";
 
-  const fetched = await feedService.fetchEntries(feed);
-  feed.title = fetched.meta?.title || "(No title)";
+    const feedId = await repository.createFeed(userId, body.categoryName, feed);
 
-  const feedId = await repository.createFeed(userId, body.categoryName, feed);
-
-  return { feedId };
+    return { feedId };
+  } catch (e) {
+    if (e instanceof HTTPError) throw createError({ statusCode: 400, statusMessage: `Failed to fetch feed: ${e}` });
+    throw e;
+  }
 });
