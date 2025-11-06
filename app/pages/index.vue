@@ -570,12 +570,12 @@ const summarizationEnabled = computed(() => !!features.value?.summarization);
 const saveEnabled = computed(() => !!features.value?.save);
 
 const headers = useRequestHeaders(["cookie"]);
-const { data, refresh } = await useAsyncData("initial", () =>
+const { data, refresh } = await useAsyncData("initial", (_nuxtApp, { signal }) =>
   Promise.all([
-    $fetch("/api/categories", { headers }),
-    $fetch("/api/count", { headers, query: countQuery.value }),
-    $fetch("/api/images/primary-keys", { headers }),
-    $fetch("/api/feeds/data", { headers }),
+    $fetch("/api/categories", { headers, signal }),
+    $fetch("/api/count", { headers, query: countQuery.value, signal }),
+    $fetch("/api/images/primary-keys", { headers, signal }),
+    $fetch("/api/feeds/data", { headers, signal }),
   ]),
 );
 const categories = computed(() => data.value?.[0] ?? []);

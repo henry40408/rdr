@@ -232,8 +232,8 @@ const refreshingFeedIds: Ref<Set<number>> = ref(new Set());
 const showErrorOnly: Ref<boolean> = ref(false);
 
 const headers = useRequestHeaders(["cookie"]);
-const { data, refresh } = await useAsyncData(() =>
-  Promise.all([$fetch("/api/categories", { headers }), $fetch("/api/feeds/data", { headers })]),
+const { data, refresh } = await useAsyncData((_nuxtApp, { signal }) =>
+  Promise.all([$fetch("/api/categories", { headers, signal }), $fetch("/api/feeds/data", { headers, signal })]),
 );
 const categories = computed(() => data.value?.[0] ?? []);
 
