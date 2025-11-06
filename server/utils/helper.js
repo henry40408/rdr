@@ -1,3 +1,5 @@
+// @ts-check
+
 import { createHash } from "node:crypto";
 
 export const DIGEST_CONTENT_LENGTH = 16;

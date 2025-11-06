@@ -1,3 +1,5 @@
+// @ts-check
+
 import xml2js from "xml2js";
 
 export class OpmlService {

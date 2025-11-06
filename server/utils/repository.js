@@ -1,3 +1,5 @@
+// @ts-check
+
 import { CategoryEntity, EntryEntity, FeedEntity, ImageEntity, JobEntity, UserEntity } from "./entities.js";
 import { compare, hash } from "bcrypt";
 import { add } from "date-fns";
@@ -670,12 +672,10 @@ export class Repository {
 
   /**
    * @param {string} name
-   * @returns {Promise<number>}
    */
   async registerJob(name) {
-    const [id] = await this.knex("jobs").insert({ name }).onConflict("name").ignore();
+    await this.knex("jobs").insert({ name }).onConflict("name").ignore();
     this.logger.info({ msg: "Registered job", name });
-    return id;
   }
 
   /**

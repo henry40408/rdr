@@ -1,3 +1,5 @@
+// @ts-check
+
 import * as cheerio from "cheerio";
 import PQueue from "p-queue";
 import got from "got";

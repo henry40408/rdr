@@ -1,3 +1,5 @@
+// @ts-check
+
 export class ImageService {
   /**
    * @param {object} opts
@@ -21,6 +23,7 @@ export class ImageService {
     const logger = this.logger.child({ externalId });
     try {
       const parsed = new URL(url);
+      // @ts-check
       if (parsed.protocol === "data:") {
         const parsedData = parseDataURL(url);
         const newImage = new ImageEntity({

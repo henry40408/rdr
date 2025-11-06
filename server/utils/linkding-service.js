@@ -1,3 +1,5 @@
+// @ts-check
+
 import got from "got";
 
 export class LinkdingService {
@@ -32,7 +34,7 @@ export class LinkdingService {
 
     let tagNames = [];
     try {
-      tagNames = JSON.parse(linkdingDefaultTags);
+      if (linkdingDefaultTags) tagNames = JSON.parse(linkdingDefaultTags);
     } catch (err) {
       this.logger.error(err);
       this.logger.error("Failed to parse Linkding default tags, falling back to empty array");

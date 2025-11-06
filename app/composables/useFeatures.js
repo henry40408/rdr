@@ -1,6 +1,7 @@
+// @ts-check
+
 export default function () {
-  const requestFetch = useRequestFetch();
   const { loggedIn } = useUserSession();
-  const { data, refresh } = useAsyncData(() => requestFetch("/api/features"), { watch: [loggedIn] });
+  const { data, refresh } = useFetch("/api/features", { watch: [loggedIn] });
   return { data, refresh };
 }

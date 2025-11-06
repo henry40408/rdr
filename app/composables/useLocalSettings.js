@@ -1,3 +1,5 @@
+// @ts-check
+
 import { useLocalStorage } from "@vueuse/core";
 
 export const CATEGORIES_ORDER = "settings:categories-order";

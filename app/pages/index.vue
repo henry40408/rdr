@@ -492,7 +492,7 @@
   <LoginPage v-else />
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { UseClipboard } from "@vueuse/components";
 import { add } from "date-fns";
 import pangu from "pangu";
@@ -500,7 +500,6 @@ import { useQuasar } from "quasar";
 import { useRouteQuery } from "@vueuse/router";
 
 const { data: features } = useFeatures();
-const requestFetch = useRequestFetch();
 const { categoriesDirection, categoriesOrder, hideEmpty } = useLocalSettings();
 const { loggedIn, session, clear: logout } = useUserSession();
 
@@ -525,56 +524,36 @@ watchEffect(
 const infiniteScroll = useTemplateRef("infinite-scroll");
 const itemRefs = useTemplateRef("item-list");
 
-/** @type {Ref<{ [key: string]: string }> } */
-const contents = ref({});
-/** @type {Ref<{ [key: string]: boolean }> } */
-const contentLoading = ref({});
-/** @type {Ref<{ [key: string]: string }> } */
-const fullContents = ref({});
-/** @type {Ref<Record<string,"read"|"toggling"|"unread">>} */
-const entryRead = ref({});
-/** @type {Ref<Record<string,"unstarred"|"starring"|"starred">>} */
-const entryStar = ref({});
-/** @type {Ref<boolean[]>} */
-const expanded = ref([]);
+const contents: Ref<{ [key: string]: string }> = ref({});
+const contentLoading: Ref<{ [key: string]: boolean }> = ref({});
+const fullContents: Ref<{ [key: string]: string }> = ref({});
+const entryRead: Ref<Record<string, "read" | "toggling" | "unread">> = ref({});
+const entryStar: Ref<Record<string, "unstarred" | "starring" | "starred">> = ref({});
+const expanded: Ref<boolean[]> = ref([]);
 const hasMore = ref(true);
-/** @type {Ref<import('../../server/api/entries.get').EntryEntityWithFeed[]>} */
-const items = ref([]);
+const items: Ref<import("../../server/api/entries.get").EntryEntityWithFeed[]> = ref([]);
 const leftDrawerOpen = ref(false);
 const loading = ref(false);
 const offset = ref(0);
 const rightDrawerOpen = ref(false);
-/** @type {Ref<Record<string,boolean>>} */
-const saving = ref({});
-/** @type {Ref<Record<string,boolean>>} */
-const scrapping = ref({});
-/** @type {Ref<Record<string,AbortController|undefined>>} */
-const scrappingControllers = ref({});
-/** @type {Ref<{ [key: string]: string }>} */
-const summarizations = ref({});
-/** @type {Ref<Record<string,boolean>>} */
-const summarizing = ref({});
-/** @type {Ref<Record<string,AbortController|undefined>>} */
-const summarizingControllers = ref({});
+const saving: Ref<Record<string, boolean>> = ref({});
+const scrapping: Ref<Record<string, boolean>> = ref({});
+const scrappingControllers: Ref<Record<string, AbortController | undefined>> = ref({});
+const summarizations: Ref<{ [key: string]: string }> = ref({});
+const summarizing: Ref<Record<string, boolean>> = ref({});
+const summarizingControllers: Ref<Record<string, AbortController | undefined>> = ref({});
 
-/** @type {Ref<"asc"|"desc">} */
-const itemsDirection = useRouteQuery("direction", "desc");
-/** @type {Ref<number>} */
-const itemsLimit = useRouteQuery("limit", "30", { transform: Number });
-/** @type {Ref<"date">} */
-const itemsOrder = useRouteQuery("order", "date");
-/** @type {Ref<"all"|"read"|"unread"|"starred">} */
-const itemsStatus = useRouteQuery("status", "unread");
-/** @type {Ref<string|undefined>} */
-const selectedCategoryId = useRouteQuery("categoryId", undefined);
-/** @type {Ref<string|undefined>} */
-const selectedFeedId = useRouteQuery("feedId", undefined);
-/** @type {Ref<string>} */
-const searchQuery = useRouteQuery("q", null);
+const itemsDirection: Ref<"asc" | "desc"> = useRouteQuery("direction", "desc");
+const itemsLimit: Ref<number> = useRouteQuery("limit", "30", { transform: Number });
+const itemsOrder: Ref<"date"> = useRouteQuery("order", "date");
+const itemsStatus: Ref<"all" | "read" | "unread" | "starred"> = useRouteQuery("status", "unread");
+const selectedCategoryId: Ref<string | undefined> = useRouteQuery("categoryId", undefined);
+const selectedFeedId: Ref<string | undefined> = useRouteQuery("feedId", undefined);
+const searchQuery: Ref<string> = useRouteQuery("q", null);
 
 const anyExpanded = computed(() => expanded.value.some((v) => v));
 const countQuery = computed(() => {
-  const query = {};
+  const query: Record<string, string> = {};
   if (selectedFeedId.value) {
     query.selectedType = "feed";
     query.selectedId = selectedFeedId.value;
@@ -590,12 +569,13 @@ const filtersEnabled = computed(() => !!selectedFeedId.value || !!selectedCatego
 const summarizationEnabled = computed(() => !!features.value?.summarization);
 const saveEnabled = computed(() => !!features.value?.save);
 
-const { data, refresh } = await useAsyncData("initial", async () =>
+const headers = useRequestHeaders(["cookie"]);
+const { data, refresh } = await useAsyncData("initial", () =>
   Promise.all([
-    requestFetch("/api/categories"),
-    requestFetch("/api/count", { query: countQuery.value }),
-    requestFetch("/api/images/primary-keys"),
-    requestFetch("/api/feeds/data"),
+    $fetch("/api/categories", { headers }),
+    $fetch("/api/count", { headers, query: countQuery.value }),
+    $fetch("/api/images/primary-keys", { headers }),
+    $fetch("/api/feeds/data", { headers }),
   ]),
 );
 const categories = computed(() => data.value?.[0] ?? []);
@@ -629,7 +609,7 @@ const imagePks = computed(() => data.value?.[2] ?? []);
 /**
  * @param {number} entryId
  */
-function cancelScraping(entryId) {
+function cancelScraping(entryId: number) {
   const controller = scrappingControllers.value[entryId];
   if (!controller) return;
   controller.abort();
@@ -638,7 +618,7 @@ function cancelScraping(entryId) {
 /**
  * @param {number} entryId
  */
-function cancelSummarization(entryId) {
+function cancelSummarization(entryId: number) {
   const controller = summarizingControllers.value[entryId];
   if (!controller) return;
   controller.abort();
@@ -654,10 +634,10 @@ function collapseOpenItem() {
 /**
  * @param {"day"|"week"|"month"|"year"} [olderThan]
  */
-async function doMarkManyAsRead(olderThan) {
+async function doMarkManyAsRead(olderThan?: "day" | "week" | "month" | "year") {
   const now = new Date();
 
-  const body = {};
+  const body: Record<string, unknown> = {};
   if (olderThan) body.olderThan = olderThan;
   if (selectedFeedId.value) {
     body.selectedType = "feed";
@@ -668,7 +648,7 @@ async function doMarkManyAsRead(olderThan) {
   }
   if (searchQuery.value) body.search = searchQuery.value;
   try {
-    const { updated } = await requestFetch("/api/entries/mark-as-read", { method: "POST", body });
+    const { updated } = await $fetch("/api/entries/mark-as-read", { method: "POST", body });
     for (const item of items.value)
       if (shouldMarkAsRead(now, item.entry.id, olderThan)) entryRead.value[item.entry.id] = "read";
     refresh();
@@ -690,7 +670,7 @@ async function doMarkManyAsRead(olderThan) {
  * @param {number} categoryId
  * @returns {number}
  */
-function getCategoryUnreadCount(categoryId) {
+function getCategoryUnreadCount(categoryId: number): number {
   if (!feedsData.value) return 0;
   const feedIds = categories.value?.filter((c) => c.id === categoryId).flatMap((c) => c.feeds.map((f) => f.id)) ?? [];
   return feedIds.reduce((sum, feedId) => sum + (feedsData.value?.feeds[feedId]?.unreadCount ?? 0), 0);
@@ -700,7 +680,7 @@ function getCategoryUnreadCount(categoryId) {
  * @param {number} entryId
  * @returns {string}
  */
-function getContent(entryId) {
+function getContent(entryId: number): string {
   return fullContents.value[entryId] ?? contents.value[entryId] ?? "";
 }
 
@@ -708,7 +688,7 @@ function getContent(entryId) {
  * @param {number} feedId
  * @returns {number}
  */
-function getFeedUnreadCount(feedId) {
+function getFeedUnreadCount(feedId: number): number {
   if (!feedsData.value) return 0;
   return feedsData.value?.feeds[feedId]?.unreadCount ?? 0;
 }
@@ -730,7 +710,7 @@ function getFilteredFeedTitle() {
 /**
  * @param {number} entryId
  */
-async function getFullContent(entryId) {
+async function getFullContent(entryId: number) {
   if (fullContents.value[entryId]) return;
 
   const controller = new AbortController();
@@ -738,7 +718,7 @@ async function getFullContent(entryId) {
 
   scrapping.value[entryId] = true;
   try {
-    const parsed = await requestFetch(`/api/entries/${entryId}/full-content`, {
+    const parsed = await $fetch(`/api/entries/${entryId}/full-content`, {
       signal: controller.signal,
     });
     if (parsed && parsed.content) fullContents.value[entryId] = parsed.content;
@@ -762,7 +742,7 @@ async function getFullContent(entryId) {
 }
 
 async function load() {
-  const query = {};
+  const query: Record<string, string> = {};
   if (itemsDirection.value) query.direction = itemsDirection.value;
   if (itemsOrder.value) query.order = itemsOrder.value;
   if (itemsStatus.value) query.status = itemsStatus.value;
@@ -774,15 +754,15 @@ async function load() {
     query.selectedId = selectedCategoryId.value;
   }
   if (searchQuery.value) query.search = searchQuery.value;
-  query.limit = itemsLimit.value;
-  query.offset = offset.value;
+  query.limit = String(itemsLimit.value);
+  query.offset = String(offset.value);
 
   if (loading.value) return;
   $q.loadingBar.start();
   loading.value = true;
 
   try {
-    const newItems = await requestFetch("/api/entries", { query });
+    const newItems = await $fetch("/api/entries", { query });
     for (const item of newItems) {
       items.value.push(item);
       entryRead.value[item.entry.id] = item.entry.readAt ? "read" : "unread";
@@ -831,14 +811,14 @@ async function load() {
 /**
  * @param {number} entryId
  */
-async function loadContent(entryId) {
+async function loadContent(entryId: number) {
   if (contents.value[entryId]) return;
 
   if (contentLoading.value[entryId]) return;
   contentLoading.value[entryId] = true;
 
   try {
-    const { content } = await requestFetch(`/api/entries/${entryId}/content`);
+    const { content } = await $fetch(`/api/entries/${entryId}/content`);
     contents.value[entryId] = content;
   } catch (err) {
     $q.notify({
@@ -855,7 +835,7 @@ async function loadContent(entryId) {
  * @param {number} feedId
  * @returns {boolean}
  */
-function isImageExists(feedId) {
+function isImageExists(feedId: number): boolean {
   const key = buildFeedImageKey(feedId);
   return imagePks.value?.includes(key) ?? false;
 }
@@ -873,7 +853,7 @@ function isOpenEntryStarred() {
  * @param {number} entryId
  * @returns {boolean}
  */
-function isRead(entryId) {
+function isRead(entryId: number): boolean {
   return entryRead.value[entryId] === "read";
 }
 
@@ -896,7 +876,7 @@ function markManyAsReadDialog() {
     cancel: true,
   }).onOk(
     /** @param {"day"|"week"|"month"|"year"|"all"} data */
-    async (data) => {
+    async (data: "day" | "week" | "month" | "year" | "all") => {
       if (data === "all") await doMarkManyAsRead();
       else await doMarkManyAsRead(data);
     },
@@ -906,13 +886,13 @@ function markManyAsReadDialog() {
 /**
  * @param {number} entryId
  */
-async function markAsRead(entryId) {
+async function markAsRead(entryId: number) {
   if (entryRead.value[entryId] === "read") return;
   const value = entryRead.value[entryId];
   const title = items.value.find((i) => i.entry.id === entryId)?.entry.title ?? "";
   try {
     entryRead.value[entryId] = "toggling";
-    await requestFetch(`/api/entries/${entryId}/read`, { method: "PUT" });
+    await $fetch(`/api/entries/${entryId}/read`, { method: "PUT" });
     entryRead.value[entryId] = "read";
     refresh();
   } catch (err) {
@@ -929,7 +909,7 @@ async function markAsRead(entryId) {
  * @param {number} entryId
  * @param {number} index
  */
-async function markAsReadAndCollapse(entryId, index) {
+async function markAsReadAndCollapse(entryId: number, index: number) {
   await markAsRead(entryId);
   expanded.value[index] = false;
   scrollToContentRef(index);
@@ -947,7 +927,7 @@ function markOpenAsReadAndCollapse() {
  * @param {number} [_index]
  * @param {(stop?:boolean) => void} [done]
  */
-async function onLoad(_index, done) {
+async function onLoad(_index: number, done: (stop?: boolean) => void) {
   if (!hasMore.value) {
     if (done) done(true);
     return;
@@ -959,7 +939,7 @@ async function onLoad(_index, done) {
 /**
  * @param {(stop?:boolean) => void} [done]
  */
-async function resetThenLoad(done) {
+async function resetThenLoad(done?: (stop?: boolean) => void) {
   // @ts-expect-error: stop exists
   infiniteScroll.value?.stop();
   try {
@@ -999,13 +979,13 @@ watch(
 /**
  * @param {number} entryId
  */
-async function saveEntry(entryId) {
+async function saveEntry(entryId: number) {
   if (saving.value[entryId]) return;
   saving.value[entryId] = true;
 
   const title = items.value.find((i) => i.entry.id === entryId)?.entry.title ?? "";
   try {
-    await requestFetch(`/api/entries/${entryId}/save`, { method: "POST" });
+    await $fetch(`/api/entries/${entryId}/save`, { method: "POST" });
     $q.notify({
       type: "positive",
       message: `Entry "${title}" saved successfully.`,
@@ -1025,7 +1005,7 @@ async function saveEntry(entryId) {
 /**
  * @param {number} index
  */
-function scrollToContentRef(index) {
+function scrollToContentRef(index: number) {
   // @ts-expect-error: scrollIntoView exists
   itemRefs.value?.[index]?.$el.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -1035,7 +1015,7 @@ function scrollToContentRef(index) {
  * @param {number} entryId
  * @param {"day"|"week"|"month"|"year"} [olderThan]
  */
-function shouldMarkAsRead(now, entryId, olderThan) {
+function shouldMarkAsRead(now: Date, entryId: number, olderThan?: "day" | "week" | "month" | "year") {
   if (entryRead.value[entryId] === "read") return true;
   if (!olderThan) return true; // mark all as read
 
@@ -1062,7 +1042,7 @@ function shouldMarkAsRead(now, entryId, olderThan) {
  * @param {number} index
  * @param {()=>void} done
  */
-async function slideLeft(entryId, index, done) {
+async function slideLeft(entryId: number, index: number, done: () => void) {
   entryStar.value[entryId] = entryStar.value[entryId] === "starred" ? "unstarred" : "starred";
   await toggleStarEntry(entryId);
   done();
@@ -1073,7 +1053,7 @@ async function slideLeft(entryId, index, done) {
  * @param {number} index
  * @param {()=>void} done
  */
-async function slideRight(entryId, index, done) {
+async function slideRight(entryId: number, index: number, done: () => void) {
   entryRead.value[entryId] = entryRead.value[entryId] === "read" ? "unread" : "read";
   await toggleReadEntry(entryId, index);
   done();
@@ -1082,7 +1062,7 @@ async function slideRight(entryId, index, done) {
 /**
  * @param {number} entryId
  */
-async function summarizeEntry(entryId) {
+async function summarizeEntry(entryId: number) {
   const entry = items.value.find((i) => i.entry.id === entryId);
   if (!entry) return;
 
@@ -1094,7 +1074,7 @@ async function summarizeEntry(entryId) {
 
   const entryTitle = entry.entry.title ?? "Untitled";
   try {
-    const text = await requestFetch(`/api/entries/${entryId}/summarize`, { signal: controller.signal });
+    const text = await $fetch(`/api/entries/${entryId}/summarize`, { signal: controller.signal });
 
     const [prefixedTitle, content] = text.split("\n\n");
     const title = replaceForTiddlyWiki((prefixedTitle ?? "").replace("Title: ", ""));
@@ -1127,7 +1107,7 @@ ${pangu.spacingText(content ?? "")}`;
  * @param {number} entryId
  * @param {number} index
  */
-async function toggleReadEntry(entryId, index) {
+async function toggleReadEntry(entryId: number, index: number) {
   if (entryRead.value[entryId] === "toggling") return;
   // status of checkbox is already changed by the time this function is called
   const value = entryRead.value[entryId];
@@ -1135,7 +1115,7 @@ async function toggleReadEntry(entryId, index) {
 
   const title = items.value.find((i) => i.entry.id === entryId)?.entry.title ?? "";
   try {
-    await requestFetch(`/api/entries/${entryId}/read`, { method: "PUT" });
+    await $fetch(`/api/entries/${entryId}/read`, { method: "PUT" });
     refresh();
   } catch (err) {
     $q.notify({
@@ -1152,7 +1132,7 @@ async function toggleReadEntry(entryId, index) {
 /**
  * @param {number} entryId
  */
-async function toggleStarEntry(entryId) {
+async function toggleStarEntry(entryId: number) {
   if (entryStar.value[entryId] === "starring") return;
   // status of checkbox is already changed by the time this function is called
   const value = entryStar.value[entryId];
@@ -1160,7 +1140,7 @@ async function toggleStarEntry(entryId) {
 
   const title = items.value.find((i) => i.entry.id === entryId)?.entry.title ?? "";
   try {
-    await requestFetch(`/api/entries/${entryId}/star`, { method: "PUT" });
+    await $fetch(`/api/entries/${entryId}/star`, { method: "PUT" });
     refresh();
     if (value) entryStar.value[entryId] = value;
   } catch (err) {

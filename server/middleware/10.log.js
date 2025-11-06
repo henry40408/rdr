@@ -1,3 +1,5 @@
+// @ts-check
+
 import pino from "pino-http";
 import { v7 } from "uuid";
 

@@ -1,3 +1,5 @@
+// @ts-check
+
 import { isDevelopment } from "std-env";
 
 /**

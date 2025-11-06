@@ -1,3 +1,5 @@
+// @ts-check
+
 export const name = "m0004-add-last-error-to-feeds";
 
 /**

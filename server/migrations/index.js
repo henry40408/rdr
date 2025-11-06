@@ -1,3 +1,5 @@
+// @ts-check
+
 import migration01 from "../migrations/m0001-initial.js";
 import migration02 from "../migrations/m0002-user-settings.js";
 import migration03 from "../migrations/m0003-job-paused-at.js";

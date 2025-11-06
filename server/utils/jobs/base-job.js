@@ -1,3 +1,5 @@
+// @ts-check
+
 import { CronJob } from "cron";
 
 /** @interface */

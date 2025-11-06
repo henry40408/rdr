@@ -1,3 +1,5 @@
+// @ts-check
+
 export default defineEventHandler(async (event) => {
   const { container } = useNitroApp();
 

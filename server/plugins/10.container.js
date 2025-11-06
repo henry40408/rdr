@@ -1,3 +1,5 @@
+// @ts-check
+
 import { asClass, asValue, createContainer } from "awilix";
 import { AwilixManager } from "awilix-manager";
 import knex from "knex";

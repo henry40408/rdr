@@ -1,3 +1,5 @@
+// @ts-check
+
 export const name = "0001-initial";
 
 /**

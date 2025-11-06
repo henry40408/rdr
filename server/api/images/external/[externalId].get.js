@@ -1,3 +1,5 @@
+// @ts-check
+
 import { secondsInHour, secondsInMinute } from "date-fns/constants";
 import { z } from "zod";
 

@@ -201,12 +201,11 @@
   <LoginPage v-else />
 </template>
 
-<script setup>
+<script setup lang="ts">
 import CategoryDialog from "../components/CategoryDialog.vue";
 import FeedDialog from "../components/FeedDialog.vue";
 import { useQuasar } from "quasar";
 
-const requestFetch = useRequestFetch();
 const { loggedIn } = useUserSession();
 
 const $q = useQuasar();
@@ -225,22 +224,18 @@ const { hideEmpty } = useLocalSettings();
 
 // New feed form fields
 const adding = ref(false);
-/** @type {Ref<string|null>} */
-const categoryName = ref(null);
-/** @type {Ref<string[]>} */
-const filteredCategoryOptions = ref([]);
+const categoryName: Ref<string | null> = ref(null);
+const filteredCategoryOptions: Ref<string[]> = ref([]);
 const htmlUrl = ref("");
 const xmlUrl = ref("");
 
-/** @type {Ref<Set<number>>} */
-const refreshingCategoryIds = ref(new Set());
-/** @type {Ref<Set<number>>} */
-const refreshingFeedIds = ref(new Set());
-/** @type {Ref<boolean>} */
-const showErrorOnly = ref(false);
+const refreshingCategoryIds: Ref<Set<number>> = ref(new Set());
+const refreshingFeedIds: Ref<Set<number>> = ref(new Set());
+const showErrorOnly: Ref<boolean> = ref(false);
 
+const headers = useRequestHeaders(["cookie"]);
 const { data, refresh } = await useAsyncData(() =>
-  Promise.all([requestFetch("/api/categories"), requestFetch("/api/feeds/data")]),
+  Promise.all([$fetch("/api/categories", { headers }), $fetch("/api/feeds/data", { headers })]),
 );
 const categories = computed(() => data.value?.[0] ?? []);
 
@@ -251,11 +246,7 @@ watchEffect(() => {
 
 const feedDataByFeedId = computed(() => data.value?.[1]?.feeds ?? {});
 
-/**
- * @param {string} inputValue
- * @param {(val: string, mode: 'add'|'add-unique'|'toggle') => void} doneFn
- */
-function addCategory(inputValue, doneFn) {
+function addCategory(inputValue: string, doneFn: (val: string, mode: "add" | "add-unique" | "toggle") => void) {
   if (inputValue && !categoryOptions.value.includes(inputValue)) {
     categoryName.value = inputValue;
   }
@@ -265,7 +256,7 @@ function addCategory(inputValue, doneFn) {
 async function addFeed() {
   adding.value = true;
   try {
-    await requestFetch("/api/feeds", {
+    await $fetch("/api/feeds", {
       method: "POST",
       body: {
         categoryName: categoryName.value,
@@ -293,10 +284,7 @@ async function addFeed() {
   }
 }
 
-/**
- * @param {number} categoryId
- */
-function deleteCategoryDialog(categoryId) {
+function deleteCategoryDialog(categoryId: number) {
   $q.dialog({
     title: "Delete Category",
     message: "Are you sure you want to delete this category and all its feeds? This action cannot be undone.",
@@ -304,7 +292,7 @@ function deleteCategoryDialog(categoryId) {
     persistent: true,
   }).onOk(async () => {
     try {
-      await requestFetch(`/api/categories/${categoryId}`, { method: "DELETE" });
+      await $fetch(`/api/categories/${categoryId}`, { method: "DELETE" });
       await refresh();
       $q.notify({
         type: "positive",
@@ -321,10 +309,7 @@ function deleteCategoryDialog(categoryId) {
   });
 }
 
-/**
- * @param {number} feedId
- */
-function deleteFeedDialog(feedId) {
+function deleteFeedDialog(feedId: number) {
   $q.dialog({
     title: "Delete Feed",
     message: "Are you sure you want to delete this feed? This action cannot be undone.",
@@ -332,7 +317,7 @@ function deleteFeedDialog(feedId) {
     persistent: true,
   }).onOk(async () => {
     try {
-      await requestFetch(`/api/feeds/${feedId}`, { method: "DELETE" });
+      await $fetch(`/api/feeds/${feedId}`, { method: "DELETE" });
       await refresh();
       $q.notify({
         type: "positive",
@@ -349,13 +334,11 @@ function deleteFeedDialog(feedId) {
   });
 }
 
-/**
- *
- * @param {string} inputValue
- * @param {(callbackFn: () => void, afterFn?: (component: import('quasar').QSelect) => void) => void} doneFn
- * @param {() => void} _abortFn
- */
-function filterCategories(inputValue, doneFn, _abortFn) {
+function filterCategories(
+  inputValue: string,
+  doneFn: (callbackFn: () => void, afterFn?: (component: import("quasar").QSelect) => void) => void,
+  _abortFn: () => void,
+) {
   doneFn(() => {
     if (!inputValue) {
       filteredCategoryOptions.value = categoryOptions.value;
@@ -366,19 +349,11 @@ function filterCategories(inputValue, doneFn, _abortFn) {
   });
 }
 
-/**
- * @param {number} feedId
- * @returns {string|undefined}
- */
-function getFeedFetchedAt(feedId) {
+function getFeedFetchedAt(feedId: number): string | undefined {
   return feedDataByFeedId.value?.[feedId]?.fetchedAt;
 }
 
-/**
- * @param {number} categoryId
- * @returns {number}
- */
-function getCategoryUnreadCount(categoryId) {
+function getCategoryUnreadCount(categoryId: number): number {
   const category = categories.value?.find((c) => c.id === categoryId);
   if (!category) return 0;
   return category.feeds.reduce((sum, feed) => {
@@ -387,19 +362,11 @@ function getCategoryUnreadCount(categoryId) {
   }, 0);
 }
 
-/**
- * @param {number} feedId
- * @returns {number}
- */
-function getFeedUnreadCount(feedId) {
+function getFeedUnreadCount(feedId: number): number {
   return feedDataByFeedId.value[feedId]?.unreadCount ?? 0;
 }
 
-/**
- * @param {number} feedId
- * @returns {boolean}
- */
-function imageExists(feedId) {
+function imageExists(feedId: number): boolean {
   return feedDataByFeedId.value[feedId]?.imageExists ?? false;
 }
 
@@ -412,10 +379,7 @@ async function refreshAll() {
   await Promise.allSettled(tasks);
 }
 
-/**
- * @param {CategoryEntity} category
- */
-async function refreshCategory(category) {
+async function refreshCategory(category: CategoryEntity) {
   const feedIds = category.feeds.map((feed) => feed.id);
 
   refreshingCategoryIds.value.add(category.id);
@@ -423,7 +387,7 @@ async function refreshCategory(category) {
 
   try {
     const tasks = [];
-    for (const feedId of feedIds) tasks.push(requestFetch(`/api/feeds/${feedId}/refresh`, { method: "POST" }));
+    for (const feedId of feedIds) tasks.push($fetch(`/api/feeds/${feedId}/refresh`, { method: "POST" }));
     await Promise.all(tasks);
     await refresh();
   } catch (err) {
@@ -438,14 +402,11 @@ async function refreshCategory(category) {
   }
 }
 
-/**
- * @param {FeedEntity} feed
- */
-async function refreshFeed(feed) {
+async function refreshFeed(feed: FeedEntity) {
   if (refreshingFeedIds.value.has(feed.id)) return;
   refreshingFeedIds.value.add(feed.id);
   try {
-    await requestFetch(`/api/feeds/${feed.id}/refresh`, { method: "POST" });
+    await $fetch(`/api/feeds/${feed.id}/refresh`, { method: "POST" });
     await refresh();
   } catch (err) {
     $q.notify({
@@ -458,10 +419,7 @@ async function refreshFeed(feed) {
   }
 }
 
-/**
- * @param {number} categoryId
- */
-function shouldShowCategory(categoryId) {
+function shouldShowCategory(categoryId: number) {
   if (!hideEmpty.value && !showErrorOnly.value) return true;
 
   const category = categories.value?.find((c) => c.id === categoryId);
@@ -478,10 +436,7 @@ function shouldShowCategory(categoryId) {
   return getCategoryUnreadCount(categoryId) > 0;
 }
 
-/**
- * @param {number} feedId
- */
-function shouldShowFeed(feedId) {
+function shouldShowFeed(feedId: number) {
   if (!hideEmpty.value && !showErrorOnly.value) return true;
 
   if (showErrorOnly.value) {
@@ -492,10 +447,7 @@ function shouldShowFeed(feedId) {
   return getFeedUnreadCount(feedId) > 0;
 }
 
-/**
- * @param {number} categoryId
- */
-async function updateCategoryDialog(categoryId) {
+async function updateCategoryDialog(categoryId: number) {
   const category = categories.value.find((c) => c.id === categoryId);
   if (!category) return;
 
@@ -505,38 +457,29 @@ async function updateCategoryDialog(categoryId) {
       id: categoryId,
       name: category.name,
     },
-  }).onOk(
-    /**
-     * @param {object} data
-     * @param {string} data.name
-     */
-    async (data) => {
-      try {
-        await requestFetch(`/api/categories/${categoryId}`, {
-          method: "PATCH",
-          body: { name: data.name },
-        });
-        await refresh();
-        $q.notify({
-          type: "positive",
-          message: "Category updated successfully",
-          actions: [{ icon: "close", color: "white" }],
-        });
-      } catch (err) {
-        $q.notify({
-          type: "negative",
-          message: `Error updating category: ${err}`,
-          actions: [{ icon: "close", color: "white" }],
-        });
-      }
-    },
-  );
+  }).onOk(async (data: { name: string }) => {
+    try {
+      await $fetch(`/api/categories/${categoryId}`, {
+        method: "PATCH",
+        body: { name: data.name },
+      });
+      await refresh();
+      $q.notify({
+        type: "positive",
+        message: "Category updated successfully",
+        actions: [{ icon: "close", color: "white" }],
+      });
+    } catch (err) {
+      $q.notify({
+        type: "negative",
+        message: `Error updating category: ${err}`,
+        actions: [{ icon: "close", color: "white" }],
+      });
+    }
+  });
 }
 
-/**
- * @param {number} feedId
- */
-async function updateFeedDialog(feedId) {
+async function updateFeedDialog(feedId: number) {
   const feed = categories.value.flatMap((category) => category.feeds).find((f) => f.id === feedId);
   if (!feed) return;
 
@@ -548,37 +491,29 @@ async function updateFeedDialog(feedId) {
       xmlUrl: feed.xmlUrl,
       htmlUrl: feed.htmlUrl,
     },
-  }).onOk(
-    /**
-     * @param {object} data
-     * @param {string} data.title
-     * @param {string} data.xmlUrl
-     * @param {string} [data.htmlUrl]
-     */
-    async (data) => {
-      try {
-        await requestFetch(`/api/feeds/${feedId}`, {
-          method: "PATCH",
-          body: {
-            title: data.title,
-            xmlUrl: data.xmlUrl,
-            htmlUrl: data.htmlUrl,
-          },
-        });
-        await refresh();
-        $q.notify({
-          type: "positive",
-          message: "Feed updated successfully",
-          actions: [{ icon: "close", color: "white" }],
-        });
-      } catch (err) {
-        $q.notify({
-          type: "negative",
-          message: `Error updating feed: ${err}`,
-          actions: [{ icon: "close", color: "white" }],
-        });
-      }
-    },
-  );
+  }).onOk(async (data: { title: string; xmlUrl: string; htmlUrl?: string }) => {
+    try {
+      await $fetch(`/api/feeds/${feedId}`, {
+        method: "PATCH",
+        body: {
+          title: data.title,
+          xmlUrl: data.xmlUrl,
+          htmlUrl: data.htmlUrl,
+        },
+      });
+      await refresh();
+      $q.notify({
+        type: "positive",
+        message: "Feed updated successfully",
+        actions: [{ icon: "close", color: "white" }],
+      });
+    } catch (err) {
+      $q.notify({
+        type: "negative",
+        message: `Error updating feed: ${err}`,
+        actions: [{ icon: "close", color: "white" }],
+      });
+    }
+  });
 }
 </script>

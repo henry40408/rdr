@@ -1,19 +1,9 @@
 {
-  "compilerOptions": {
-    "allowJs": true,
-    "checkJs": true,
-    "esModuleInterop": true,
-    "module": "preserve",
-    "moduleResolution": "bundler",
-    "noEmit": true,
-    "noImplicitAny": true,
-    "noImplicitOverride": true,
-    "noImplicitReturns": true,
-    "noImplicitThis": true,
-    "skipLibCheck": true,
-    "strict": true,
-    "target": "esnext"
-  },
-  "include": [".nuxt/**/*.d.ts", "**/*.js", "**/*.ts", "**/*.vue", "nuxt.config.*"],
-  "exclude": [".output", "coverage", "dist", "node_modules"]
+  "files": [],
+  "references": [
+    { "path": "./.nuxt/tsconfig.app.json" },
+    { "path": "./.nuxt/tsconfig.server.json" },
+    { "path": "./.nuxt/tsconfig.shared.json" },
+    { "path": "./.nuxt/tsconfig.node.json" }
+  ]
 }

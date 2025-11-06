@@ -17,7 +17,7 @@
   </q-dialog>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { useDialogPluginComponent } from "quasar";
 
 const props = defineProps({
