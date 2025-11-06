@@ -76,15 +76,9 @@
               <q-card>
                 <q-card-section>
                   <q-btn-group>
-                    <q-btn
-                      icon="edit"
-                      label="Edit"
-                      color="primary"
-                      @click="updateCategoryDialog(category.id, category.name)"
-                    />
+                    <q-btn icon="edit" label="Edit" @click="updateCategoryDialog(category.id)" />
                     <q-btn
                       icon="refresh"
-                      color="primary"
                       label="Refresh"
                       :loading="refreshingCategoryIds.has(category.id)"
                       @click="refreshCategory(category)"
@@ -129,11 +123,13 @@
                       </q-item-label>
                     </q-item-section>
                     <q-item-section top side>
-                      <q-item-label caption>{{ formatFetchedAtToNow(feed.id) }}</q-item-label>
+                      <q-item-label caption>
+                        <ClientAgo :datetime="getFeedFetchedAt(feed.id)" />
+                      </q-item-label>
                       <div class="q-mt-xs">
-                        <q-badge color="primary" :outline="!getFeedUnreadCount(feed.id)">{{
-                          getFeedUnreadCount(feed.id)
-                        }}</q-badge>
+                        <q-badge color="primary" :outline="!getFeedUnreadCount(feed.id)">
+                          {{ getFeedUnreadCount(feed.id) }}
+                        </q-badge>
                       </div>
                     </q-item-section>
                   </template>
@@ -155,6 +151,7 @@
                       <q-item-section>
                         <div>
                           <q-btn-group push>
+                            <q-btn icon="edit" label="Edit" @click="updateFeedDialog(feed.id)" />
                             <q-btn
                               icon="refresh"
                               label="Refresh"
@@ -202,7 +199,7 @@
 
 <script setup>
 import CategoryDialog from "../components/CategoryDialog.vue";
-import { formatDistanceToNow } from "date-fns";
+import FeedDialog from "../components/FeedDialog.vue";
 import { useQuasar } from "quasar";
 
 const requestFetch = useRequestFetch();
@@ -367,12 +364,10 @@ function filterCategories(inputValue, doneFn, _abortFn) {
 
 /**
  * @param {number} feedId
- * @returns {string}
+ * @returns {string|undefined}
  */
-function formatFetchedAtToNow(feedId) {
-  const fetchedAt = feedDataByFeedId.value?.[feedId]?.fetchedAt;
-  if (!fetchedAt) return "never";
-  return formatDistanceToNow(new Date(fetchedAt), { addSuffix: true });
+function getFeedFetchedAt(feedId) {
+  return feedDataByFeedId.value?.[feedId]?.fetchedAt;
 }
 
 /**
@@ -495,14 +490,16 @@ function shouldShowFeed(feedId) {
 
 /**
  * @param {number} categoryId
- * @param {string} name
  */
-async function updateCategoryDialog(categoryId, name) {
+async function updateCategoryDialog(categoryId) {
+  const category = categories.value.find((c) => c.id === categoryId);
+  if (!category) return;
+
   $q.dialog({
     component: CategoryDialog,
     componentProps: {
       id: categoryId,
-      name,
+      name: category.name,
     },
   }).onOk(
     /**
@@ -525,6 +522,55 @@ async function updateCategoryDialog(categoryId, name) {
         $q.notify({
           type: "negative",
           message: `Error updating category: ${err}`,
+          actions: [{ icon: "close", color: "white" }],
+        });
+      }
+    },
+  );
+}
+
+/**
+ * @param {number} feedId
+ */
+async function updateFeedDialog(feedId) {
+  const feed = categories.value.flatMap((category) => category.feeds).find((f) => f.id === feedId);
+  if (!feed) return;
+
+  $q.dialog({
+    component: FeedDialog,
+    componentProps: {
+      id: feedId,
+      title: feed.title,
+      xmlUrl: feed.xmlUrl,
+      htmlUrl: feed.htmlUrl,
+    },
+  }).onOk(
+    /**
+     * @param {object} data
+     * @param {string} data.title
+     * @param {string} data.xmlUrl
+     * @param {string} [data.htmlUrl]
+     */
+    async (data) => {
+      try {
+        await requestFetch(`/api/feeds/${feedId}`, {
+          method: "PATCH",
+          body: {
+            title: data.title,
+            xmlUrl: data.xmlUrl,
+            htmlUrl: data.htmlUrl,
+          },
+        });
+        await refresh();
+        $q.notify({
+          type: "positive",
+          message: "Feed updated successfully",
+          actions: [{ icon: "close", color: "white" }],
+        });
+      } catch (err) {
+        $q.notify({
+          type: "negative",
+          message: `Error updating feed: ${err}`,
           actions: [{ icon: "close", color: "white" }],
         });
       }

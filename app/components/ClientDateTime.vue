@@ -1,17 +1,16 @@
 <template>
-  <span v-if="datetime">
-    <span v-if="onClient" title="Date" :datetime="datetime">{{ new Date(datetime).toLocaleString() }}</span>
-    <span v-else title="Date" :datetime="datetime">{{ datetime }}</span>
-  </span>
+  <ClientOnly>
+    <time v-if="datetime" :datetime="datetime">{{ localeString }}</time>
+  </ClientOnly>
 </template>
 
 <script setup>
-defineProps({
-  datetime: { type: String, default: null },
+const props = defineProps({
+  datetime: { type: String, default: "" },
 });
 
-const onClient = ref(false);
-onMounted(() => {
-  onClient.value = true;
+const localeString = computed(() => {
+  if (!props.datetime) return;
+  return new Date(props.datetime).toLocaleString();
 });
 </script>

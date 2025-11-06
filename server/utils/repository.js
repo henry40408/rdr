@@ -762,6 +762,22 @@ export class Repository {
   }
 
   /**
+   * @param {number} userId
+   * @param {FeedEntity} feed
+   * @returns {Promise<number>}
+   */
+  async updateFeed(userId, feed) {
+    const updated = await this.knex("feeds")
+      .whereIn("category_id", (builder) => {
+        builder.select("id").from("categories").where("user_id", userId);
+      })
+      .where({ id: feed.id })
+      .update({ title: feed.title, xml_url: feed.xmlUrl, html_url: feed.htmlUrl });
+    this.logger.info({ msg: "Updated feed", feedId: feed.id, updated });
+    return updated;
+  }
+
+  /**
    * @param {object} opts
    * @param {number} opts.userId
    * @param {FeedEntity} opts.feed
