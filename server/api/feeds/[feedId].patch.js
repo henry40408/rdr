@@ -7,7 +7,7 @@ const schema = z.object({
 const bodySchema = z.object({
   title: z.string(),
   xmlUrl: z.url(),
-  htmlUrl: z.url().optional(),
+  htmlUrl: z.url().or(z.literal("")),
 });
 
 export default defineEventHandler(async (event) => {

@@ -6,9 +6,9 @@
       </q-card-section>
 
       <q-card-section>
-        <q-input v-model="xmlUrl" label="Feed XML URL" />
-        <q-input v-model="htmlUrl" label="Feed HTML URL (Optional)" />
-        <q-input v-model="title" label="Feed Title" />
+        <q-input v-model="xmlUrl" label="Feed XML URL *" :rules="[(val) => !!val || 'Feed XML URL is required']" />
+        <q-input v-model="htmlUrl" label="Feed HTML URL" />
+        <q-input v-model="title" label="Feed Title *" :rules="[(val) => !!val || 'Feed Title is required']" />
       </q-card-section>
 
       <q-card-actions align="right">

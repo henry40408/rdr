@@ -1,13 +1,13 @@
 <template>
   <ClientOnly>
-    <span :title="localeString">{{ formatted }}</span>
+    <span v-if="datetime" :title="localeString">{{ formatted }}</span>
   </ClientOnly>
 </template>
 
 <script setup>
 import { formatDistanceToNow } from "date-fns";
 
-const props = defineProps({ datetime: { type: [String, Date], required: true } });
+const props = defineProps({ datetime: { type: String, default: "" } });
 
 const localeString = computed(() => {
   if (!props.datetime) return;

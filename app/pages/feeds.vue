@@ -25,10 +25,12 @@
                 use-input
                 label="Category Name"
                 :options="filteredCategoryOptions"
-                hint="Create a new category by typing a name and pressing Enter. Clear to select existing."
                 @new-value="addCategory"
                 @filter="filterCategories"
               />
+              <div class="text-caption q-px-sm">
+                Create a new category by typing a name and pressing Enter. Clear to select existing.
+              </div>
               <q-input v-model="xmlUrl" outlined type="url" class="q-mt-sm" label="Feed URL" />
               <q-input v-model="htmlUrl" outlined type="url" class="q-mt-sm" label="Website URL (Optional)" />
               <q-btn
@@ -49,8 +51,10 @@
           </q-item>
           <q-item>
             <q-item-section>
-              <q-toggle v-model="hideEmpty" label="Hide empty" />
-              <q-toggle v-model="showErrorOnly" label="Show error only" />
+              <ClientOnly>
+                <q-toggle v-model="hideEmpty" label="Hide empty" />
+                <q-toggle v-model="showErrorOnly" label="Show error only" />
+              </ClientOnly>
             </q-item-section>
           </q-item>
           <template v-for="category in categories" :key="category.id">

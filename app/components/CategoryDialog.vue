@@ -6,7 +6,7 @@
       </q-card-section>
 
       <q-card-section>
-        <q-input v-model="name" label="Category Name" />
+        <q-input v-model="name" label="Category name *" :rules="[(val) => !!val || 'Category name is required']" />
       </q-card-section>
 
       <q-card-actions align="right">
