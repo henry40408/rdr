@@ -1095,7 +1095,7 @@ async function summarizeEntry(entryId) {
     const text = await requestFetch(`/api/entries/${entryId}/summarize`, { signal: controller.signal });
 
     const [prefixedTitle, content] = text.split("\n\n");
-    const title = (prefixedTitle ?? "").replace("Title: ", "").trim();
+    const title = replaceForTiddlyWiki((prefixedTitle ?? "").replace("Title: ", ""));
 
     summarizations.value[entryId] = `${pangu.spacingText(title)}
 
