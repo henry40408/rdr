@@ -1,3 +1,5 @@
+// @ts-check
+
 export class CategoryEntity {
   /**
    * @param {object} opts

@@ -3,7 +3,7 @@
   <span v-html="processed" />
 </template>
 
-<script setup>
+<script setup lang="ts">
 import pangu from "pangu";
 
 const props = defineProps({

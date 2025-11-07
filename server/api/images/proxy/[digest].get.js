@@ -1,3 +1,5 @@
+// @ts-check
+
 import got from "got";
 import { pipeline as streamPipeline } from "node:stream/promises";
 import { z } from "zod";

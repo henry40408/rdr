@@ -1,3 +1,5 @@
+// @ts-check
+
 export const name = "m0005-add-error-count-to-feeds";
 
 /**

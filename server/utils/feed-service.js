@@ -1,3 +1,5 @@
+// @ts-check
+
 import FeedParser from "feedparser";
 import { Readable } from "node:stream";
 

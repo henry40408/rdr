@@ -1,3 +1,5 @@
+// @ts-check
+
 import { HTTPError } from "got";
 import { z } from "zod";
 

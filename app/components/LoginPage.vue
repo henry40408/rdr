@@ -23,7 +23,7 @@
   </q-layout>
 </template>
 
-<script setup>
+<script setup lang="ts">
 const username = ref("");
 const password = ref("");
 const loading = ref(false);
@@ -31,8 +31,7 @@ const error = ref("");
 
 const { fetch: fetchSession } = useUserSession();
 
-/** @param {'login' | 'signup'} action */
-async function onSubmit(action) {
+async function onSubmit(action: "login" | "signup") {
   if (action === "login") login();
   else signup();
 }

@@ -1,3 +1,5 @@
+// @ts-check
+
 export class JobService {
   /**
    * @param {object} opts

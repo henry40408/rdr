@@ -1,3 +1,5 @@
+// @ts-check
+
 import { JSDOM } from "jsdom";
 import { Readability } from "@mozilla/readability";
 import { z } from "zod";

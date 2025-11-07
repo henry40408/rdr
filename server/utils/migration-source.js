@@ -1,3 +1,5 @@
+// @ts-check
+
 import { migrationNames, migrations } from "../migrations/index.js";
 
 export class MigrationSource {

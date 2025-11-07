@@ -1,3 +1,5 @@
+// @ts-check
+
 import { BaseJob } from "./base-job.js";
 
 /** @implements {BaseJob} */

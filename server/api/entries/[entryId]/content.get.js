@@ -1,3 +1,5 @@
+// @ts-check
+
 import * as cheerio from "cheerio";
 import sanitizeHtml from "sanitize-html";
 import { z } from "zod";
@@ -55,7 +57,7 @@ function proxyImages(content, baseUrl) {
       const entries = srcset.split(",").map((entry) => entry.trim());
       const proxiedEntries = entries.map((entry) => {
         const [url, descriptor] = entry.split(" ");
-        if (srcPattern.test(url)) {
+        if (url && srcPattern.test(url)) {
           const digest = digestUrl(config.imageDigestSecret, url);
           const proxiedUrl = `/api/images/proxy/${digest}?url=${encodeURIComponent(url)}`;
           return descriptor ? `${proxiedUrl} ${descriptor}` : proxiedUrl;

@@ -4,7 +4,7 @@
   </ClientOnly>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { formatDistanceToNow } from "date-fns";
 
 const props = defineProps({ datetime: { type: String, default: "" } });

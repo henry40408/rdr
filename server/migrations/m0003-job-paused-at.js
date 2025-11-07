@@ -1,3 +1,5 @@
+// @ts-check
+
 export const name = "m0003-job-paused-at";
 
 /**

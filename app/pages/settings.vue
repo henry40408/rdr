@@ -42,7 +42,7 @@
           <q-item-label header>Background Jobs</q-item-label>
           <q-item v-for="job in jobsData" :key="job.name">
             <q-item-section side>
-              <JobToggle :name="job.name" :value="jobPaused[job.name]" @toggled="refreshJobs()" />
+              <JobToggle :name="job.name" :value="!!jobPaused[job.name]" @toggled="refreshJobs()" />
             </q-item-section>
             <q-item-section>
               <q-item-label>{{ job.name }}</q-item-label>
@@ -102,11 +102,10 @@
   <LoginPage v-else />
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { millisecondsToSeconds } from "date-fns";
 import { useQuasar } from "quasar";
 
-const requestFetch = useRequestFetch();
 const { loggedIn } = useUserSession();
 
 const $q = useQuasar();
@@ -125,10 +124,11 @@ const triggeringJobs = ref(new Set());
 const uploadedFile = ref(null);
 const uploading = ref(false);
 
-const { data: jobsData, refresh: refreshJobs } = await useAsyncData(() => requestFetch("/api/jobs"));
+const headers = useRequestHeaders(["cookie"]);
+const { data: jobsData, refresh: refreshJobs } = await useFetch("/api/jobs", { headers });
+
 const jobPaused = computed(() => {
-  /** @type {Record<string, boolean>} */
-  const map = {};
+  const map: Record<string, boolean> = {};
   if (jobsData.value) for (const job of jobsData.value) map[job.name] = !!job.pausedAt;
   return map;
 });
@@ -142,7 +142,7 @@ async function importOPML() {
   uploading.value = true;
 
   try {
-    await requestFetch("/api/opml", { method: "POST", body: formData });
+    await $fetch("/api/opml", { method: "POST", body: formData });
     uploadedFile.value = null;
     $q.notify({
       type: "positive",
@@ -158,14 +158,11 @@ async function importOPML() {
   }
 }
 
-/**
- * @param {string} name
- */
-async function triggerJob(name) {
+async function triggerJob(name: string) {
   if (triggeringJobs.value.has(name)) return;
   triggeringJobs.value.add(name);
   try {
-    await requestFetch(`/api/jobs/${name}/run`, { method: "POST" });
+    await $fetch(`/api/jobs/${name}/run`, { method: "POST" });
     $q.notify({
       type: "positive",
       message: `Job ${name} triggered successfully`,

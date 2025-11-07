@@ -1,3 +1,5 @@
+// @ts-check
+
 /**
  * @typedef {object} UserFeatures
  * @property {boolean} summarization

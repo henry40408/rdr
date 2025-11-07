@@ -10,7 +10,7 @@
   </q-form>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { useQuasar } from "quasar";
 
 const $q = useQuasar();

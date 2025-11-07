@@ -1,3 +1,5 @@
+// @ts-check
+
 /**
  * @typedef {object} FeedData
  * @property {number} count

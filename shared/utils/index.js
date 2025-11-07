@@ -1,3 +1,5 @@
+// @ts-check
+
 /**
  * @param {number} feedId
  * @returns {string}
