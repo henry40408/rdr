@@ -570,7 +570,7 @@ const summarizationEnabled = computed(() => !!features.value?.summarization);
 const saveEnabled = computed(() => !!features.value?.save);
 
 const headers = useRequestHeaders(["cookie"]);
-const { data, refresh } = await useAsyncData("initial", (_nuxtApp, { signal }) =>
+const { data: metadata, refresh: refreshMetadata } = await useAsyncData("metadata", (_nuxtApp, { signal }) =>
   Promise.all([
     $fetch("/api/categories", { headers, signal }),
     $fetch("/api/count", { headers, query: countQuery.value, signal }),
@@ -578,7 +578,7 @@ const { data, refresh } = await useAsyncData("initial", (_nuxtApp, { signal }) =
     $fetch("/api/feeds/data", { headers, signal }),
   ]),
 );
-const categories = computed(() => data.value?.[0] ?? []);
+const categories = computed(() => metadata.value?.[0] ?? []);
 const sortedCategories = computed(() => {
   const cats = structuredClone(categories.value);
   cats.sort((a, b) => {
@@ -595,7 +595,7 @@ const sortedCategories = computed(() => {
   });
   return cats;
 });
-const countData = computed(() => data.value?.[1] ?? { count: 0 });
+const countData = computed(() => metadata.value?.[1] ?? { count: 0 });
 useHead(() => ({
   title: selectedFeedId.value
     ? `(${countData.value?.count ?? 0}) Feed: ${getFilteredFeedTitle()} - rdr`
@@ -603,8 +603,8 @@ useHead(() => ({
       ? `(${countData.value?.count ?? 0}) Category: ${getFilteredCategoryName()} - rdr`
       : `(${countData.value?.count ?? 0}) rdr`,
 }));
-const feedsData = computed(() => data.value?.[3]);
-const imagePks = computed(() => data.value?.[2] ?? []);
+const feedsData = computed(() => metadata.value?.[3]);
+const imagePks = computed(() => metadata.value?.[2] ?? []);
 
 function cancelScraping(entryId: number) {
   const controller = scrappingControllers.value[entryId];
@@ -642,7 +642,7 @@ async function doMarkManyAsRead(olderThan?: "day" | "week" | "month" | "year") {
     const { updated } = await $fetch("/api/entries/mark-as-read", { method: "POST", body });
     for (const item of items.value)
       if (shouldMarkAsRead(now, item.entry.id, olderThan)) entryRead.value[item.entry.id] = "read";
-    refresh();
+    refreshMetadata();
     $q.notify({
       type: "positive",
       message: `Marked ${updated} entries as read.`,
@@ -853,7 +853,7 @@ async function markAsRead(entryId: number) {
     entryRead.value[entryId] = "toggling";
     await $fetch(`/api/entries/${entryId}/read`, { method: "PUT" });
     entryRead.value[entryId] = "read";
-    refresh();
+    await refreshMetadata();
   } catch (err) {
     $q.notify({
       type: "negative",
@@ -907,8 +907,7 @@ async function resetThenLoad(done?: (stop?: boolean) => void) {
     summarizing.value = {};
     summarizingControllers.value = {};
 
-    refresh();
-    await load();
+    await Promise.all([refreshMetadata(), load()]);
   } catch (e) {
     console.error("Error in resetThenLoad:", e);
   } finally {
@@ -1036,7 +1035,7 @@ async function toggleReadEntry(entryId: number, index: number) {
   const title = items.value.find((i) => i.entry.id === entryId)?.entry.title ?? "";
   try {
     await $fetch(`/api/entries/${entryId}/read`, { method: "PUT" });
-    refresh();
+    refreshMetadata();
   } catch (err) {
     $q.notify({
       type: "negative",
@@ -1058,7 +1057,7 @@ async function toggleStarEntry(entryId: number) {
   const title = items.value.find((i) => i.entry.id === entryId)?.entry.title ?? "";
   try {
     await $fetch(`/api/entries/${entryId}/star`, { method: "PUT" });
-    refresh();
+    refreshMetadata();
     if (value) entryStar.value[entryId] = value;
   } catch (err) {
     $q.notify({
