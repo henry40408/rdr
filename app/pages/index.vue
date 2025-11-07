@@ -613,7 +613,7 @@ watch(entries, (newItems) => {
     if (itemsStatus.value === "unread") {
       if (selectedFeedId.value && selectedCategoryId.value) {
         $q.notify({
-          type: "info",
+          icon: "info",
           message: `No entries found for the selected feed ${getFilteredFeedTitle()}.`,
           actions: [{ icon: "close", color: "white" }],
         });
@@ -623,7 +623,7 @@ watch(entries, (newItems) => {
       }
       if (selectedCategoryId.value) {
         $q.notify({
-          type: "info",
+          icon: "info",
           message: `No entries found for the selected category ${getFilteredCategoryName()}.`,
           actions: [{ icon: "close", color: "white" }],
         });
