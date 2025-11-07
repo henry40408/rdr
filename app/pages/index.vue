@@ -609,7 +609,7 @@ const {
 watch(entries, (newItems) => {
   if (!newItems) return;
 
-  if (newItems.length === 0) {
+  if (items.value.length === 0 && newItems.length === 0) {
     if (itemsStatus.value === "unread") {
       if (selectedFeedId.value && selectedCategoryId.value) {
         $q.notify({
