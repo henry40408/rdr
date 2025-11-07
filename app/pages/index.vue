@@ -578,6 +578,43 @@ const { data: metadata, refresh: refreshMetadata } = await useAsyncData("metadat
     $fetch("/api/feeds/data", { headers, signal }),
   ]),
 );
+
+const { data: entries, execute: fetchEntries } = await useFetch("/api/entries", {
+  headers,
+  immediate: true,
+  query: computed(() => {
+    const query: Record<string, string> = {};
+    if (itemsDirection.value) query.direction = itemsDirection.value;
+    if (itemsOrder.value) query.order = itemsOrder.value;
+    if (itemsStatus.value) query.status = itemsStatus.value;
+    if (selectedFeedId.value) {
+      query.selectedType = "feed";
+      query.selectedId = selectedFeedId.value;
+    } else if (selectedCategoryId.value) {
+      query.selectedType = "category";
+      query.selectedId = selectedCategoryId.value;
+    }
+    if (searchQuery.value) query.search = searchQuery.value;
+    query.limit = String(itemsLimit.value);
+    query.offset = String(offset.value);
+    return query;
+  }),
+  watch: false,
+});
+watch(entries, (newItems) => {
+  if (!newItems) return;
+  if (newItems.length < itemsLimit.value) hasMore.value = false;
+  for (const item of newItems) {
+    items.value.push(item);
+    entryRead.value[item.entry.id] = item.entry.readAt ? "read" : "unread";
+    entryStar.value[item.entry.id] = item.entry.starredAt ? "starred" : "unstarred";
+  }
+  offset.value += itemsLimit.value;
+});
+watch([itemsDirection, itemsLimit, itemsOrder, itemsStatus, searchQuery, selectedCategoryId, selectedFeedId], () => {
+  resetThenLoad();
+});
+
 const categories = computed(() => metadata.value?.[0] ?? []);
 const sortedCategories = computed(() => {
   const cats = structuredClone(categories.value);
@@ -717,73 +754,6 @@ async function getFullContent(entryId: number) {
   }
 }
 
-async function load() {
-  const query: Record<string, string> = {};
-  if (itemsDirection.value) query.direction = itemsDirection.value;
-  if (itemsOrder.value) query.order = itemsOrder.value;
-  if (itemsStatus.value) query.status = itemsStatus.value;
-  if (selectedFeedId.value) {
-    query.selectedType = "feed";
-    query.selectedId = selectedFeedId.value;
-  } else if (selectedCategoryId.value) {
-    query.selectedType = "category";
-    query.selectedId = selectedCategoryId.value;
-  }
-  if (searchQuery.value) query.search = searchQuery.value;
-  query.limit = String(itemsLimit.value);
-  query.offset = String(offset.value);
-
-  if (loading.value) return;
-  $q.loadingBar.start();
-  loading.value = true;
-
-  try {
-    const newItems = await $fetch("/api/entries", { query });
-    for (const item of newItems) {
-      items.value.push(item);
-      entryRead.value[item.entry.id] = item.entry.readAt ? "read" : "unread";
-      entryStar.value[item.entry.id] = item.entry.starredAt ? "starred" : "unstarred";
-    }
-    if (newItems.length < itemsLimit.value) hasMore.value = false;
-    offset.value += itemsLimit.value;
-
-    if (itemsStatus.value === "unread" && items.value.length === 0) {
-      if (selectedFeedId.value) {
-        $q.notify({
-          type: "info",
-          icon: "search_off",
-          message: `No entries found for the selected ${getFilteredFeedTitle()}.`,
-          actions: [{ icon: "close", color: "white" }],
-        });
-        selectedFeedId.value = undefined;
-        await nextTick();
-        return;
-      }
-      if (selectedCategoryId.value) {
-        $q.notify({
-          type: "info",
-          icon: "search_off",
-          message: `No entries found for the selected ${getFilteredCategoryName()}.`,
-          actions: [{ icon: "close", color: "white" }],
-        });
-        selectedCategoryId.value = undefined;
-        await nextTick();
-        return;
-      }
-    }
-  } catch (err) {
-    $q.notify({
-      type: "negative",
-      message: `Failed to load entries: ${err}`,
-      actions: [{ icon: "close", color: "white" }],
-    });
-    hasMore.value = false;
-  } finally {
-    loading.value = false;
-    $q.loadingBar.stop();
-  }
-}
-
 async function loadContent(entryId: number) {
   if (contents.value[entryId]) return;
 
@@ -883,7 +853,7 @@ async function onLoad(_index: number, done: (stop?: boolean) => void) {
     if (done) done(true);
     return;
   }
-  await load();
+  await fetchEntries();
   if (done) done();
 }
 
@@ -907,7 +877,7 @@ async function resetThenLoad(done?: (stop?: boolean) => void) {
     summarizing.value = {};
     summarizingControllers.value = {};
 
-    await Promise.all([refreshMetadata(), load()]);
+    await Promise.all([refreshMetadata(), fetchEntries()]);
   } catch (e) {
     console.error("Error in resetThenLoad:", e);
   } finally {
@@ -916,12 +886,6 @@ async function resetThenLoad(done?: (stop?: boolean) => void) {
     if (done) done();
   }
 }
-watch(
-  [loggedIn, itemsDirection, itemsLimit, itemsOrder, itemsStatus, selectedCategoryId, selectedFeedId, searchQuery],
-  () => {
-    if (loggedIn.value) resetThenLoad();
-  },
-);
 
 async function saveEntry(entryId: number) {
   if (saving.value[entryId]) return;
