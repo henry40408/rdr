@@ -242,7 +242,7 @@
           <q-infinite-scroll ref="infinite-scroll" :offset="250" @load="onLoad">
             <q-list separator>
               <q-item
-                v-if="!loading && items.length === 0"
+                v-if="!pending && items.length === 0"
                 class="q-pa-md q-mb-md"
                 :class="{ 'bg-grey-9': isDark, 'bg-grey-3': !isDark }"
               >
@@ -533,7 +533,6 @@ const expanded: Ref<boolean[]> = ref([]);
 const hasMore = ref(true);
 const items: Ref<import("../../server/api/entries.get").EntryEntityWithFeed[]> = ref([]);
 const leftDrawerOpen = ref(false);
-const loading = ref(false);
 const offset = ref(0);
 const rightDrawerOpen = ref(false);
 const saving: Ref<Record<string, boolean>> = ref({});
@@ -579,9 +578,12 @@ const { data: metadata, refresh: refreshMetadata } = await useAsyncData("metadat
   ]),
 );
 
-const { data: entries, execute: fetchEntries } = await useFetch("/api/entries", {
+const {
+  data: entries,
+  execute: fetchEntries,
+  pending,
+} = await useFetch("/api/entries", {
   headers,
-  immediate: true,
   query: computed(() => {
     const query: Record<string, string> = {};
     if (itemsDirection.value) query.direction = itemsDirection.value;
@@ -599,10 +601,39 @@ const { data: entries, execute: fetchEntries } = await useFetch("/api/entries", 
     query.offset = String(offset.value);
     return query;
   }),
+  // when any query parameters change,
+  // we first reset the items list and then fetch new data,
+  // so we don't need to auto-refetch here
   watch: false,
 });
 watch(entries, (newItems) => {
   if (!newItems) return;
+
+  if (newItems.length === 0) {
+    if (itemsStatus.value === "unread") {
+      if (selectedFeedId.value && selectedCategoryId.value) {
+        $q.notify({
+          type: "info",
+          message: `No entries found for the selected feed ${getFilteredFeedTitle()}.`,
+          actions: [{ icon: "close", color: "white" }],
+        });
+        selectedFeedId.value = undefined;
+        fetchEntries();
+        return;
+      }
+      if (selectedCategoryId.value) {
+        $q.notify({
+          type: "info",
+          message: `No entries found for the selected category ${getFilteredCategoryName()}.`,
+          actions: [{ icon: "close", color: "white" }],
+        });
+        selectedCategoryId.value = undefined;
+        fetchEntries();
+        return;
+      }
+    }
+  }
+
   if (newItems.length < itemsLimit.value) hasMore.value = false;
   for (const item of newItems) {
     items.value.push(item);
@@ -610,6 +641,10 @@ watch(entries, (newItems) => {
     entryStar.value[item.entry.id] = item.entry.starredAt ? "starred" : "unstarred";
   }
   offset.value += itemsLimit.value;
+});
+watchEffect(() => {
+  if (!pending.value) $q.loadingBar.stop();
+  else $q.loadingBar.start();
 });
 watch([itemsDirection, itemsLimit, itemsOrder, itemsStatus, searchQuery, selectedCategoryId, selectedFeedId], () => {
   resetThenLoad();
