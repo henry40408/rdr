@@ -606,18 +606,12 @@ useHead(() => ({
 const feedsData = computed(() => data.value?.[3]);
 const imagePks = computed(() => data.value?.[2] ?? []);
 
-/**
- * @param {number} entryId
- */
 function cancelScraping(entryId: number) {
   const controller = scrappingControllers.value[entryId];
   if (!controller) return;
   controller.abort();
 }
 
-/**
- * @param {number} entryId
- */
 function cancelSummarization(entryId: number) {
   const controller = summarizingControllers.value[entryId];
   if (!controller) return;
@@ -631,9 +625,6 @@ function collapseOpenItem() {
   scrollToContentRef(index);
 }
 
-/**
- * @param {"day"|"week"|"month"|"year"} [olderThan]
- */
 async function doMarkManyAsRead(olderThan?: "day" | "week" | "month" | "year") {
   const now = new Date();
 
@@ -666,28 +657,16 @@ async function doMarkManyAsRead(olderThan?: "day" | "week" | "month" | "year") {
   }
 }
 
-/**
- * @param {number} categoryId
- * @returns {number}
- */
 function getCategoryUnreadCount(categoryId: number): number {
   if (!feedsData.value) return 0;
   const feedIds = categories.value?.filter((c) => c.id === categoryId).flatMap((c) => c.feeds.map((f) => f.id)) ?? [];
   return feedIds.reduce((sum, feedId) => sum + (feedsData.value?.feeds[feedId]?.unreadCount ?? 0), 0);
 }
 
-/**
- * @param {number} entryId
- * @returns {string}
- */
 function getContent(entryId: number): string {
   return fullContents.value[entryId] ?? contents.value[entryId] ?? "";
 }
 
-/**
- * @param {number} feedId
- * @returns {number}
- */
 function getFeedUnreadCount(feedId: number): number {
   if (!feedsData.value) return 0;
   return feedsData.value?.feeds[feedId]?.unreadCount ?? 0;
@@ -707,9 +686,6 @@ function getFilteredFeedTitle() {
   return entry ? entry.title : "Unknown";
 }
 
-/**
- * @param {number} entryId
- */
 async function getFullContent(entryId: number) {
   if (fullContents.value[entryId]) return;
 
@@ -808,9 +784,6 @@ async function load() {
   }
 }
 
-/**
- * @param {number} entryId
- */
 async function loadContent(entryId: number) {
   if (contents.value[entryId]) return;
 
@@ -831,10 +804,6 @@ async function loadContent(entryId: number) {
   }
 }
 
-/**
- * @param {number} feedId
- * @returns {boolean}
- */
 function isImageExists(feedId: number): boolean {
   const key = buildFeedImageKey(feedId);
   return imagePks.value?.includes(key) ?? false;
@@ -849,10 +818,6 @@ function isOpenEntryStarred() {
   return false;
 }
 
-/**
- * @param {number} entryId
- * @returns {boolean}
- */
 function isRead(entryId: number): boolean {
   return entryRead.value[entryId] === "read";
 }
@@ -874,18 +839,12 @@ function markManyAsReadDialog() {
     },
     ok: { color: "negative" },
     cancel: true,
-  }).onOk(
-    /** @param {"day"|"week"|"month"|"year"|"all"} data */
-    async (data: "day" | "week" | "month" | "year" | "all") => {
-      if (data === "all") await doMarkManyAsRead();
-      else await doMarkManyAsRead(data);
-    },
-  );
+  }).onOk(async (data: "day" | "week" | "month" | "year" | "all") => {
+    if (data === "all") await doMarkManyAsRead();
+    else await doMarkManyAsRead(data);
+  });
 }
 
-/**
- * @param {number} entryId
- */
 async function markAsRead(entryId: number) {
   if (entryRead.value[entryId] === "read") return;
   const value = entryRead.value[entryId];
@@ -905,10 +864,6 @@ async function markAsRead(entryId: number) {
   }
 }
 
-/**
- * @param {number} entryId
- * @param {number} index
- */
 async function markAsReadAndCollapse(entryId: number, index: number) {
   await markAsRead(entryId);
   expanded.value[index] = false;
@@ -923,10 +878,6 @@ function markOpenAsReadAndCollapse() {
   if (entryId) markAsReadAndCollapse(entryId, index);
 }
 
-/**
- * @param {number} [_index]
- * @param {(stop?:boolean) => void} [done]
- */
 async function onLoad(_index: number, done: (stop?: boolean) => void) {
   if (!hasMore.value) {
     if (done) done(true);
@@ -936,9 +887,6 @@ async function onLoad(_index: number, done: (stop?: boolean) => void) {
   if (done) done();
 }
 
-/**
- * @param {(stop?:boolean) => void} [done]
- */
 async function resetThenLoad(done?: (stop?: boolean) => void) {
   // @ts-expect-error: stop exists
   infiniteScroll.value?.stop();
@@ -976,9 +924,6 @@ watch(
   },
 );
 
-/**
- * @param {number} entryId
- */
 async function saveEntry(entryId: number) {
   if (saving.value[entryId]) return;
   saving.value[entryId] = true;
@@ -1002,19 +947,11 @@ async function saveEntry(entryId: number) {
   }
 }
 
-/**
- * @param {number} index
- */
 function scrollToContentRef(index: number) {
   // @ts-expect-error: scrollIntoView exists
   itemRefs.value?.[index]?.$el.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-/**
- * @param {Date} now
- * @param {number} entryId
- * @param {"day"|"week"|"month"|"year"} [olderThan]
- */
 function shouldMarkAsRead(now: Date, entryId: number, olderThan?: "day" | "week" | "month" | "year") {
   if (entryRead.value[entryId] === "read") return true;
   if (!olderThan) return true; // mark all as read
@@ -1037,31 +974,18 @@ function shouldMarkAsRead(now: Date, entryId: number, olderThan?: "day" | "week"
   }
 }
 
-/**
- * @param {number} entryId
- * @param {number} index
- * @param {()=>void} done
- */
 async function slideLeft(entryId: number, index: number, done: () => void) {
   entryStar.value[entryId] = entryStar.value[entryId] === "starred" ? "unstarred" : "starred";
   await toggleStarEntry(entryId);
   done();
 }
 
-/**
- * @param {number} entryId
- * @param {number} index
- * @param {()=>void} done
- */
 async function slideRight(entryId: number, index: number, done: () => void) {
   entryRead.value[entryId] = entryRead.value[entryId] === "read" ? "unread" : "read";
   await toggleReadEntry(entryId, index);
   done();
 }
 
-/**
- * @param {number} entryId
- */
 async function summarizeEntry(entryId: number) {
   const entry = items.value.find((i) => i.entry.id === entryId);
   if (!entry) return;
@@ -1103,10 +1027,6 @@ ${pangu.spacingText(content ?? "")}`;
   }
 }
 
-/**
- * @param {number} entryId
- * @param {number} index
- */
 async function toggleReadEntry(entryId: number, index: number) {
   if (entryRead.value[entryId] === "toggling") return;
   // status of checkbox is already changed by the time this function is called
@@ -1129,9 +1049,6 @@ async function toggleReadEntry(entryId: number, index: number) {
   }
 }
 
-/**
- * @param {number} entryId
- */
 async function toggleStarEntry(entryId: number) {
   if (entryStar.value[entryId] === "starring") return;
   // status of checkbox is already changed by the time this function is called
