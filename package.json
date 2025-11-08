@@ -68,5 +68,9 @@
     "typescript": "^5.9.2",
     "vitest": "^3.2.4",
     "vue-tsc": "^3.0.8"
-  }
+  },
+  "trustedDependencies": [
+    "@parcel/watcher",
+    "unrs-resolver"
+  ]
 }
