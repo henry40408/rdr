@@ -5,7 +5,7 @@ RUN bun install --frozen-lockfile
 COPY . .
 RUN bun run build
 
-FROM oven/bun:1-distroless
+FROM oven/bun:1-alpine
 WORKDIR /app
 COPY --from=builder /app/.output .output
 EXPOSE 3000
