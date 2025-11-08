@@ -468,6 +468,9 @@
                 </q-item-section>
               </q-item>
             </q-list>
+            <div class="text-center" v-if="pending">
+              <q-spinner size="lg" class="q-my-md" />
+            </div>
           </q-infinite-scroll>
         </q-pull-to-refresh>
 
@@ -513,6 +516,9 @@ $q.loadingBar.setDefaults({
 const isDark = useDark();
 onMounted(() => {
   $q.dark.set(isDark.value);
+});
+onUnmounted(() => {
+  $q.loadingBar.stop();
 });
 watchEffect(
   () => {
@@ -569,11 +575,11 @@ const summarizationEnabled = computed(() => !!features.value?.summarization);
 const saveEnabled = computed(() => !!features.value?.save);
 
 const headers = useRequestHeaders(["cookie"]);
+const { data: categories } = await useFetch("/api/categories", { headers, default: () => [] });
+const { data: imagePrimaryKeys } = await useFetch<string[]>("/api/images/primary-keys", { headers, default: () => [] });
 const { data: metadata, refresh: refreshMetadata } = await useAsyncData("metadata", (_nuxtApp, { signal }) =>
   Promise.all([
-    $fetch("/api/categories", { headers, signal }),
     $fetch("/api/count", { headers, query: countQuery.value, signal }),
-    $fetch("/api/images/primary-keys", { headers, signal }),
     $fetch("/api/feeds/data", { headers, signal }),
   ]),
 );
@@ -650,7 +656,6 @@ watch([itemsDirection, itemsLimit, itemsOrder, itemsStatus, searchQuery, selecte
   resetThenLoad();
 });
 
-const categories = computed(() => metadata.value?.[0] ?? []);
 const sortedCategories = computed(() => {
   const cats = structuredClone(categories.value);
   cats.sort((a, b) => {
@@ -667,7 +672,7 @@ const sortedCategories = computed(() => {
   });
   return cats;
 });
-const countData = computed(() => metadata.value?.[1] ?? { count: 0 });
+const countData = computed(() => metadata.value?.[0] ?? { count: 0 });
 useHead(() => ({
   title: selectedFeedId.value
     ? `(${countData.value?.count ?? 0}) Feed: ${getFilteredFeedTitle()} - rdr`
@@ -675,8 +680,7 @@ useHead(() => ({
       ? `(${countData.value?.count ?? 0}) Category: ${getFilteredCategoryName()} - rdr`
       : `(${countData.value?.count ?? 0}) rdr`,
 }));
-const feedsData = computed(() => metadata.value?.[3]);
-const imagePks = computed(() => metadata.value?.[2] ?? []);
+const feedsData = computed(() => metadata.value?.[1]);
 
 function cancelScraping(entryId: number) {
   const controller = scrappingControllers.value[entryId];
@@ -811,7 +815,7 @@ async function loadContent(entryId: number) {
 
 function isImageExists(feedId: number): boolean {
   const key = buildFeedImageKey(feedId);
-  return imagePks.value?.includes(key) ?? false;
+  return imagePrimaryKeys.value?.includes(key) ?? false;
 }
 
 function isOpenEntryStarred() {
