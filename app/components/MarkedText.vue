@@ -13,8 +13,6 @@ const props = defineProps({
 
 const processed = computed(() => {
   if (!props.keyword) return pangu.spacingText(props.text);
-
-  const regex = new RegExp(`(${props.keyword})`, "gi");
-  return props.text.replace(regex, "<mark>$1</mark>");
+  return highlightKeyword(props.text, props.keyword);
 });
 </script>
