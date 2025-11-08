@@ -126,13 +126,13 @@
         <q-item-label header>Account</q-item-label>
         <q-item v-if="session?.user">
           <q-item-section>
-            <q-item-label overline>USERNAME</q-item-label>
+            <q-item-label caption>Username</q-item-label>
             <q-item-label>{{ session.user.username }}</q-item-label>
           </q-item-section>
         </q-item>
         <q-item v-if="session?.loggedInAt">
           <q-item-section>
-            <q-item-label overline>LOGGED IN AT</q-item-label>
+            <q-item-label caption>Logged in at</q-item-label>
             <q-item-label><ClientDateTime :datetime="session.loggedInAt" /></q-item-label>
           </q-item-section>
         </q-item>
@@ -306,7 +306,10 @@
                         />
                       </q-item-section>
                       <q-item-section>
-                        <q-item-label caption>{{ item.feed.title }} &middot; {{ item.category.name }}</q-item-label>
+                        <q-item-label caption
+                          >{{ item.feed.title }} &middot; {{ item.category.name }} &middot;
+                          <ClientAgo :datetime="item.entry.date" />
+                        </q-item-label>
                         <q-item-label lines="3">
                           <q-avatar square size="xs" class="bg-white q-mr-sm">
                             <img
@@ -321,7 +324,6 @@
                         </q-item-label>
                       </q-item-section>
                       <q-item-section top side>
-                        <ClientAgo :datetime="item.entry.date" />
                         <q-icon v-if="fullContents[item.entry.id]" size="xs" name="article" />
                         <q-spinner v-if="scrapping[item.entry.id]" />
                         <template v-if="summarizationEnabled">
