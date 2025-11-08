@@ -17,6 +17,7 @@ export default defineNuxtConfig({
   },
   css: ["@/assets/css/main.css", "@/assets/css/anchor.css"],
   modules: ["@nuxt/eslint", "@nuxt/test-utils/module", "@vueuse/nuxt", "nuxt-auth-utils", "nuxt-quasar-ui"],
+  nitro: { preset: "bun" },
   runtimeConfig: {
     dbPath: "./data/db.sqlite3",
     disableSignUp: false,
@@ -40,10 +41,5 @@ export default defineNuxtConfig({
     },
     singleUser: true,
   },
-  quasar: {
-    plugins: ["Dialog", "LoadingBar", "Notify"],
-  },
-  typescript: {
-    typeCheck: true,
-  },
+  quasar: { plugins: ["Dialog", "LoadingBar", "Notify"] },
 });
