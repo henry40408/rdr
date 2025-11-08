@@ -41,5 +41,19 @@ export default defineNuxtConfig({
     },
     singleUser: true,
   },
-  quasar: { plugins: ["Dialog", "LoadingBar", "Notify"] },
+  quasar: {
+    plugins: ["Dialog", "LoadingBar", "Notify"],
+    config: {
+      brand: {
+        primary: "#4682B4",
+        secondary: "#5F9EA0",
+        accent: "#FF7F50",
+        positive: "#3CB371",
+        negative: "#FF6347",
+        info: "#1E90FF",
+        warning: "#FFA500",
+        // dark: "#2F4F4F", // use default dark color
+      },
+    },
+  },
 });
