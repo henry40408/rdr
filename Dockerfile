@@ -1,15 +1,15 @@
-FROM node:22-alpine AS builder
+FROM oven/bun:1-alpine AS builder
 WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci
+COPY package.json bun.lock ./
+RUN bun install --frozen-lockfile
 COPY . .
-RUN npm run build
+RUN bun run build
 
-FROM node:22-alpine
+FROM oven/bun:1-distroless
 WORKDIR /app
 COPY --from=builder /app/.output .output
 EXPOSE 3000
 
 VOLUME /app/data
 
-CMD ["node", ".output/server/index.mjs"]
+CMD ["bun", "run", "./.output/server/index.mjs"]
