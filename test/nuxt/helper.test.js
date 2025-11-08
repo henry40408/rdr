@@ -3,6 +3,7 @@
 import { describe, it } from "vitest";
 import { digestUrl, normalizeDatetime, parseDataURL } from "../../server/utils/helper.js";
 import assert from "node:assert";
+import { highlightKeyword } from "../../app/utils/index.js";
 import { replaceForTiddlyWiki } from "../../shared/utils/index.js";
 
 describe("digestUrl", () => {
@@ -89,5 +90,55 @@ describe("replaceForTiddlyWiki", () => {
     const expected = "Just a normal string.";
     const output = replaceForTiddlyWiki(input);
     assert.strictEqual(output, expected);
+  });
+});
+
+describe("mark text", () => {
+  it("marks keyword in plain text", () => {
+    const text = "This is a simple test. Testing the mark function.";
+    const keyword = "test";
+    const result = highlightKeyword(text, keyword);
+    const expected = "This is a simple <mark>test</mark>. <mark>Test</mark>ing the mark function.";
+    assert.strictEqual(result, expected);
+  });
+
+  it("does not break existing HTML tags", () => {
+    const text = "This is a <strong>test</strong> of the mark function.";
+    const keyword = "test";
+    const result = highlightKeyword(text, keyword);
+    const expected = "This is a <strong><mark>test</mark></strong> of the mark function.";
+    assert.strictEqual(result, expected);
+  });
+
+  it("does not mark keywords inside URLs", () => {
+    const text = "Visit https://example.com/test for more info.";
+    const keyword = "test";
+    const result = highlightKeyword(text, keyword);
+    const expected = "Visit https://example.com/test for more info.";
+    assert.strictEqual(result, expected);
+  });
+
+  it("handles mixed content with HTML and URLs", () => {
+    const text = 'Check <a href="https://example.com/test">this link</a> and the test word.';
+    const keyword = "test";
+    const result = highlightKeyword(text, keyword);
+    const expected = 'Check <a href="https://example.com/test">this link</a> and the <mark>test</mark> word.';
+    assert.strictEqual(result, expected);
+  });
+
+  it("handles keywords in anchor tags but not in href attributes", () => {
+    const text = 'Check out <a href="https://example.com/test">this test</a> for the info.';
+    const keyword = "test";
+    const result = highlightKeyword(text, keyword);
+    const expected = 'Check out <a href="https://example.com/test">this <mark>test</mark></a> for the info.';
+    assert.strictEqual(result, expected);
+  });
+
+  it("is case insensitive when marking keywords", () => {
+    const text = "This is a Test of the MARK function.";
+    const keyword = "mark";
+    const result = highlightKeyword(text, keyword);
+    const expected = "This is a Test of the <mark>MARK</mark> function.";
+    assert.strictEqual(result, expected);
   });
 });
