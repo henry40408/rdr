@@ -10,7 +10,8 @@
 export function highlightKeyword(text, keyword) {
   if (!keyword) return text;
 
-  const regex = new RegExp(`(https?:\/\/[^\s<]+|<[^>]+>)|(${keyword})`, "gi");
+  const escapedKeyword = keyword.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
+  const regex = new RegExp(`(https?://[^\\s<]+|<[^>]+>)|(${escapedKeyword})`, "gi");
   return text.replace(regex, (match, p1, p2) => {
     if (p1) {
       // It's a URL or HTML tag, return as is

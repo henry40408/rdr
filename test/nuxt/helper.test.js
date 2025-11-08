@@ -3,8 +3,8 @@
 import { describe, it } from "vitest";
 import { digestUrl, normalizeDatetime, parseDataURL } from "../../server/utils/helper.js";
 import assert from "node:assert";
-import { replaceForTiddlyWiki } from "../../shared/utils/index.js";
 import { highlightKeyword } from "../../app/utils/index.js";
+import { replaceForTiddlyWiki } from "../../shared/utils/index.js";
 
 describe("digestUrl", () => {
   const secret = "my_secret_key";
