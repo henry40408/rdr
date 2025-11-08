@@ -306,10 +306,8 @@
                         />
                       </q-item-section>
                       <q-item-section>
+                        <q-item-label caption>{{ item.feed.title }} &middot; {{ item.category.name }}</q-item-label>
                         <q-item-label lines="3">
-                          <MarkedText :keyword="searchQuery" :text="item.entry.title" />
-                        </q-item-label>
-                        <q-item-label caption lines="3">
                           <q-avatar square size="xs" class="bg-white q-mr-sm">
                             <img
                               v-if="isImageExists(item.feed.id)"
@@ -319,17 +317,17 @@
                               :src="`/api/images/external/${buildFeedImageKey(item.feed.id)}`"
                             />
                           </q-avatar>
-                          <span>
-                            {{ item.category.name }} &middot; {{ item.feed.title }} &middot;
-                            <ClientAgo :datetime="item.entry.date" />
-                          </span>
+                          <MarkedText :keyword="searchQuery" :text="item.entry.title" />
                         </q-item-label>
                       </q-item-section>
-                      <q-item-section v-if="summarizationEnabled" top side>
+                      <q-item-section top side>
+                        <ClientAgo :datetime="item.entry.date" />
                         <q-icon v-if="fullContents[item.entry.id]" size="xs" name="article" />
                         <q-spinner v-if="scrapping[item.entry.id]" />
-                        <q-icon v-if="summarizations[item.entry.id]" size="xs" name="psychology" />
-                        <q-spinner v-if="summarizing[item.entry.id]" />
+                        <template v-if="summarizationEnabled">
+                          <q-icon v-if="summarizations[item.entry.id]" size="xs" name="psychology" />
+                          <q-spinner v-if="summarizing[item.entry.id]" />
+                        </template>
                       </q-item-section>
                     </q-item>
                   </q-slide-item>
