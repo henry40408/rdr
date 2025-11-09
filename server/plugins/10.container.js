@@ -53,8 +53,8 @@ export default defineNitroPlugin(
     logger.info("Dependency injection container initialized");
 
     {
-      const { buildDate, gitDescribe } = config.public;
-      logger.info({ message: "Application started", buildDate, gitDescribe });
+      const { buildDate, version } = config.public;
+      logger.info({ message: "Application started", buildDate, version });
     }
 
     nitroApp.container = diContainer;

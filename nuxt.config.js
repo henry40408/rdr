@@ -27,7 +27,7 @@ export default defineNuxtConfig({
     opmlPath: "./data/feeds.opml",
     public: {
       buildDate: new Date().toISOString(),
-      gitDescribe: "unknown",
+      version: "dev",
     },
     userAgent: "Mozilla/5.0 (compatible; rdr/1.0; +https://github.com/henry40408/rdr)",
     session: {

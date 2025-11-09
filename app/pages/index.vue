@@ -126,8 +126,8 @@
         <q-item-label header>Version</q-item-label>
         <q-item>
           <q-item-section>
-            <q-item-label caption>Git describe</q-item-label>
-            <q-item-label>{{ $config.public.gitDescribe }}</q-item-label>
+            <q-item-label caption>Version</q-item-label>
+            <q-item-label>{{ $config.public.version }}</q-item-label>
           </q-item-section>
         </q-item>
         <q-item>
