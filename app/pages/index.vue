@@ -513,7 +513,7 @@
 
 <script setup lang="ts">
 import { UseClipboard } from "@vueuse/components";
-import { add } from "date-fns";
+import { add } from "date-fns/add";
 import pangu from "pangu";
 import { useQuasar } from "quasar";
 import { useRouteQuery } from "@vueuse/router";

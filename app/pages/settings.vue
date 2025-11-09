@@ -103,7 +103,7 @@
 </template>
 
 <script setup lang="ts">
-import { millisecondsToSeconds } from "date-fns";
+import { millisecondsToSeconds } from "date-fns/millisecondsToSeconds";
 import { useQuasar } from "quasar";
 
 const { loggedIn } = useUserSession();
