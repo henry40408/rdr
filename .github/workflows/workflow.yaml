@@ -10,16 +10,17 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5.0.0
-      - uses: oven-sh/setup-bun@v2.0.2
+      - uses: actions/setup-node@v5.0.0
         with:
-          bun-version: 1.3.1
-      - run: bun install --frozen-lockfile
-      - run: bun run nuxi prepare
-      - run: bun run lint
-      - run: bun run prettier:check
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx nuxi prepare
+      - run: npm run lint
+      - run: npm run prettier:check
         if: ${{ runner.os != 'Windows' }} # Prettier on Windows has some issues with line endings
-      - run: bun run nuxi typecheck
-      - run: bun run test
+      - run: npx nuxi typecheck
+      - run: npm test
   build-and-publish:
     needs: [check]
     runs-on: ubuntu-latest
