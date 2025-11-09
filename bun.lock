@@ -57,6 +57,7 @@
     },
   },
   "trustedDependencies": [
+    "sqlite3",
     "unrs-resolver",
     "@parcel/watcher",
   ],
