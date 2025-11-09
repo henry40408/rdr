@@ -52,6 +52,11 @@ export default defineNitroPlugin(
     await manager.executeInit();
     logger.info("Dependency injection container initialized");
 
+    {
+      const { buildDate, gitDescribe } = config.public;
+      logger.info({ message: "Application started", buildDate, gitDescribe });
+    }
+
     nitroApp.container = diContainer;
 
     nitroApp.hooks.hookOnce("close", async () => {

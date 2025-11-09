@@ -123,6 +123,22 @@
 
     <q-drawer v-model="rightDrawerOpen" bordered persistent side="right" show-if-above>
       <q-list padding>
+        <q-item-label header>Version</q-item-label>
+        <q-item>
+          <q-item-section>
+            <q-item-label caption>Git describe</q-item-label>
+            <q-item-label>{{ $config.public.gitDescribe }}</q-item-label>
+          </q-item-section>
+        </q-item>
+        <q-item>
+          <q-item-section>
+            <q-item-label caption>Build date</q-item-label>
+            <q-item-label>
+              <ClientDateTime :datetime="$config.public.buildDate" />
+            </q-item-label>
+          </q-item-section>
+        </q-item>
+        <q-separator spaced />
         <q-item-label header>Account</q-item-label>
         <q-item v-if="session?.user">
           <q-item-section>
