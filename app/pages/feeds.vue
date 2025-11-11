@@ -15,7 +15,9 @@
     <q-page-container>
       <q-page>
         <q-list padding class="q-pb-xl">
-          <q-item-label header>New Feed</q-item-label>
+          <q-item>
+            <q-item-section>New Feed</q-item-section>
+          </q-item>
           <q-item>
             <q-item-section>
               <q-select
@@ -71,7 +73,7 @@
                   clickable
                   @click="() => $router.push({ path: '/', query: { categoryId: category.id } })"
                 >
-                  <q-item-label>{{ category.name }}</q-item-label>
+                  <MarkedText :text="category.name" :keyword="categoryFeedQuery" />
                 </q-item-section>
                 <q-item-section top side>
                   <q-item-label caption>{{ category.feeds.length }} feeds</q-item-label>
@@ -127,8 +129,9 @@
                           :class="{
                             'text-negative': feedDataByFeedId[feed.id]?.lastError,
                           }"
-                          >{{ feed.title }}</span
                         >
+                          <MarkedText :text="feed.title" :keyword="categoryFeedQuery" />
+                        </span>
                       </q-item-label>
                     </q-item-section>
                     <q-item-section top side>
