@@ -65,4 +65,12 @@ export default defineNuxtConfig({
       },
     },
   },
+  security: {
+    // Built-in rate limiter is not suitable for complex production applications.
+    // It is meant to help simpler applications handle the issue of brute forcing.
+    // To correctly protect your production application against brute forcing,
+    // you should use solutions that work on the infrastructure layer,
+    // not the application layer.
+    rateLimiter: false,
+  },
 });
