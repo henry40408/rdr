@@ -2,21 +2,21 @@
   <q-layout v-if="loggedIn" view="hhh LpR fFf">
     <q-header elevated class="bg-primary text-white">
       <q-toolbar>
-        <q-btn flat dense round icon="menu" @click="leftDrawerOpen = !leftDrawerOpen" />
+        <q-btn flat round icon="menu" @click="leftDrawerOpen = !leftDrawerOpen" />
         <q-toolbar-title>
           <q-avatar>
             <q-icon name="rss_feed" />
           </q-avatar>
           rdr
         </q-toolbar-title>
-        <q-input v-model="searchQuery" dark dense filled debounce="500" placeholder="Search" input-class="text-right">
+        <q-input v-model="searchQuery" dark filled debounce="500" input-class="text-right" placeholder="Search entries">
           <template #append>
             <q-icon v-if="!searchQuery" name="search" />
             <q-icon v-else name="clear" class="cursor-pointer" @click="searchQuery = ''" />
           </template>
         </q-input>
         <NavTabs />
-        <q-btn flat dense round icon="menu" @click="rightDrawerOpen = !rightDrawerOpen" />
+        <q-btn flat round icon="menu" @click="rightDrawerOpen = !rightDrawerOpen" />
       </q-toolbar>
     </q-header>
 
@@ -28,7 +28,6 @@
             <ClientOnly>
               <q-select
                 v-model="categoriesOrder"
-                dense
                 filled
                 emit-value
                 map-options
@@ -52,14 +51,14 @@
         <q-item>
           <q-item-section>
             <ClientOnly>
-              <q-toggle v-model="hideEmpty" dense label="Hide empty" />
+              <q-toggle v-model="hideEmpty" label="Hide empty" />
             </ClientOnly>
           </q-item-section>
         </q-item>
         <ClientOnly>
           <template v-for="category in sortedCategories" :key="category.id">
             <q-item
-              v-show="!hideEmpty || getCategoryUnreadCount(category.id) > 0"
+              v-show="shouldShowCategory(category.id)"
               v-ripple
               clickable
               @click="
@@ -76,10 +75,10 @@
                 </q-badge>
               </q-item-section>
             </q-item>
-            <q-separator v-if="!hideEmpty || getCategoryUnreadCount(category.id) > 0" />
+            <q-separator v-if="shouldShowCategory(category.id)" />
             <template v-for="feed in category.feeds" :key="feed.id">
               <q-item
-                v-show="!hideEmpty || getFeedUnreadCount(feed.id) > 0"
+                v-show="shouldShowFeed(feed.id)"
                 v-ripple
                 clickable
                 @click="
@@ -174,7 +173,7 @@
             {{ itemsLimit }}
           </q-item-section>
           <q-item-section>
-            <q-slider v-model.number="itemsLimit" dense filled markers :min="30" :max="300" :step="30" type="number" />
+            <q-slider v-model.number="itemsLimit" filled markers :min="30" :max="300" :step="30" type="number" />
           </q-item-section>
         </q-item>
         <q-separator spaced />
@@ -183,7 +182,6 @@
           <q-item-section>
             <q-select
               v-model="itemsOrder"
-              dense
               filled
               emit-value
               map-options
@@ -990,6 +988,16 @@ function shouldMarkAsRead(now: Date, entryId: number, olderThan?: "day" | "week"
     default:
       return false;
   }
+}
+
+function shouldShowCategory(categoryId: number): boolean {
+  if (hideEmpty.value) return getCategoryUnreadCount(categoryId) > 0;
+  return true;
+}
+
+function shouldShowFeed(feedId: number): boolean {
+  if (hideEmpty.value) return getFeedUnreadCount(feedId) > 0;
+  return true;
 }
 
 async function slideLeft(entryId: number, index: number, done: () => void) {
