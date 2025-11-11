@@ -55,6 +55,11 @@
             </ClientOnly>
           </q-item-section>
         </q-item>
+        <q-item>
+          <q-item-section>
+            <q-input v-model="categoryFeedQuery" filled clearable label="Filter categories and / or feeds" />
+          </q-item-section>
+        </q-item>
         <ClientOnly>
           <template v-for="category in sortedCategories" :key="category.id">
             <q-item
@@ -544,6 +549,7 @@ watchEffect(
 const infiniteScroll = useTemplateRef("infinite-scroll");
 const itemRefs = useTemplateRef("item-list");
 
+const categoryFeedQuery = ref("");
 const contents: Ref<{ [key: string]: string }> = ref({});
 const contentLoading: Ref<{ [key: string]: boolean }> = ref({});
 const fullContents: Ref<{ [key: string]: string }> = ref({});
@@ -991,12 +997,31 @@ function shouldMarkAsRead(now: Date, entryId: number, olderThan?: "day" | "week"
 }
 
 function shouldShowCategory(categoryId: number): boolean {
+  const category = categories.value?.find((c) => c.id === categoryId);
+  if (!category) return false;
+
+  if (categoryFeedQuery.value) {
+    const categoryMatched = category.name.toLowerCase().includes(categoryFeedQuery.value.toLowerCase());
+    const feedMatched = category.feeds.some((f) =>
+      f.title.toLowerCase().includes(categoryFeedQuery.value.toLowerCase()),
+    );
+    return categoryMatched || feedMatched;
+  }
+
   if (hideEmpty.value) return getCategoryUnreadCount(categoryId) > 0;
+
   return true;
 }
 
 function shouldShowFeed(feedId: number): boolean {
+  const feeds = categories.value?.flatMap((c) => c.feeds) ?? [];
+  const feed = feeds.find((f) => f.id === feedId);
+  if (!feed) return false;
+
+  if (categoryFeedQuery.value) return feed.title.toLowerCase().includes(categoryFeedQuery.value.toLowerCase());
+
   if (hideEmpty.value) return getFeedUnreadCount(feedId) > 0;
+
   return true;
 }
 

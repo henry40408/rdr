@@ -15,7 +15,7 @@
     <q-page-container>
       <q-page>
         <q-list padding class="q-pb-xl">
-          <q-item header>New Feed</q-item>
+          <q-item-label header>New Feed</q-item-label>
           <q-item>
             <q-item-section>
               <q-select
@@ -43,6 +43,7 @@
               />
             </q-item-section>
           </q-item>
+          <q-separator spaced />
           <q-item>
             <q-item-section>
               <q-item-label>Feeds</q-item-label>
@@ -55,6 +56,11 @@
                 <q-toggle v-model="hideEmpty" label="Hide empty" />
                 <q-toggle v-model="showErrorOnly" label="Show error only" />
               </ClientOnly>
+            </q-item-section>
+          </q-item>
+          <q-item>
+            <q-item-section>
+              <q-input v-model="categoryFeedQuery" filled clearable label="Filter categories and / or feeds" />
             </q-item-section>
           </q-item>
           <template v-for="category in categories" :key="category.id">
@@ -227,6 +233,7 @@ const filteredCategoryOptions: Ref<string[]> = ref([]);
 const htmlUrl = ref("");
 const xmlUrl = ref("");
 
+const categoryFeedQuery = ref("");
 const refreshingCategoryIds: Ref<Set<number>> = ref(new Set());
 const refreshingFeedIds: Ref<Set<number>> = ref(new Set());
 const showErrorOnly: Ref<boolean> = ref(false);
@@ -418,10 +425,16 @@ async function refreshFeed(feed: FeedEntity) {
 }
 
 function shouldShowCategory(categoryId: number) {
-  if (!hideEmpty.value && !showErrorOnly.value) return true;
-
   const category = categories.value?.find((c) => c.id === categoryId);
   if (!category) return false;
+
+  if (categoryFeedQuery.value) {
+    const categoryMatched = category.name.toLowerCase().includes(categoryFeedQuery.value.toLowerCase());
+    const feedMatched = category.feeds.some((f) =>
+      f.title.toLowerCase().includes(categoryFeedQuery.value.toLowerCase()),
+    );
+    return categoryMatched || feedMatched;
+  }
 
   if (showErrorOnly.value) {
     for (const feed of category.feeds) {
@@ -431,18 +444,25 @@ function shouldShowCategory(categoryId: number) {
     return false;
   }
 
-  return getCategoryUnreadCount(categoryId) > 0;
+  if (hideEmpty.value) return getCategoryUnreadCount(categoryId) > 0;
+
+  return true;
 }
 
 function shouldShowFeed(feedId: number) {
-  if (!hideEmpty.value && !showErrorOnly.value) return true;
+  const feed = categories.value?.flatMap((c) => c.feeds).find((f) => f.id === feedId);
+  if (!feed) return false;
+
+  if (categoryFeedQuery.value) return feed.title.toLowerCase().includes(categoryFeedQuery.value.toLowerCase());
 
   if (showErrorOnly.value) {
     const feedData = feedDataByFeedId.value[feedId];
     return !!feedData?.lastError;
   }
 
-  return getFeedUnreadCount(feedId) > 0;
+  if (hideEmpty.value) return getFeedUnreadCount(feedId) > 0;
+
+  return true;
 }
 
 async function updateCategoryDialog(categoryId: number) {
