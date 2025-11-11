@@ -31,7 +31,6 @@ export default defineNuxtConfig({
     httpTimeoutMs: 90000,
     imageDigestSecret: "",
     logLevel: "",
-    opmlPath: "./data/feeds.opml",
     public: {
       buildDate: new Date().toISOString(),
       version: "dev",
