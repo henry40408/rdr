@@ -1,6 +1,6 @@
 // @ts-check
 
-import { secondsInHour, secondsInMinute } from "date-fns/constants";
+import { secondsInDay, secondsInHour } from "date-fns/constants";
 import { z } from "zod";
 
 const schema = z.object({
@@ -24,7 +24,7 @@ export default defineEventHandler(async (event) => {
   if (image.etag) setHeader(event, "ETag", image.etag);
   if (image.lastModified) setHeader(event, "Last-Modified", image.lastModified);
 
-  setHeader(event, "Cache-Control", `public, max-age=${secondsInHour}, stale-while-revalidate=${secondsInMinute}`);
+  setHeader(event, "Cache-Control", `public, max-age=${secondsInHour}, stale-while-revalidate=${secondsInDay}`);
 
   const etag = getHeader(event, "if-none-match");
   if (etag && image.etag && etag === image.etag) {
