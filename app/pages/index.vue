@@ -2,21 +2,29 @@
   <q-layout v-if="loggedIn" view="hhh LpR fFf">
     <q-header elevated class="bg-primary text-white">
       <q-toolbar>
-        <q-btn flat round icon="menu" @click="leftDrawerOpen = !leftDrawerOpen" />
+        <q-btn flat round dense icon="menu" @click="leftDrawerOpen = !leftDrawerOpen" />
         <q-toolbar-title>
           <q-avatar>
             <q-icon name="rss_feed" />
           </q-avatar>
           rdr
         </q-toolbar-title>
-        <q-input v-model="searchQuery" dark filled debounce="500" input-class="text-right" placeholder="Search entries">
+        <q-input
+          v-model="searchQuery"
+          dark
+          dense
+          filled
+          debounce="500"
+          input-class="text-right"
+          placeholder="Search entries"
+        >
           <template #append>
             <q-icon v-if="!searchQuery" name="search" />
             <q-icon v-else name="clear" class="cursor-pointer" @click="searchQuery = ''" />
           </template>
         </q-input>
         <NavTabs />
-        <q-btn flat round icon="menu" @click="rightDrawerOpen = !rightDrawerOpen" />
+        <q-btn flat round dense icon="menu" @click="rightDrawerOpen = !rightDrawerOpen" />
       </q-toolbar>
     </q-header>
 
