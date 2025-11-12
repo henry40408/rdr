@@ -29,50 +29,6 @@ function rewriteContent(content) {
   return $.html();
 }
 
-const srcPattern = /^https?:\/\//;
-
-/**
- * @param {string} content
- * @param {string} baseUrl
- * @return {string}
- */
-function proxyImages(content, baseUrl) {
-  const config = useRuntimeConfig();
-
-  const $ = cheerio.load(content);
-  $("img").each(function () {
-    let src = $(this).attr("src");
-    if (src) {
-      // some src are relative paths, convert them to absolute using the feed's base URL
-      if (!srcPattern.test(src)) src = String(new URL(src, baseUrl));
-      if (srcPattern.test(src)) {
-        const digest = digestUrl(config.imageDigestSecret, src);
-        const proxiedUrl = `/api/images/proxy/${digest}?url=${encodeURIComponent(src)}`;
-        $(this).attr("src", proxiedUrl);
-      }
-    }
-
-    const srcset = $(this).attr("srcset");
-    if (srcset) {
-      const entries = srcset.split(",").map((entry) => entry.trim());
-      const proxiedEntries = entries.map((entry) => {
-        const [url, descriptor] = entry.split(" ");
-        if (url && srcPattern.test(url)) {
-          const digest = digestUrl(config.imageDigestSecret, url);
-          const proxiedUrl = `/api/images/proxy/${digest}?url=${encodeURIComponent(url)}`;
-          return descriptor ? `${proxiedUrl} ${descriptor}` : proxiedUrl;
-        }
-        return entry;
-      });
-      $(this).attr("srcset", proxiedEntries.join(", "));
-    }
-
-    $(this).attr("loading", "lazy").attr("decoding", "async");
-  });
-
-  return $.html();
-}
-
 export default defineEventHandler(async (event) => {
   const { container } = useNitroApp();
 
@@ -101,7 +57,6 @@ export default defineEventHandler(async (event) => {
     allowedTags,
   });
   const proxied = proxyImages(sanitized, feed.htmlUrl);
-
   return {
     content: proxied,
   };
