@@ -907,9 +907,17 @@ function markManyAsReadDialog() {
       if (!latest || itemDate > latest) return itemDate;
       return latest;
     }, null);
-    if (olderThan === "all" && mostRecentDate) {
+    if (olderThan === "all") {
+      if (!mostRecentDate) {
+        $q.notify({
+          type: "info",
+          message: "No entries to mark as read.",
+          actions: [{ icon: "close", color: "white" }],
+        });
+        return;
+      }
       await doMarkManyAsRead({ type: "before", value: mostRecentDate });
-    } else if (olderThan !== "all") {
+    } else {
       await doMarkManyAsRead({ type: "olderThan", value: olderThan });
     }
   });
