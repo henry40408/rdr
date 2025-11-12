@@ -16,6 +16,32 @@
       <q-page>
         <q-list padding class="q-pb-xl">
           <q-item>
+            <q-item-section>Subscriptions</q-item-section>
+          </q-item>
+          <q-item>
+            <q-item-section>
+              <q-file v-model="uploadedFile" label="Upload OPML">
+                <template #prepend>
+                  <q-icon name="attach_file" />
+                </template>
+              </q-file>
+            </q-item-section>
+            <q-item-section side>
+              <q-btn
+                label="Import"
+                class="q-ml-sm"
+                color="primary"
+                :loading="uploading"
+                :disabled="!uploadedFile"
+                @click="importOPML"
+              />
+            </q-item-section>
+            <q-item-section side>
+              <q-btn label="Export" color="primary" href="/api/opml" />
+            </q-item-section>
+          </q-item>
+          <q-separator spaced />
+          <q-item>
             <q-item-section>New Feed</q-item-section>
           </q-item>
           <q-item>
@@ -240,6 +266,8 @@ const categoryFeedQuery = ref("");
 const refreshingCategoryIds: Ref<Set<number>> = ref(new Set());
 const refreshingFeedIds: Ref<Set<number>> = ref(new Set());
 const showErrorOnly: Ref<boolean> = ref(false);
+const uploadedFile = ref(null);
+const uploading = ref(false);
 
 const headers = useRequestHeaders(["cookie"]);
 const { data, refresh } = await useAsyncData((_nuxtApp, { signal }) =>
@@ -376,6 +404,31 @@ function getFeedUnreadCount(feedId: number): number {
 
 function imageExists(feedId: number): boolean {
   return feedDataByFeedId.value[feedId]?.imageExists ?? false;
+}
+
+async function importOPML() {
+  if (!uploadedFile.value) return;
+  const formData = new FormData();
+  formData.append("file", uploadedFile.value);
+
+  if (uploading.value) return;
+  uploading.value = true;
+
+  try {
+    await $fetch("/api/opml", { method: "POST", body: formData });
+    uploadedFile.value = null;
+    $q.notify({
+      type: "positive",
+      message: "OPML file imported successfully",
+    });
+  } catch (err) {
+    $q.notify({
+      type: "negative",
+      message: `Failed to import OPML file: ${err}`,
+    });
+  } finally {
+    uploading.value = false;
+  }
 }
 
 async function refreshAll() {

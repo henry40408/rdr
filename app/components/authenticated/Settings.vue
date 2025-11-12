@@ -16,28 +16,20 @@
       <q-page>
         <q-list padding>
           <q-item>
-            <q-item-section>Subscriptions</q-item-section>
+            <q-item-section>Change Password</q-item-section>
           </q-item>
           <q-item>
             <q-item-section>
-              <q-file v-model="uploadedFile" label="Upload OPML">
-                <template #prepend>
-                  <q-icon name="attach_file" />
-                </template>
-              </q-file>
+              <ChangePasswordForm />
             </q-item-section>
-            <q-item-section side>
-              <q-btn
-                label="Import"
-                class="q-ml-sm"
-                color="primary"
-                :loading="uploading"
-                :disabled="!uploadedFile"
-                @click="importOPML"
-              />
-            </q-item-section>
-            <q-item-section side>
-              <q-btn label="Export" color="primary" href="/api/opml" />
+          </q-item>
+          <q-separator spaced />
+          <q-item>
+            <q-item-section>User Settings</q-item-section>
+          </q-item>
+          <q-item>
+            <q-item-section>
+              <UserSettingsForm />
             </q-item-section>
           </q-item>
           <q-separator spaced />
@@ -85,24 +77,6 @@
               <q-item-label>No background jobs available.</q-item-label>
             </q-item-section>
           </q-item>
-          <q-separator spaced />
-          <q-item>
-            <q-item-section>Change Password</q-item-section>
-          </q-item>
-          <q-item>
-            <q-item-section>
-              <ChangePasswordForm />
-            </q-item-section>
-          </q-item>
-          <q-separator spaced />
-          <q-item>
-            <q-item-section>User Settings</q-item-section>
-          </q-item>
-          <q-item>
-            <q-item-section>
-              <UserSettingsForm />
-            </q-item-section>
-          </q-item>
         </q-list>
       </q-page>
     </q-page-container>
@@ -129,8 +103,6 @@ watchEffect(
 );
 
 const triggeringJobs = ref(new Set());
-const uploadedFile = ref(null);
-const uploading = ref(false);
 
 const headers = useRequestHeaders(["cookie"]);
 const { data: jobsData, refresh: refreshJobs } = await useFetch("/api/jobs", { headers });
@@ -140,31 +112,6 @@ const jobPaused = computed(() => {
   if (jobsData.value) for (const job of jobsData.value) map[job.name] = !!job.pausedAt;
   return map;
 });
-
-async function importOPML() {
-  if (!uploadedFile.value) return;
-  const formData = new FormData();
-  formData.append("file", uploadedFile.value);
-
-  if (uploading.value) return;
-  uploading.value = true;
-
-  try {
-    await $fetch("/api/opml", { method: "POST", body: formData });
-    uploadedFile.value = null;
-    $q.notify({
-      type: "positive",
-      message: "OPML file imported successfully",
-    });
-  } catch (err) {
-    $q.notify({
-      type: "negative",
-      message: `Failed to import OPML file: ${err}`,
-    });
-  } finally {
-    uploading.value = false;
-  }
-}
 
 async function triggerJob(name: string) {
   if (triggeringJobs.value.has(name)) return;
