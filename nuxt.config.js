@@ -16,7 +16,14 @@ export default defineNuxtConfig({
     },
   },
   css: ["@/assets/css/main.css", "@/assets/css/anchor.css"],
-  modules: ["@nuxt/eslint", "@nuxt/test-utils/module", "@vueuse/nuxt", "nuxt-auth-utils", "nuxt-quasar-ui"],
+  modules: [
+    "@nuxt/eslint",
+    "@nuxt/test-utils/module",
+    "@vueuse/nuxt",
+    "nuxt-auth-utils",
+    "nuxt-quasar-ui",
+    "nuxt-security",
+  ],
   runtimeConfig: {
     dbPath: "./data/db.sqlite3",
     disableSignUp: false,
@@ -24,7 +31,6 @@ export default defineNuxtConfig({
     httpTimeoutMs: 90000,
     imageDigestSecret: "",
     logLevel: "",
-    opmlPath: "./data/feeds.opml",
     public: {
       buildDate: new Date().toISOString(),
       version: "dev",
@@ -58,5 +64,13 @@ export default defineNuxtConfig({
         // dark: "#2F4F4F", // use default dark color
       },
     },
+  },
+  security: {
+    // Built-in rate limiter is not suitable for complex production applications.
+    // It is meant to help simpler applications handle the issue of brute forcing.
+    // To correctly protect your production application against brute forcing,
+    // you should use solutions that work on the infrastructure layer,
+    // not the application layer.
+    rateLimiter: false,
   },
 });
