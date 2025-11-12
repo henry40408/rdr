@@ -1,5 +1,6 @@
 // @ts-check
 
+import * as cheerio from "cheerio";
 import { createHash } from "node:crypto";
 
 export const DIGEST_CONTENT_LENGTH = 16;
@@ -96,4 +97,64 @@ export function parseDataURL(url) {
     encoding === "base64" ? Buffer.from(dataPart, "base64") : Buffer.from(decodeURIComponent(dataPart), "utf8");
 
   return { mediaType, encoding, data: buffer };
+}
+
+const srcPattern = /^https?:\/\//;
+
+/**
+ * @param {string} content
+ * @param {string} baseUrl
+ * @return {string}
+ */
+export function proxyImages(content, baseUrl) {
+  const config = useRuntimeConfig();
+
+  const $ = cheerio.load(content);
+  $("img").each(function () {
+    let src = $(this).attr("src");
+    if (src) {
+      // some src are relative paths, convert them to absolute using the feed's base URL
+      if (!srcPattern.test(src)) src = String(new URL(src, baseUrl));
+      if (srcPattern.test(src)) {
+        const digest = digestUrl(config.imageDigestSecret, src);
+        const proxiedUrl = `/api/images/proxy/${digest}?url=${encodeURIComponent(src)}`;
+        $(this).attr("src", proxiedUrl);
+      }
+    }
+
+    const srcset = $(this).attr("srcset");
+    if (srcset) {
+      const entries = srcset.split(",").map((entry) => entry.trim());
+      const proxiedEntries = entries.map((entry) => {
+        const [url, descriptor] = entry.split(" ");
+        if (url && srcPattern.test(url)) {
+          const digest = digestUrl(config.imageDigestSecret, url);
+          const proxiedUrl = `/api/images/proxy/${digest}?url=${encodeURIComponent(url)}`;
+          return descriptor ? `${proxiedUrl} ${descriptor}` : proxiedUrl;
+        }
+        return entry;
+      });
+      $(this).attr("srcset", proxiedEntries.join(", "));
+    }
+
+    $(this).attr("loading", "lazy").attr("decoding", "async");
+  });
+  $("source").each(function () {
+    let srcset = $(this).attr("srcset");
+    if (srcset) {
+      const entries = srcset.split(",").map((entry) => entry.trim());
+      const proxiedEntries = entries.map((entry) => {
+        const [url, descriptor] = entry.split(" ");
+        if (url && srcPattern.test(url)) {
+          const digest = digestUrl(config.imageDigestSecret, url);
+          const proxiedUrl = `/api/images/proxy/${digest}?url=${encodeURIComponent(url)}`;
+          return descriptor ? `${proxiedUrl} ${descriptor}` : proxiedUrl;
+        }
+        return entry;
+      });
+      $(this).attr("srcset", proxiedEntries.join(", "));
+    }
+  });
+
+  return $.html();
 }
