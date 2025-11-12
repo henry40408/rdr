@@ -28,5 +28,5 @@ export default defineEventHandler(async (event) => {
   job.pausedAt = pausedAt;
   await repository.upsertJob(job);
 
-  return { success: true, pausedAt };
+  return job;
 });

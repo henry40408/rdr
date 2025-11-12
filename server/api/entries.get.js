@@ -55,7 +55,7 @@ export default defineEventHandler(async (event) => {
     search,
     status,
   });
-  return entries
+  const items = entries
     .map((entry) => {
       const category = categories.find((c) => c.feeds.some((f) => f.id === entry.feedId));
       const feed = categories.flatMap((c) => c.feeds).find((f) => f.id === entry.feedId);
@@ -63,4 +63,5 @@ export default defineEventHandler(async (event) => {
       return { category, entry, feed };
     })
     .filter((e) => !!e);
+  return { entries: items };
 });

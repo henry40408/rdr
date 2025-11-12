@@ -34,8 +34,10 @@ export default defineEventHandler(async (event) => {
     feed.title = fetched.meta?.title || "(No title)";
 
     const feedId = await repository.createFeed(userId, body.categoryName, feed);
-
-    return { feedId };
+    {
+      const feed = await repository.findFeedById(userId, feedId);
+      return feed;
+    }
   } catch (e) {
     if (e instanceof HTTPError) throw createError({ statusCode: 400, statusMessage: `Failed to fetch feed: ${e}` });
     throw e;

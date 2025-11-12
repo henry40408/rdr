@@ -35,7 +35,7 @@ export default defineEventHandler(async (event) => {
       description: content,
     }),
   );
-  await Promise.allSettled(tasks);
 
-  return { success: true };
+  const saved = await Promise.allSettled(tasks);
+  return { saved: saved.filter((r) => r.status === "fulfilled").length };
 });

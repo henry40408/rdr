@@ -28,5 +28,5 @@ export default defineEventHandler(async (event) => {
     logger.error(`Failed to run job ${name}: ${err}`);
   });
 
-  return true;
+  return { status: "PENDING" };
 });

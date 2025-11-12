@@ -31,5 +31,5 @@ export default defineEventHandler(async (event) => {
 
   await clearUserSession(event); // log out the user after password change
 
-  return { success: true };
+  return { status: "COMPLETED" };
 });
