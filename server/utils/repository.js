@@ -622,11 +622,12 @@ export class Repository {
    * @param {object} opts
    * @param {number} opts.userId
    * @param {number[]} [opts.feedIds]
-   * @param {"day"|"week"|"month"|"year"} [opts.olderThan]
+   * @param {string} [opts.before]
+   * @param {"day"|"week"|"month"|"year"|Date} [opts.olderThan]
    * @param {string} [opts.search]
    * @returns {Promise<number>}
    */
-  async markEntriesAsRead({ userId, feedIds, olderThan, search }) {
+  async markEntriesAsRead({ userId, feedIds, before, olderThan, search }) {
     const now = new Date();
     const nowISO = now.toISOString();
 
@@ -641,19 +642,23 @@ export class Repository {
           });
       });
     if (feedIds && feedIds.length > 0) q.whereIn("feed_id", feedIds);
-    switch (olderThan) {
-      case "day":
-        q.where("date", "<", add(now, { days: -1 }).toISOString());
-        break;
-      case "week":
-        q.where("date", "<", add(now, { days: -7 }).toISOString());
-        break;
-      case "month":
-        q.where("date", "<", add(now, { months: -1 }).toISOString());
-        break;
-      case "year":
-        q.where("date", "<", add(now, { years: -1 }).toISOString());
-        break;
+    if (before) {
+      q.where("date", "<=", before);
+    } else {
+      switch (olderThan) {
+        case "day":
+          q.where("date", "<", add(now, { days: -1 }).toISOString());
+          break;
+        case "week":
+          q.where("date", "<", add(now, { days: -7 }).toISOString());
+          break;
+        case "month":
+          q.where("date", "<", add(now, { months: -1 }).toISOString());
+          break;
+        case "year":
+          q.where("date", "<", add(now, { years: -1 }).toISOString());
+          break;
+      }
     }
     if (search) {
       const uppered = search.toUpperCase();

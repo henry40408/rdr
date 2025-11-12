@@ -745,11 +745,20 @@ function collapseOpenItem() {
   scrollToContentRef(index);
 }
 
-async function doMarkManyAsRead(olderThan?: "day" | "week" | "month" | "year") {
+type DatePart = "day" | "week" | "month" | "year";
+type MarkAsReadParam = { type: "before"; value: Date } | { type: "olderThan"; value: DatePart };
+
+async function doMarkManyAsRead(param: MarkAsReadParam) {
   const now = new Date();
 
   const body: Record<string, unknown> = {};
-  if (olderThan) body.olderThan = olderThan;
+  if (param.type === "before" && param.value instanceof Date) {
+    body.before = param.value.toISOString();
+  }
+  if (param.type === "olderThan") {
+    body.olderThan = param.value;
+  }
+
   if (selectedFeedId.value) {
     body.selectedType = "feed";
     body.selectedId = selectedFeedId.value;
@@ -761,7 +770,7 @@ async function doMarkManyAsRead(olderThan?: "day" | "week" | "month" | "year") {
   try {
     const { updated } = await $fetch("/api/entries/mark-as-read", { method: "POST", body });
     for (const item of items.value)
-      if (shouldMarkAsRead(now, item.entry.id, olderThan)) entryRead.value[item.entry.id] = "read";
+      if (shouldMarkAsRead(now, item.entry.id, param)) entryRead.value[item.entry.id] = "read";
     refreshMetadata();
     $q.notify({
       type: "positive",
@@ -892,9 +901,17 @@ function markManyAsReadDialog() {
     },
     ok: { color: "negative" },
     cancel: true,
-  }).onOk(async (data: "day" | "week" | "month" | "year" | "all") => {
-    if (data === "all") await doMarkManyAsRead();
-    else await doMarkManyAsRead(data);
+  }).onOk(async (olderThan: "day" | "week" | "month" | "year" | "all") => {
+    const mostRecentDate = items.value.reduce<Date | null>((latest, item) => {
+      const itemDate = new Date(item.entry.date);
+      if (!latest || itemDate > latest) return itemDate;
+      return latest;
+    }, null);
+    if (olderThan === "all" && mostRecentDate) {
+      await doMarkManyAsRead({ type: "before", value: mostRecentDate });
+    } else if (olderThan !== "all") {
+      await doMarkManyAsRead({ type: "olderThan", value: olderThan });
+    }
   });
 }
 
@@ -998,26 +1015,34 @@ function scrollToContentRef(index: number) {
   itemRefs.value?.[index]?.$el.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-function shouldMarkAsRead(now: Date, entryId: number, olderThan?: "day" | "week" | "month" | "year") {
+function shouldMarkAsRead(now: Date, entryId: number, param: MarkAsReadParam): boolean {
   if (entryRead.value[entryId] === "read") return true;
-  if (!olderThan) return true; // mark all as read
 
   const item = items.value.find((i) => i.entry.id === entryId);
   if (!item) return false;
 
-  const entryDate = new Date(item.entry.date);
-  switch (olderThan) {
-    case "day":
-      return entryDate <= add(now, { days: -1 });
-    case "week":
-      return entryDate <= add(now, { days: -7 });
-    case "month":
-      return entryDate <= add(now, { months: -1 });
-    case "year":
-      return entryDate <= add(now, { years: -1 });
-    default:
-      return false;
+  if (param.type === "before" && param.value instanceof Date) {
+    const entryDate = new Date(item.entry.date);
+    return entryDate <= param.value;
   }
+
+  if (param.type === "olderThan" && param.value) {
+    const entryDate = new Date(item.entry.date);
+    switch (param.value) {
+      case "day":
+        return entryDate <= add(now, { days: -1 });
+      case "week":
+        return entryDate <= add(now, { days: -7 });
+      case "month":
+        return entryDate <= add(now, { months: -1 });
+      case "year":
+        return entryDate <= add(now, { years: -1 });
+      default:
+        return false;
+    }
+  }
+
+  return false;
 }
 
 function shouldShowCategory(categoryId: number): boolean {
