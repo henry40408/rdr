@@ -2,6 +2,7 @@
   <q-layout v-if="loggedIn" view="hhh LpR fFf">
     <q-header elevated class="bg-primary text-white">
       <q-toolbar>
+        <q-btn flat dense round icon="menu" @click="leftDrawerOpen = !leftDrawerOpen" />
         <q-toolbar-title>
           <q-avatar>
             <q-icon name="rss_feed" />
@@ -12,10 +13,26 @@
       </q-toolbar>
     </q-header>
 
+    <q-drawer v-model="leftDrawerOpen" bordered persistent side="left" show-if-above>
+      <q-list padding>
+        <q-item>Navigation</q-item>
+        <q-item to="#change-password">
+          <q-item-section>Change Password</q-item-section>
+        </q-item>
+        <q-item to="#user-settings">
+          <q-item-section>User Settings</q-item-section>
+        </q-item>
+        <q-item to="#background-jobs">
+          <q-item-section>Background Jobs</q-item-section>
+        </q-item>
+        <q-separator spaced />
+      </q-list>
+    </q-drawer>
+
     <q-page-container>
       <q-page>
         <q-list padding>
-          <q-item>
+          <q-item id="change-password">
             <q-item-section>Change Password</q-item-section>
           </q-item>
           <q-item>
@@ -24,7 +41,7 @@
             </q-item-section>
           </q-item>
           <q-separator spaced />
-          <q-item>
+          <q-item id="user-settings">
             <q-item-section>User Settings</q-item-section>
           </q-item>
           <q-item>
@@ -33,7 +50,7 @@
             </q-item-section>
           </q-item>
           <q-separator spaced />
-          <q-item>
+          <q-item id="background-jobs">
             <q-item-section>Background Jobs</q-item-section>
           </q-item>
           <q-item v-for="job in jobsData" :key="job.name">
@@ -102,6 +119,7 @@ watchEffect(
   { flush: "post" },
 );
 
+const leftDrawerOpen = ref(false);
 const triggeringJobs = ref(new Set());
 
 const headers = useRequestHeaders(["cookie"]);
