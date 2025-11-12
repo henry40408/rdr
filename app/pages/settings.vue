@@ -15,7 +15,9 @@
     <q-page-container>
       <q-page>
         <q-list padding>
-          <q-item-label header>Subscriptions</q-item-label>
+          <q-item>
+            <q-item-section>Subscriptions</q-item-section>
+          </q-item>
           <q-item>
             <q-item-section>
               <q-file v-model="uploadedFile" label="Upload OPML">
@@ -39,7 +41,9 @@
             </q-item-section>
           </q-item>
           <q-separator spaced />
-          <q-item-label header>Background Jobs</q-item-label>
+          <q-item>
+            <q-item-section>Background Jobs</q-item-section>
+          </q-item>
           <q-item v-for="job in jobsData" :key="job.name">
             <q-item-section side>
               <JobToggle :name="job.name" :value="!!jobPaused[job.name]" @toggled="refreshJobs()" />
@@ -82,14 +86,18 @@
             </q-item-section>
           </q-item>
           <q-separator spaced />
-          <q-item-label header>Change Password</q-item-label>
+          <q-item>
+            <q-item-section>Change Password</q-item-section>
+          </q-item>
           <q-item>
             <q-item-section>
               <ChangePasswordForm />
             </q-item-section>
           </q-item>
           <q-separator spaced />
-          <q-item-label header>User Settings</q-item-label>
+          <q-item>
+            <q-item-section>User Settings</q-item-section>
+          </q-item>
           <q-item>
             <q-item-section>
               <UserSettingsForm />
