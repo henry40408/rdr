@@ -3,6 +3,7 @@
 import z from "zod";
 
 const schema = z.object({
+  before: z.iso.datetime({ offset: true }).optional(),
   olderThan: z.enum(["day", "week", "month", "year"]).optional(),
   search: z.string().optional(),
   selectedId: z.coerce.number().optional(),
@@ -15,7 +16,9 @@ export default defineEventHandler(async (event) => {
   const session = await requireUserSession(event);
   const userId = session.user.id;
 
-  const { olderThan, search, selectedType, selectedId } = await readValidatedBody(event, (body) => schema.parse(body));
+  const { before, olderThan, search, selectedType, selectedId } = await readValidatedBody(event, (body) =>
+    schema.parse(body),
+  );
 
   /** @type {Repository} */
   const repository = container.resolve("repository");
@@ -31,6 +34,6 @@ export default defineEventHandler(async (event) => {
     feedIds = [selectedId];
   }
 
-  const updated = await repository.markEntriesAsRead({ userId, feedIds, olderThan, search });
+  const updated = await repository.markEntriesAsRead({ before, userId, feedIds, olderThan, search });
   return { updated };
 });
