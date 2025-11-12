@@ -2,20 +2,61 @@
   <q-layout v-if="loggedIn" view="hhh LpR fFf">
     <q-header elevated class="bg-primary text-white">
       <q-toolbar>
+        <q-btn flat dense round icon="menu" @click="leftDrawerOpen = !leftDrawerOpen" />
         <q-toolbar-title>
           <q-avatar>
             <q-icon name="rss_feed" />
           </q-avatar>
           rdr
         </q-toolbar-title>
+        <q-input
+          v-model="categoryFeedQuery"
+          dark
+          dense
+          filled
+          debounce="500"
+          input-class="text-right"
+          placeholder="Search categories and / or feeds"
+        >
+          <template #append>
+            <q-icon v-if="!categoryFeedQuery" name="search" />
+            <q-icon v-else name="clear" class="cursor-pointer" @click="categoryFeedQuery = ''" />
+          </template>
+        </q-input>
         <NavTabs />
       </q-toolbar>
     </q-header>
 
+    <q-drawer v-model="leftDrawerOpen" bordered persistent side="left" show-if-above>
+      <q-list padding>
+        <q-item>
+          <q-item-section>Navigation</q-item-section>
+        </q-item>
+        <q-item clickable @click="$router.push({ hash: '#subscriptions' })">
+          <q-item-section>Subscriptions</q-item-section>
+        </q-item>
+        <q-item clickable @click="$router.push({ hash: '#new-feed' })">
+          <q-item-section>New Feed</q-item-section>
+        </q-item>
+        <q-item clickable @click="$router.push({ hash: '#feeds' })">
+          <q-item-section>Feeds</q-item-section>
+        </q-item>
+        <q-separator spaced />
+        <q-item>
+          <q-item-section>Categories</q-item-section>
+        </q-item>
+        <template v-for="category in categories" :key="category.id">
+          <q-item clickable @click="$router.push({ hash: `#category-${category.id}` })">
+            <q-item-section>{{ category.name }}</q-item-section>
+          </q-item>
+        </template>
+      </q-list>
+    </q-drawer>
+
     <q-page-container>
       <q-page>
         <q-list padding class="q-pb-xl">
-          <q-item>
+          <q-item id="subscriptions">
             <q-item-section>Subscriptions</q-item-section>
           </q-item>
           <q-item>
@@ -41,7 +82,7 @@
             </q-item-section>
           </q-item>
           <q-separator spaced />
-          <q-item>
+          <q-item id="new-feed">
             <q-item-section>New Feed</q-item-section>
           </q-item>
           <q-item>
@@ -72,7 +113,7 @@
             </q-item-section>
           </q-item>
           <q-separator spaced />
-          <q-item>
+          <q-item id="feeds">
             <q-item-section>
               <q-item-label>Feeds</q-item-label>
               <q-item-label caption>Manage your feed subscriptions</q-item-label>
@@ -86,13 +127,8 @@
               </ClientOnly>
             </q-item-section>
           </q-item>
-          <q-item>
-            <q-item-section>
-              <q-input v-model="categoryFeedQuery" filled clearable label="Filter categories and / or feeds" />
-            </q-item-section>
-          </q-item>
           <template v-for="category in categories" :key="category.id">
-            <q-expansion-item v-show="shouldShowCategory(category.id)" group="category">
+            <q-expansion-item v-show="shouldShowCategory(category.id)" :id="`category-${category.id}`" group="category">
               <template #header>
                 <q-item-section
                   v-ripple
@@ -263,6 +299,7 @@ const htmlUrl = ref("");
 const xmlUrl = ref("");
 
 const categoryFeedQuery = ref("");
+const leftDrawerOpen = ref(false);
 const refreshingCategoryIds: Ref<Set<number>> = ref(new Set());
 const refreshingFeedIds: Ref<Set<number>> = ref(new Set());
 const showErrorOnly: Ref<boolean> = ref(false);

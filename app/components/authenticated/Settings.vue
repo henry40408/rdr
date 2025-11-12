@@ -15,14 +15,16 @@
 
     <q-drawer v-model="leftDrawerOpen" bordered persistent side="left" show-if-above>
       <q-list padding>
-        <q-item>Navigation</q-item>
-        <q-item to="#change-password">
+        <q-item>
+          <q-item-section>Navigation</q-item-section>
+        </q-item>
+        <q-item clickable @click="$router.push({ hash: '#change-password' })">
           <q-item-section>Change Password</q-item-section>
         </q-item>
-        <q-item to="#user-settings">
+        <q-item clickable @click="$router.push({ hash: '#user-settings' })">
           <q-item-section>User Settings</q-item-section>
         </q-item>
-        <q-item to="#background-jobs">
+        <q-item clickable @click="$router.push({ hash: '#background-jobs' })">
           <q-item-section>Background Jobs</q-item-section>
         </q-item>
         <q-separator spaced />
