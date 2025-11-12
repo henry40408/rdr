@@ -629,7 +629,7 @@ const { data: metadata, refresh: refreshMetadata } = await useAsyncData("metadat
 );
 
 const {
-  data: entries,
+  data: entriesData,
   execute: fetchEntries,
   pending,
 } = await useFetch("/api/entries", {
@@ -656,9 +656,10 @@ const {
   // so we don't need to auto-refetch here
   watch: false,
 });
-watch(entries, (newItems) => {
-  if (!newItems) return;
+watch(entriesData, (newEntriesData) => {
+  if (!newEntriesData) return;
 
+  const { entries: newItems } = newEntriesData;
   if (items.value.length === 0 && newItems.length === 0) {
     if (itemsStatus.value === "unread") {
       if (selectedFeedId.value && selectedCategoryId.value) {

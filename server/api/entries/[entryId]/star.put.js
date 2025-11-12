@@ -17,6 +17,6 @@ export default defineEventHandler(async (event) => {
   /** @type {Repository} */
   const repository = container.resolve("repository");
 
-  const now = await repository.toggleStarEntry(userId, entryId);
-  return { success: true, readAt: now };
+  const updated = await repository.toggleStarEntry(userId, entryId);
+  return { updated };
 });

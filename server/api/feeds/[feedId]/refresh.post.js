@@ -24,5 +24,8 @@ export default defineEventHandler(async (event) => {
 
   await Promise.allSettled([feedService.fetchAndSaveEntries(userId, feed), feedService.fetchImage(userId, feed)]);
 
-  return { status: "ok" };
+  {
+    const feed = await repository.findFeedById(userId, feedId);
+    return feed;
+  }
 });

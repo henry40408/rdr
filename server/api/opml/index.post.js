@@ -14,7 +14,6 @@ export default defineEventHandler(async (event) => {
   const data = String(body?.find((b) => b.name === "file")?.data);
   if (!data) throw createError({ statusCode: 400, statusMessage: "No file uploaded" });
 
-  await opmlService.importOpml(userId, data);
-
-  return true;
+  const categories = await opmlService.importOpml(userId, data);
+  return categories;
 });

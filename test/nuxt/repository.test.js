@@ -495,12 +495,11 @@ describe("Repository", () => {
       const { entryId } = await createEntries(repository, alice);
       {
         const res = await repository.toggleReadEntry(alice.id, entryId);
-        assert.ok(res instanceof Date);
-        assert.ok(res.valueOf() > 0);
+        assert.strictEqual(res, 1);
       }
       {
         const res = await repository.toggleReadEntry(alice.id, entryId);
-        assert.strictEqual(res, undefined);
+        assert.strictEqual(res, 1);
       }
       // other user
       await assert.rejects(() => repository.toggleReadEntry(eve.id, entryId), {
@@ -515,12 +514,11 @@ describe("Repository", () => {
       const { entryId } = await createEntries(repository, alice);
       {
         const res = await repository.toggleStarEntry(alice.id, entryId);
-        assert.strictEqual(res, undefined);
+        assert.strictEqual(res, 1);
       }
       {
         const res = await repository.toggleStarEntry(alice.id, entryId);
-        assert.ok(res instanceof Date);
-        assert.ok(res.valueOf() > 0);
+        assert.strictEqual(res, 1);
       }
       // other user
       await assert.rejects(() => repository.toggleStarEntry(eve.id, entryId), {

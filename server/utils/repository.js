@@ -686,7 +686,7 @@ export class Repository {
   /**
    * @param {number} userId
    * @param {number} id
-   * @returns {Promise<Date|undefined>}
+   * @returns {Promise<number>}
    */
   async toggleReadEntry(userId, id) {
     const logger = this.logger.child({ entryId: id });
@@ -707,13 +707,13 @@ export class Repository {
       const now = new Date();
       const isoNow = now.toISOString();
       if (row.read_at) {
-        await tx("entries").where({ id }).update({ read_at: null, updated_at: isoNow });
-        logger.info({ msg: "Marked entry as unread" });
-        return undefined;
+        const updated = await tx("entries").where({ id }).update({ read_at: null, updated_at: isoNow });
+        logger.info({ msg: "Marked entry as unread", updated });
+        return updated;
       } else {
-        await tx("entries").where({ id }).update({ read_at: isoNow, updated_at: isoNow });
-        logger.info({ msg: "Marked entry as read" });
-        return now;
+        const updated = await tx("entries").where({ id }).update({ read_at: isoNow, updated_at: isoNow });
+        logger.info({ msg: "Marked entry as read", updated });
+        return updated;
       }
     });
   }
@@ -721,7 +721,7 @@ export class Repository {
   /**
    * @param {number} userId
    * @param {number} id
-   * @returns {Promise<Date|undefined>}
+   * @returns {Promise<number>}
    */
   async toggleStarEntry(userId, id) {
     const logger = this.logger.child({ entryId: id });
@@ -742,13 +742,13 @@ export class Repository {
       const now = new Date();
       const isoNow = now.toISOString();
       if (row.starred_at) {
-        await tx("entries").where({ id }).update({ starred_at: null, updated_at: isoNow });
-        logger.info({ msg: "Unstarred entry" });
-        return undefined;
+        const updated = await tx("entries").where({ id }).update({ starred_at: null, updated_at: isoNow });
+        logger.info({ msg: "Unstarred entry", updated });
+        return updated;
       } else {
-        await tx("entries").where({ id }).update({ starred_at: isoNow, updated_at: isoNow });
-        logger.info({ msg: "Starred entry" });
-        return now;
+        const updated = await tx("entries").where({ id }).update({ starred_at: isoNow, updated_at: isoNow });
+        logger.info({ msg: "Starred entry", updated });
+        return updated;
       }
     });
   }
