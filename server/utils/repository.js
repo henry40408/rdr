@@ -623,7 +623,7 @@ export class Repository {
    * @param {number} opts.userId
    * @param {number[]} [opts.feedIds]
    * @param {string} [opts.before]
-   * @param {"day"|"week"|"month"|"year"|Date} [opts.olderThan]
+   * @param {"day"|"week"|"month"|"year"} [opts.olderThan]
    * @param {string} [opts.search]
    * @returns {Promise<number>}
    */
