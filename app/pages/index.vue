@@ -2,7 +2,7 @@
   <q-layout v-if="loggedIn" view="hhh LpR fFf">
     <q-header elevated class="bg-primary text-white">
       <q-toolbar>
-        <q-btn flat round dense icon="menu" @click="leftDrawerOpen = !leftDrawerOpen" />
+        <q-btn flat dense round icon="menu" @click="leftDrawerOpen = !leftDrawerOpen" />
         <q-toolbar-title>
           <q-avatar>
             <q-icon name="rss_feed" />
@@ -24,7 +24,7 @@
           </template>
         </q-input>
         <NavTabs />
-        <q-btn flat round dense icon="menu" @click="rightDrawerOpen = !rightDrawerOpen" />
+        <q-btn flat dense round icon="menu" @click="rightDrawerOpen = !rightDrawerOpen" />
       </q-toolbar>
     </q-header>
 
@@ -83,7 +83,7 @@
             >
               <q-item-section>
                 <q-item-label>
-                  <MarkedText :keyword="categoryFeedQuery" :text="category.name" />
+                  <MarkedText :text="category.name" :keyword="categoryFeedQuery" />
                 </q-item-label>
               </q-item-section>
               <q-item-section side>
@@ -117,7 +117,7 @@
                 </q-item-section>
                 <q-item-section>
                   <q-item-label lines="1">
-                    <MarkedText :keyword="categoryFeedQuery" :text="feed.title" />
+                    <MarkedText :text="feed.title" :keyword="categoryFeedQuery" />
                   </q-item-label>
                 </q-item-section>
                 <q-item-section side>
