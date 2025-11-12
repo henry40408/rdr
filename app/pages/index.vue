@@ -1038,13 +1038,13 @@ function shouldMarkAsRead(now: Date, entryId: number, param: MarkAsReadParam): b
     const entryDate = new Date(item.entry.date);
     switch (param.value) {
       case "day":
-        return entryDate <= add(now, { days: -1 });
+        return entryDate < add(now, { days: -1 });
       case "week":
-        return entryDate <= add(now, { days: -7 });
+        return entryDate < add(now, { days: -7 });
       case "month":
-        return entryDate <= add(now, { months: -1 });
+        return entryDate < add(now, { months: -1 });
       case "year":
-        return entryDate <= add(now, { years: -1 });
+        return entryDate < add(now, { years: -1 });
       default:
         return false;
     }
