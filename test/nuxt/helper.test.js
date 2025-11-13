@@ -1,7 +1,7 @@
 // @ts-check
 
 import { describe, it } from "vitest";
-import { digestUrl, normalizeDatetime, parseDataURL } from "../../server/utils/helper.js";
+import { digestUrl, normalizeDatetime, parseDataURL, removeTrackingParameters } from "../../server/utils/helper.js";
 import assert from "node:assert";
 import { highlightKeyword } from "../../app/utils/index.js";
 import { replaceForTiddlyWiki } from "../../shared/utils/index.js";
@@ -140,5 +140,63 @@ describe("mark text", () => {
     const result = highlightKeyword(text, keyword);
     const expected = "This is a Test of the <mark>MARK</mark> function.";
     assert.strictEqual(result, expected);
+  });
+});
+
+describe("remove tracking parameters", () => {
+  const tests = [
+    {
+      name: "URL with tracking parameters",
+      input: "https://example.com/page?id=123&utm_source=newsletter&utm_medium=email&fbclid=abc123",
+      expected: "https://example.com/page?id=123",
+    },
+    {
+      name: "URL with only tracking parameters",
+      input: "https://example.com/page?utm_source=newsletter&utm_medium=email",
+      expected: "https://example.com/page",
+    },
+    {
+      name: "URL with no tracking parameters",
+      input: "https://example.com/page?id=123&foo=bar",
+      expected: "https://example.com/page?id=123&foo=bar",
+    },
+    {
+      name: "URL with no parameters",
+      input: "https://example.com/page",
+      expected: "https://example.com/page",
+      strictComparison: true,
+    },
+    {
+      name: "URL with mixed case tracking parameters",
+      input: "https://example.com/page?UTM_SOURCE=newsletter&utm_MEDIUM=email",
+      expected: "https://example.com/page",
+    },
+    {
+      name: "URL with tracking parameters and fragments",
+      input: "https://example.com/page?id=123&utm_source=newsletter#section1",
+      expected: "https://example.com/page?id=123#section1",
+    },
+    {
+      name: "URL with only tracking parameters and fragments",
+      input: "https://example.com/page?utm_source=newsletter#section1",
+      expected: "https://example.com/page#section1",
+    },
+    {
+      name: "URL with only one tracking parameter",
+      input: "https://example.com/page?utm_source=newsletter",
+      expected: "https://example.com/page",
+    },
+    {
+      name: "URL with encoded characters",
+      input: "https://example.com/page?name=John%20Doe&utm_source=newsletter",
+      expected: "https://example.com/page?name=John+Doe",
+    },
+  ];
+
+  tests.forEach((test) => {
+    it(test.name, () => {
+      const result = removeTrackingParameters(test.input);
+      assert.strictEqual(result, test.expected);
+    });
   });
 });
