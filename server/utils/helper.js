@@ -17,7 +17,7 @@ export function digestUrl(secret, url) {
   return hasher.digest("hex");
 }
 
-const replacements = {
+const DATE_PART_REPLACEMENTS = {
   週日: "Sun",
   週一: "Mon",
   週二: "Tue",
@@ -45,7 +45,7 @@ const replacements = {
  */
 export function normalizeDatetime(dt) {
   let normalized = dt;
-  for (const [key, value] of Object.entries(replacements)) {
+  for (const [key, value] of Object.entries(DATE_PART_REPLACEMENTS)) {
     normalized = normalized.replace(key, value);
   }
   const date = new Date(normalized);
@@ -99,7 +99,26 @@ export function parseDataURL(url) {
   return { mediaType, encoding, data: buffer };
 }
 
-const srcPattern = /^https?:\/\//;
+const ABSOLUTE_URL_PATTERN = /^https?:\/\//;
+const SRC_PATTERN = /^(https?:)?\/\//;
+
+/**
+ * @param {string} url
+ * @param {string} baseUrl
+ * @return {string}
+ */
+function normalizeUrl(url, baseUrl) {
+  // handle protocol-relative URLs
+  if (url.startsWith("//")) {
+    const baseProtocol = new URL(baseUrl).protocol;
+    return `${baseProtocol}${url}`;
+  }
+  // handle relative URLs
+  if (!SRC_PATTERN.test(url)) {
+    return String(new URL(url, baseUrl));
+  }
+  return url;
+}
 
 /**
  * @param {string} content
@@ -113,9 +132,8 @@ export function proxyImages(content, baseUrl) {
   $("img").each(function () {
     let src = $(this).attr("src");
     if (src) {
-      // some src are relative paths, convert them to absolute using the feed's base URL
-      if (!srcPattern.test(src)) src = String(new URL(src, baseUrl));
-      if (srcPattern.test(src)) {
+      src = normalizeUrl(src, baseUrl);
+      if (ABSOLUTE_URL_PATTERN.test(src)) {
         const digest = digestUrl(config.imageDigestSecret, src);
         const proxiedUrl = `/api/images/proxy/${digest}?url=${encodeURIComponent(src)}`;
         $(this).attr("src", proxiedUrl);
@@ -127,10 +145,13 @@ export function proxyImages(content, baseUrl) {
       const entries = srcset.split(",").map((entry) => entry.trim());
       const proxiedEntries = entries.map((entry) => {
         const [url, descriptor] = entry.split(" ");
-        if (url && srcPattern.test(url)) {
-          const digest = digestUrl(config.imageDigestSecret, url);
-          const proxiedUrl = `/api/images/proxy/${digest}?url=${encodeURIComponent(url)}`;
-          return descriptor ? `${proxiedUrl} ${descriptor}` : proxiedUrl;
+        if (url) {
+          const normalizedUrl = normalizeUrl(url, baseUrl);
+          if (ABSOLUTE_URL_PATTERN.test(normalizedUrl)) {
+            const digest = digestUrl(config.imageDigestSecret, normalizedUrl);
+            const proxiedUrl = `/api/images/proxy/${digest}?url=${encodeURIComponent(normalizedUrl)}`;
+            return descriptor ? `${proxiedUrl} ${descriptor}` : proxiedUrl;
+          }
         }
         return entry;
       });
@@ -145,10 +166,13 @@ export function proxyImages(content, baseUrl) {
       const entries = srcset.split(",").map((entry) => entry.trim());
       const proxiedEntries = entries.map((entry) => {
         const [url, descriptor] = entry.split(" ");
-        if (url && srcPattern.test(url)) {
-          const digest = digestUrl(config.imageDigestSecret, url);
-          const proxiedUrl = `/api/images/proxy/${digest}?url=${encodeURIComponent(url)}`;
-          return descriptor ? `${proxiedUrl} ${descriptor}` : proxiedUrl;
+        if (url) {
+          const normalizedUrl = normalizeUrl(url, baseUrl);
+          if (ABSOLUTE_URL_PATTERN.test(normalizedUrl)) {
+            const digest = digestUrl(config.imageDigestSecret, normalizedUrl);
+            const proxiedUrl = `/api/images/proxy/${digest}?url=${encodeURIComponent(normalizedUrl)}`;
+            return descriptor ? `${proxiedUrl} ${descriptor}` : proxiedUrl;
+          }
         }
         return entry;
       });

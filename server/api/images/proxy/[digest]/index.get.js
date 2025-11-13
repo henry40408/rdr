@@ -25,7 +25,7 @@ const ALLOWED_HEADERS = new Set([
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
   if (!config.imageDigestSecret)
-    throw createError({ statusCode: 500, statusMessage: "Image digest secret not configured" });
+    throw createError({ statusCode: 503, statusMessage: "Image digest secret not configured" });
 
   const { container } = useNitroApp();
 
@@ -49,6 +49,7 @@ export default defineEventHandler(async (event) => {
   const userAgent = getHeader(event, "user-agent") ?? config.userAgent;
   if (userAgent) headers["user-agent"] = userAgent;
 
+  logger.info({ message: "Proxying image from URL", url, headers });
   const stream = got.stream(url, {
     headers,
     timeout: { request: config.httpTimeoutMs },
