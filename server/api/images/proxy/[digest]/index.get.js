@@ -38,19 +38,19 @@ export default defineEventHandler(async (event) => {
   const expectedDigest = digestUrl(config.imageDigestSecret, url);
   if (expectedDigest !== digest) throw createError({ statusCode: 400, statusMessage: "Invalid digest" });
 
-  const accept = getHeader(event, "accept") || "";
-  const acceptEncoding = getHeader(event, "accept-encoding") || "";
-  const range = getHeader(event, "range") || "";
-  const referer = getHeader(event, "referer");
+  /** @type {import('got').Headers} */
+  const headers = {};
+  const proxyHeaderKeys = ["accept", "accept-encoding", "range", "referer"];
+  for (const headerName of proxyHeaderKeys) {
+    const value = getHeader(event, headerName);
+    if (value) headers[headerName] = value;
+  }
+
   const userAgent = getHeader(event, "user-agent") ?? config.userAgent;
+  if (userAgent) headers["user-agent"] = userAgent;
+
   const stream = got.stream(url, {
-    headers: {
-      accept,
-      "accept-encoding": acceptEncoding,
-      range,
-      referer,
-      "user-agent": userAgent,
-    },
+    headers,
     timeout: { request: config.httpTimeoutMs },
   });
 
