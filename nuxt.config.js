@@ -4,7 +4,6 @@ export default defineNuxtConfig({
   compatibilityDate: "2025-09-25",
   app: {
     head: {
-      title: "rdr",
       link: [
         { rel: "icon", type: "image/x-icon", href: "/favicon.ico" },
         { rel: "icon", type: "image/png", sizes: "16x16", href: "/favicon-16x16.png" },
@@ -13,6 +12,8 @@ export default defineNuxtConfig({
         { rel: "icon", type: "image/png", sizes: "192x192", href: "/android-chrome-192x192.png" },
         { rel: "icon", type: "image/png", sizes: "512x512", href: "/android-chrome-512x512.png" },
       ],
+      meta: [{ name: "referrer", content: "no-referrer" }],
+      title: "rdr",
     },
   },
   css: ["@/assets/css/main.css", "@/assets/css/anchor.css"],

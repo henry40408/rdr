@@ -2,6 +2,15 @@
 
 import * as cheerio from "cheerio";
 import { createHash } from "node:crypto";
+import sanitizeHtml from "sanitize-html";
+
+const defaults = sanitizeHtml.defaults;
+const allowedAttributes = {
+  ...defaults.allowedAttributes,
+  a: [...(defaults.allowedAttributes.a ?? []), "href", "name", "target"],
+  img: [...(defaults.allowedAttributes.img ?? []), "src", "alt", "title", "width", "height"],
+};
+const allowedTags = [...defaults.allowedTags, "img"];
 
 export const DIGEST_CONTENT_LENGTH = 16;
 
@@ -180,5 +189,205 @@ export function proxyImages(content, baseUrl) {
     }
   });
 
-  return $.html();
+  return $("body").html() || "";
+}
+
+/**
+ * @param {string} content
+ * @returns {string}
+ */
+export function removePixelTrackers(content) {
+  const $ = cheerio.load(content);
+
+  /** @type {(v: string | undefined) => boolean} */
+  const isZeroAttr = (v) => {
+    if (!v) return false;
+    return /^\s*0(?:\.0+)?(?:px)?\s*$/i.test(String(v));
+  };
+
+  /** @type {(style: string) => boolean} */
+  const styleHasZero = (style) => /(?:^|;)\s*(?:width|height)\s*:\s*0(?:\.0+)?(?:px)?\s*(?:;|$)/i.test(style || "");
+
+  $("img").each(function () {
+    const wAttr = $(this).attr("width");
+    const hAttr = $(this).attr("height");
+    const style = $(this).attr("style") || "";
+
+    // remove obvious pixel trackers or zero-sized images
+    if (isZeroAttr(wAttr) || isZeroAttr(hAttr) || styleHasZero(style)) {
+      $(this).remove();
+      return;
+    }
+
+    // also remove common 1x1 pixel images (explicitly sized)
+    const w = parseInt(wAttr || "", 10);
+    const h = parseInt(hAttr || "", 10);
+    if ((w === 1 && h === 1) || (w === 1 && !hAttr) || (h === 1 && !wAttr)) {
+      $(this).remove();
+    }
+  });
+
+  return $("body").html() || "";
+}
+
+// Interesting lists:
+// https://raw.githubusercontent.com/AdguardTeam/AdguardFilters/master/TrackParamFilter/sections/general_url.txt
+// https://firefox.settings.services.mozilla.com/v1/buckets/main/collections/query-stripping/records
+// https://github.com/Smile4ever/Neat-URL/blob/master/data/default-params-by-category.json
+// https://github.com/brave/brave-core/blob/master/components/query_filter/utils.cc
+// https://developers.google.com/analytics/devguides/collection/ga4/reference/config
+const trackingParams = [
+  // Facebook Click Identifiers
+  "fbclid",
+  "_openstat",
+  "fb_action_ids",
+  "fb_action_types",
+  "fb_ref",
+  "fb_source",
+  "fb_comment_id",
+
+  // Humble Bundles
+  "hmb_campaign",
+  "hmb_medium",
+  "hmb_source",
+
+  // Likely Google as well
+  "itm_campaign",
+  "itm_medium",
+  "itm_source",
+
+  // Google Click Identifiers
+  "gclid",
+  "dclid",
+  "gbraid",
+  "wbraid",
+  "gclsrc",
+
+  // Google Analytics
+  "campaign_id",
+  "campaign_medium",
+  "campaign_name",
+  "campaign_source",
+  "campaign_term",
+  "campaign_content",
+
+  // Google
+  "srsltid",
+
+  // Yandex Click Identifiers
+  "yclid",
+  "ysclid",
+
+  // Twitter Click Identifier
+  "twclid",
+
+  // Microsoft Click Identifier
+  "msclkid",
+
+  // Mailchimp Click Identifiers
+  "mc_cid",
+  "mc_eid",
+  "mc_tc",
+
+  // Wicked Reports click tracking
+  "wickedid",
+
+  // Hubspot Click Identifiers
+  "hsa_cam",
+  "_hsenc",
+  "__hssc",
+  "__hstc",
+  "__hsfp",
+  "_hsmi",
+  "hsctatracking",
+
+  // Olytics
+  "rb_clickid",
+  "oly_anon_id",
+  "oly_enc_id",
+
+  // Vero Click Identifier
+  "vero_id",
+  "vero_conv",
+
+  // Marketo email tracking
+  "mkt_tok",
+
+  // Adobe email tracking
+  "sc_cid",
+
+  // Beehiiv
+  "_bhlid",
+
+  // Branch.io
+  "_branch_match_id",
+  "_branch_referrer",
+
+  // Readwise
+  "__readwiseLocation",
+];
+
+const trackingParamPrefixes = [
+  "utm_", // https://en.wikipedia.org/wiki/UTM_parameters
+  "mtm_", // https://matomo.org/faq/reports/common-campaign-tracking-use-cases-and-examples/
+];
+
+// Outbound tracking parameters are appending the website's url to outbound links.
+const trackingParamsOutbound = [
+  "ref", // Ghost
+];
+
+/**
+ * @param {string} url
+ * @returns {string}
+ */
+export function removeTrackingParameters(url) {
+  if (!url) return url;
+  try {
+    const parsedUrl = new URL(url);
+    for (const key of Array.from(parsedUrl.searchParams.keys())) {
+      const lowerKey = key.toLowerCase();
+      const value = parsedUrl.searchParams.get(key) || "";
+      if (trackingParams.includes(lowerKey) || trackingParamPrefixes.some((p) => lowerKey.startsWith(p))) {
+        parsedUrl.searchParams.delete(key);
+      } else if (trackingParamsOutbound.includes(lowerKey)) {
+        if (value === parsedUrl.hostname) {
+          parsedUrl.searchParams.delete(key);
+        }
+      }
+    }
+    return parsedUrl.toString();
+  } catch {
+    return url;
+  }
+}
+
+/**
+ * @param {string} content
+ * @return {string}
+ */
+export function rewriteContent(content) {
+  // Open links in a new tab and add noopener noreferrer for security
+  const $ = cheerio.load(content);
+  $("a").replaceWith(function () {
+    const href = $(this).attr("href") || "";
+    return $(this)
+      .attr("rel", "noopener noreferrer")
+      .attr("referrerpolicy", "no-referrer")
+      .attr("target", "_blank")
+      .attr("href", removeTrackingParameters(href))
+      .clone();
+  });
+  return $("body").html() || "";
+}
+
+/**
+ * @param {string} content
+ * @returns {string}
+ */
+export function rewriteSanitizedContent(content) {
+  let processed = content;
+  processed = sanitizeHtml(processed, { allowedAttributes, allowedTags });
+  processed = removePixelTrackers(processed);
+  return rewriteContent(processed);
 }
