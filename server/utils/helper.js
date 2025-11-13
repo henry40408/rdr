@@ -2,6 +2,15 @@
 
 import * as cheerio from "cheerio";
 import { createHash } from "node:crypto";
+import sanitizeHtml from "sanitize-html";
+
+const defaults = sanitizeHtml.defaults;
+const allowedAttributes = {
+  ...defaults.allowedAttributes,
+  a: [...(defaults.allowedAttributes.a ?? []), "href", "name", "target"],
+  img: [...(defaults.allowedAttributes.img ?? []), "src", "alt", "title", "width", "height"],
+};
+const allowedTags = [...defaults.allowedTags, "img"];
 
 export const DIGEST_CONTENT_LENGTH = 16;
 
@@ -181,4 +190,30 @@ export function proxyImages(content, baseUrl) {
   });
 
   return $.html();
+}
+
+/**
+ * @param {string} content
+ * @return {string}
+ */
+export function rewriteContent(content) {
+  // Open links in a new tab and add noopener noreferrer for security
+  const $ = cheerio.load(content);
+  $("a").replaceWith(function () {
+    return $(this)
+      .attr("rel", "noopener noreferrer")
+      .attr("referrerpolicy", "no-referrer")
+      .attr("target", "_blank")
+      .clone();
+  });
+  return $.html();
+}
+
+/**
+ * @param {string} content
+ * @returns {string}
+ */
+export function rewriteSanitizedContent(content) {
+  const sanitized = sanitizeHtml(content, { allowedAttributes, allowedTags });
+  return rewriteContent(sanitized);
 }

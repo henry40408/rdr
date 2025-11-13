@@ -381,7 +381,7 @@
                 <q-card>
                   <q-card-section>
                     <div class="q-my-sm text-h6">
-                      <a target="_blank" :href="item.entry.link" rel="noopener noreferrer">
+                      <a target="_blank" :href="item.entry.link" rel="noopener noreferrer" referrerpolicy="no-referrer">
                         <MarkedText :keyword="searchQuery" :text="item.entry.title" />
                       </a>
                       <q-checkbox

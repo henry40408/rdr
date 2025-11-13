@@ -34,5 +34,8 @@ export default defineEventHandler(async (event) => {
   const doc = new JSDOM(res.body, { url: entry.link });
   const reader = new Readability(doc.window.document);
   const parsed = reader.parse();
-  return { content: proxyImages(parsed?.content || "", feed.htmlUrl) };
+
+  const sanitized = rewriteSanitizedContent(parsed?.content || "");
+  const proxied = proxyImages(sanitized, feed.htmlUrl);
+  return { content: proxied };
 });
