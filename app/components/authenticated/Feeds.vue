@@ -458,6 +458,7 @@ async function importOPML() {
       type: "positive",
       message: "OPML file imported successfully",
     });
+    refresh();
   } catch (err) {
     $q.notify({
       type: "negative",
