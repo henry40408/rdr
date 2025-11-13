@@ -189,7 +189,45 @@ export function proxyImages(content, baseUrl) {
     }
   });
 
-  return $.html();
+  return $("body").html() || "";
+}
+
+/**
+ * @param {string} content
+ * @returns {string}
+ */
+export function removePixelTrackers(content) {
+  const $ = cheerio.load(content);
+
+  /** @type {(v: string | undefined) => boolean} */
+  const isZeroAttr = (v) => {
+    if (!v) return false;
+    return /^\s*0(?:\.0+)?(?:px)?\s*$/i.test(String(v));
+  };
+
+  /** @type {(style: string) => boolean} */
+  const styleHasZero = (style) => /(?:^|;)\s*(?:width|height)\s*:\s*0(?:\.0+)?(?:px)?\s*(?:;|$)/i.test(style || "");
+
+  $("img").each(function () {
+    const wAttr = $(this).attr("width");
+    const hAttr = $(this).attr("height");
+    const style = $(this).attr("style") || "";
+
+    // remove obvious pixel trackers or zero-sized images
+    if (isZeroAttr(wAttr) || isZeroAttr(hAttr) || styleHasZero(style)) {
+      $(this).remove();
+      return;
+    }
+
+    // also remove common 1x1 pixel images (explicitly sized)
+    const w = parseInt(wAttr || "", 10);
+    const h = parseInt(hAttr || "", 10);
+    if ((w === 1 && h === 1) || (w === 1 && !hAttr) || (h === 1 && !wAttr)) {
+      $(this).remove();
+    }
+  });
+
+  return $("body").html() || "";
 }
 
 // Interesting lists:
@@ -340,7 +378,7 @@ export function rewriteContent(content) {
       .attr("href", removeTrackingParameters(href))
       .clone();
   });
-  return $.html();
+  return $("body").html() || "";
 }
 
 /**
@@ -348,6 +386,8 @@ export function rewriteContent(content) {
  * @returns {string}
  */
 export function rewriteSanitizedContent(content) {
-  const sanitized = sanitizeHtml(content, { allowedAttributes, allowedTags });
-  return rewriteContent(sanitized);
+  let processed = content;
+  processed = sanitizeHtml(processed, { allowedAttributes, allowedTags });
+  processed = removePixelTrackers(processed);
+  return rewriteContent(processed);
 }

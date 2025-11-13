@@ -1,7 +1,13 @@
 // @ts-check
 
 import { describe, it } from "vitest";
-import { digestUrl, normalizeDatetime, parseDataURL, removeTrackingParameters } from "../../server/utils/helper.js";
+import {
+  digestUrl,
+  normalizeDatetime,
+  parseDataURL,
+  removePixelTrackers,
+  removeTrackingParameters,
+} from "../../server/utils/helper.js";
 import assert from "node:assert";
 import { highlightKeyword } from "../../app/utils/index.js";
 import { replaceForTiddlyWiki } from "../../shared/utils/index.js";
@@ -198,5 +204,21 @@ describe("remove tracking parameters", () => {
       const result = removeTrackingParameters(test.input);
       assert.strictEqual(result, test.expected);
     });
+  });
+});
+
+describe("remove pixel trackers", () => {
+  it("1x1 pixel tracker removal", () => {
+    const input = `<p><img src="https://tracker1.example.org/" height="1" width="1"> and <img src="https://tracker2.example.org/" height="1" width="1"/></p>`;
+    const expected = `<p> and </p>`;
+    const output = removePixelTrackers(input);
+    assert.strictEqual(output, expected);
+  });
+
+  it("0x0 pixel tracker removal", () => {
+    const input = `<p><img src="https://tracker1.example.org/" height="0" width="0"> and <img src="https://tracker2.example.org/" height="0" width="0"/></p>`;
+    const expected = `<p> and </p>`;
+    const output = removePixelTrackers(input);
+    assert.strictEqual(output, expected);
   });
 });
