@@ -511,7 +511,7 @@
                 </q-item-section>
               </q-item>
             </q-list>
-            <div v-if="pending" class="text-center">
+            <div :class="{ invisible: !pending, 'text-center': true }">
               <q-spinner size="lg" class="q-my-md" />
             </div>
           </q-infinite-scroll>
