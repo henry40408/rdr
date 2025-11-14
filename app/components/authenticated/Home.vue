@@ -128,13 +128,18 @@
               </q-item>
             </template>
           </template>
-          <q-banner v-if="categories.length <= 0" :class="{ 'bg-grey-9': isDark, 'bg-grey-3': !isDark }">
-            <div>No categories found</div>
-            <div class="text-caption">
-              Try adjusting your filters or
-              <router-link to="/settings">add new feeds</router-link>.
-            </div>
-          </q-banner>
+          <q-item v-if="shouldShowNoCategories" :class="{ 'bg-grey-9': isDark, 'bg-grey-3': !isDark }">
+            <q-item-section side>
+              <q-icon name="info" />
+            </q-item-section>
+            <q-item-section>
+              <q-item-label>No categories found</q-item-label>
+              <q-item-label caption>
+                Try adjusting your filters or
+                <router-link to="/feeds">add new feeds</router-link>.
+              </q-item-label>
+            </q-item-section>
+          </q-item>
         </ClientOnly>
       </q-list>
     </q-drawer>
@@ -294,7 +299,7 @@
                 <q-item-section>
                   <q-item-label>No entries found.</q-item-label>
                   <q-item-label caption>
-                    Try adjusting your filters or <router-link to="/settings">add new feeds</router-link>.
+                    Try adjusting your filters or <router-link to="/feeds">add new feeds</router-link>.
                   </q-item-label>
                 </q-item-section>
               </q-item>
@@ -736,6 +741,10 @@ useHead(() => ({
       : `(${countData.value?.count ?? 0}) rdr`,
 }));
 const feedsData = computed(() => metadata.value?.[1]);
+const shouldShowNoCategories = computed(() => {
+  for (const category of sortedCategories.value) if (shouldShowCategory(category.id)) return false;
+  return true;
+});
 
 function cancelScraping(entryId: number) {
   const controller = scrappingControllers.value[entryId];
