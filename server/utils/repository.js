@@ -381,14 +381,20 @@ export class Repository {
 
     if (cursor) {
       if (direction === "asc")
-        q = q.where("date", ">", cursor).orWhere((builder) => {
-          builder.where("date", "=", cursor);
-          if (id) builder.where("id", ">", id);
+        q = q.where((builder) => {
+          builder.where("date", ">", cursor);
+          builder.orWhere((dateBuilder) => {
+            dateBuilder.where("date", "=", cursor);
+            if (id) dateBuilder.where("id", ">", id);
+          });
         });
       else
-        q = q.where("date", "<", cursor).orWhere((builder) => {
-          builder.where("date", "=", cursor);
-          if (id) builder.where("id", "<", id);
+        q = q.where((builder) => {
+          builder.where("date", "<", cursor);
+          builder.orWhere((dateBuilder) => {
+            dateBuilder.where("date", "=", cursor);
+            if (id) dateBuilder.where("id", "<", id);
+          });
         });
     }
 
