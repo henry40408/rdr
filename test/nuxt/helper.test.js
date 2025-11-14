@@ -59,9 +59,16 @@ describe("normalizeDatetime", () => {
   });
 
   it("should parse date strings with Chinese weekdays and months", () => {
-    const date = new Date("2025-09-26T06:29:00Z");
-    const normalized = normalizeDatetime("週五, 26 九月 2025 06:29:00 +0000");
-    assert.strictEqual(normalized?.toISOString(), date.toISOString());
+    {
+      const date = new Date("2025-09-26T06:29:00Z");
+      const normalized = normalizeDatetime("週五, 26 九月 2025 06:29:00 +0000");
+      assert.strictEqual(normalized?.toISOString(), date.toISOString());
+    }
+    {
+      const date = new Date("2025-11-10T15:38:00Z");
+      const normalized = normalizeDatetime("週一, 10 十一月 2025 15:38:00 +0000");
+      assert.strictEqual(normalized?.toISOString(), date.toISOString());
+    }
   });
 });
 

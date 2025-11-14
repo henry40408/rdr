@@ -27,6 +27,8 @@ export function digestUrl(secret, url) {
 }
 
 const DATE_PART_REPLACEMENTS = {
+  十一月: "Nov",
+  十二月: "Dec",
   週日: "Sun",
   週一: "Mon",
   週二: "Tue",
@@ -44,8 +46,6 @@ const DATE_PART_REPLACEMENTS = {
   八月: "Aug",
   九月: "Sep",
   十月: "Oct",
-  十一月: "Nov",
-  十二月: "Dec",
 };
 
 /**
@@ -53,11 +53,16 @@ const DATE_PART_REPLACEMENTS = {
  * @returns {Date|undefined}
  */
 export function normalizeDatetime(dt) {
+  if (!dt || typeof dt !== "string") return undefined;
+
+  let date = new Date(dt);
+  if (!isNaN(date.valueOf())) return date;
+
   let normalized = dt;
   for (const [key, value] of Object.entries(DATE_PART_REPLACEMENTS)) {
     normalized = normalized.replace(key, value);
   }
-  const date = new Date(normalized);
+  date = new Date(normalized);
   return isNaN(date.valueOf()) ? undefined : date;
 }
 
