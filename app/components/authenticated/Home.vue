@@ -511,7 +511,7 @@
                 </q-item-section>
               </q-item>
             </q-list>
-            <div v-if="pending" class="text-center">
+            <div :class="{ invisible: !pending, 'text-center': true }">
               <q-spinner size="lg" class="q-my-md" />
             </div>
           </q-infinite-scroll>
@@ -575,6 +575,7 @@ const itemRefs = useTemplateRef("item-list");
 const categoryFeedQuery = ref("");
 const contents: Ref<{ [key: string]: string }> = ref({});
 const contentLoading: Ref<{ [key: string]: boolean }> = ref({});
+const cursor = ref<{ id: number; date: string } | undefined>(undefined);
 const fullContents: Ref<{ [key: string]: string }> = ref({});
 const entryRead: Ref<Record<string, "read" | "toggling" | "unread">> = ref({});
 const entryStar: Ref<Record<string, "unstarred" | "starring" | "starred">> = ref({});
@@ -582,7 +583,6 @@ const expanded: Ref<boolean[]> = ref([]);
 const hasMore = ref(true);
 const items: Ref<import("../../../server/api/entries.get").EntryEntityWithFeed[]> = ref([]);
 const leftDrawerOpen = ref(false);
-const offset = ref(0);
 const rightDrawerOpen = ref(false);
 const saving: Ref<Record<string, boolean>> = ref({});
 const scrapping: Ref<Record<string, boolean>> = ref({});
@@ -647,7 +647,11 @@ const {
     }
     if (searchQuery.value) query.search = searchQuery.value;
     query.limit = String(itemsLimit.value);
-    query.offset = String(offset.value);
+    if (cursor.value) {
+      const { id, date } = cursor.value;
+      query.cursor = date;
+      query.id = String(id);
+    }
     return query;
   }),
   // when any query parameters change,
@@ -690,7 +694,8 @@ watch(entriesData, (newEntriesData) => {
     entryRead.value[item.entry.id] = item.entry.readAt ? "read" : "unread";
     entryStar.value[item.entry.id] = item.entry.starredAt ? "starred" : "unstarred";
   }
-  offset.value += itemsLimit.value;
+  const lastItem = newItems[newItems.length - 1];
+  if (lastItem) cursor.value = { id: lastItem.entry.id, date: lastItem.entry.date };
 });
 watchEffect(() => {
   if (!pending.value) $q.loadingBar.stop();
@@ -970,13 +975,13 @@ async function resetThenLoad(done?: (stop?: boolean) => void) {
   infiniteScroll.value?.stop();
   try {
     contents.value = {};
+    cursor.value = undefined;
     fullContents.value = {};
     entryRead.value = {};
     entryStar.value = {};
     expanded.value = [];
     hasMore.value = true;
     items.value = [];
-    offset.value = 0;
     saving.value = {};
     scrapping.value = {};
     scrappingControllers.value = {};

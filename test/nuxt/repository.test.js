@@ -233,7 +233,6 @@ describe("Repository", () => {
         status: "unread",
         search: "Entry",
         limit: 10,
-        offset: 0,
       });
       assert.strictEqual(entries.length, 2);
       for (const entry of entries) {
@@ -247,7 +246,6 @@ describe("Repository", () => {
           feedIds: [feedId],
           status: "read",
           limit: 10,
-          offset: 0,
         });
         assert.strictEqual(readEntries.length, 1);
         assert.ok(readEntries[0] instanceof EntryEntity);
@@ -260,7 +258,6 @@ describe("Repository", () => {
           feedIds: [feedId],
           status: "starred",
           limit: 10,
-          offset: 0,
         });
         assert.strictEqual(starredEntries.length, 1);
         assert.ok(starredEntries[0] instanceof EntryEntity);
@@ -275,7 +272,7 @@ describe("Repository", () => {
 
       const content = await repository.findEntryContentById(alice.id, entries[0].id);
       assert.strictEqual(typeof content, "string");
-      assert.strictEqual(content, "Content 1");
+      assert.strictEqual(content, "Content 3");
 
       // other user
       {

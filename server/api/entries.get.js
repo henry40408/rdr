@@ -10,10 +10,11 @@ import { z } from "zod";
  */
 
 const schema = z.object({
+  cursor: z.string().optional(),
   direction: z.enum(["asc", "desc"]).default("desc"),
+  id: z.coerce.number().optional(),
   limit: z.coerce.number().min(1).max(1000).default(100),
   search: z.string().optional(),
-  offset: z.coerce.number().min(0).default(0),
   order: z.enum(["date"]).default("date"),
   selectedId: z.coerce.number().optional(),
   selectedType: z.enum(["category", "feed"]).optional(),
@@ -26,7 +27,7 @@ export default defineEventHandler(async (event) => {
   const session = await requireUserSession(event);
   const userId = session.user.id;
 
-  const { direction, limit, offset, order, search, selectedId, selectedType, status } = await getValidatedQuery(
+  const { cursor, direction, id, limit, order, search, selectedId, selectedType, status } = await getValidatedQuery(
     event,
     (query) => schema.parse(query),
   );
@@ -47,10 +48,11 @@ export default defineEventHandler(async (event) => {
 
   const entries = await repository.findEntries({
     userId,
+    cursor,
     direction,
     feedIds,
+    id,
     limit,
-    offset,
     order,
     search,
     status,
