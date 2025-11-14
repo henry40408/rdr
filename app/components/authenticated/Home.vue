@@ -286,8 +286,7 @@
             <q-list separator>
               <q-item
                 v-if="!pending && items.length === 0"
-                class="q-pa-md q-mb-md"
-                :class="{ 'bg-grey-9': isDark, 'bg-grey-3': !isDark }"
+                :class="{ 'q-pa-md': true, 'bg-grey-9': isDark, 'bg-grey-3': !isDark }"
               >
                 <q-item-section side>
                   <q-icon name="info" />
@@ -505,9 +504,16 @@
                   </q-card-section>
                 </q-card>
               </q-expansion-item>
-              <q-item v-if="!hasMore && items.length > 0">
-                <q-item-section class="q-pb-md">
-                  <q-item-label class="text-center">End of list</q-item-label>
+              <q-item
+                v-if="!hasMore && items.length > 0"
+                :class="{ 'bg-grey-9': isDark, 'bg-grey-3': !isDark, 'q-pa-md': true }"
+              >
+                <q-item-section side>
+                  <q-icon name="info" />
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label>End of list</q-item-label>
+                  <q-item-label caption>No more items to display.</q-item-label>
                 </q-item-section>
               </q-item>
             </q-list>
