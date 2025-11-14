@@ -325,10 +325,11 @@ export class Repository {
   /**
    * @param {object} opts
    * @param {number} opts.userId
+   * @param {string} [opts.cursor]
    * @param {"asc"|"desc"} [opts.direction="desc"]
    * @param {number[]} [opts.feedIds]
+   * @param {number} [opts.id]
    * @param {number} [opts.limit=100]
-   * @param {number} [opts.offset=0]
    * @param {"date"} [opts.order="date"]
    * @param {string} [opts.search]
    * @param {"all"|"read"|"unread"|"starred"} [opts.status="all"]
@@ -336,10 +337,11 @@ export class Repository {
    */
   async findEntries({
     userId,
+    cursor,
     direction = "desc",
     feedIds = [],
+    id,
     limit = 100,
-    offset = 0,
     order = "date",
     search,
     status = "all",
@@ -377,13 +379,26 @@ export class Repository {
       );
     }
 
+    if (cursor) {
+      if (direction === "asc")
+        q = q.where("date", ">", cursor).orWhere((builder) => {
+          builder.where("date", "=", cursor);
+          if (id) builder.where("id", ">", id);
+        });
+      else
+        q = q.where("date", "<", cursor).orWhere((builder) => {
+          builder.where("date", "=", cursor);
+          if (id) builder.where("id", "<", id);
+        });
+    }
+
     switch (order) {
       case "date":
       default:
-        q = q.orderBy("date", direction);
+        q = q.orderBy("date", direction).orderBy("id", direction);
     }
 
-    const rows = await q.limit(limit).offset(offset);
+    const rows = await q.limit(limit);
     return rows.map(
       (row) =>
         new EntryEntity({
