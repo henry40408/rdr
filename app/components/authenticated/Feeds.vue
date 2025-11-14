@@ -248,18 +248,18 @@
               </template>
             </q-list>
           </template>
+          <q-item v-if="shouldShowNoCategories" :class="{ 'q-pa-md': true, 'bg-grey-9': isDark, 'bg-grey-3': !isDark }">
+            <q-item-section side>
+              <q-icon name="info" />
+            </q-item-section>
+            <q-item-section>
+              <q-item-label>No categories or feeds match the current filters.</q-item-label>
+              <q-item-label caption
+                >Try adjusting the search query or toggles above to find your subscriptions.</q-item-label
+              >
+            </q-item-section>
+          </q-item>
         </q-list>
-        <q-banner v-if="categories.length <= 0" :class="{ 'bg-grey-9': isDark, 'bg-grey-3': !isDark }">
-          <template #avatar>
-            <q-icon name="info" />
-          </template>
-
-          <div>No categories found</div>
-          <div class="text-caption">
-            Try adjusting your filters or
-            <router-link to="/settings">add new feeds</router-link>.
-          </div>
-        </q-banner>
 
         <q-page-sticky :offset="[18, 18]" position="bottom-right">
           <q-btn fab padding="sm" icon="refresh" color="primary" @click="refreshAll()" />
@@ -318,6 +318,10 @@ watchEffect(() => {
 });
 
 const feedDataByFeedId = computed(() => data.value?.[1]?.feeds ?? {});
+const shouldShowNoCategories = computed(() => {
+  for (const category of categories.value ?? []) if (shouldShowCategory(category.id)) return false;
+  return true;
+});
 
 function addCategory(inputValue: string, doneFn: (val: string, mode: "add" | "add-unique" | "toggle") => void) {
   if (inputValue && !categoryOptions.value.includes(inputValue)) {
