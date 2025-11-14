@@ -128,10 +128,7 @@
               </q-item>
             </template>
           </template>
-          <q-item v-if="shouldShowNoCategories" :class="{ 'bg-grey-9': isDark, 'bg-grey-3': !isDark }">
-            <q-item-section side>
-              <q-icon name="info" />
-            </q-item-section>
+          <q-item v-if="shouldShowNoCategories" :class="{ 'bg-grey-9': isDark, 'bg-grey-3': !isDark, 'q-pa-md': true }">
             <q-item-section>
               <q-item-label>No categories found</q-item-label>
               <q-item-label caption>
