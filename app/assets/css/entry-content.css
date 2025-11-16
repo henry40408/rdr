@@ -149,7 +149,7 @@ body.body--dark .entry-content blockquote {
 
 /* Dark Mode - Code */
 body.body--dark .entry-content code {
-  background-color: #2d3748;
+  /* background-color: #2d3748; */
   color: #f56565;
 }
 
