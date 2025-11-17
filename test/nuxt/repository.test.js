@@ -50,13 +50,13 @@ describe("Repository", () => {
     });
 
     it("should create user", async () => {
-      const user = new UserEntity({ id: 0, username: "testuser" });
+      const user = new UserEntity({ id: 0, username: "testuser", nonce: 0 });
       await repository.createUser(user, "password123");
       assert.ok(typeof user.id === "number");
     });
 
     it("should authenticate user", async () => {
-      const user = new UserEntity({ id: 0, username: "authuser" });
+      const user = new UserEntity({ id: 0, username: "authuser", nonce: 0 });
       const password = "securepassword";
       await repository.createUser(user, password);
 
@@ -74,7 +74,7 @@ describe("Repository", () => {
      * @returns {Promise<UserEntity>}
      */
     async function createUser(username, password) {
-      const user = new UserEntity({ id: 0, username });
+      const user = new UserEntity({ id: 0, username, nonce: 0 });
       await repository.createUser(user, password);
       return user;
     }
@@ -977,6 +977,22 @@ describe("Repository", () => {
       const row = await repository.knex("categories").where({ user_id: user.id, id: category.id }).first();
       assert.ok(row);
       assert.strictEqual(row.name, "Updated Name");
+    });
+
+    it("should delete cached nonce when password is changed", async () => {
+      const user = await createUser("nonceuser", "noncepassword");
+
+      const nonce = await repository.findUserNonceById(user.id);
+      const cachedNonce = repository.nonceCache.get(user.id);
+      assert.strictEqual(cachedNonce, nonce);
+
+      await repository.updateUserPassword(user.username, "noncepassword", "newnoncepassword");
+      assert.ok(!repository.nonceCache.has(user.id));
+
+      const updatedNonce = await repository.findUserNonceById(user.id);
+      const updatedUser = await repository.findUserById(user.id);
+      assert.ok(updatedUser);
+      assert.strictEqual(updatedUser.nonce, updatedNonce);
     });
   });
 });
