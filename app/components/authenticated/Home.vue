@@ -30,9 +30,7 @@
 
     <q-drawer v-model="leftDrawerOpen" bordered persistent side="left" show-if-above>
       <q-list padding>
-        <q-item>
-          <q-item-section>Categories</q-item-section>
-        </q-item>
+        <q-item-label header>Categories</q-item-label>
         <q-item>
           <q-item-section>
             <ClientOnly>
@@ -143,9 +141,7 @@
 
     <q-drawer v-model="rightDrawerOpen" bordered persistent side="right" show-if-above>
       <q-list padding>
-        <q-item>
-          <q-item-section>Version</q-item-section>
-        </q-item>
+        <q-item-label header>Version</q-item-label>
         <q-item>
           <q-item-section>
             <q-item-label caption>Version</q-item-label>
@@ -161,9 +157,7 @@
           </q-item-section>
         </q-item>
         <q-separator spaced />
-        <q-item>
-          <q-item-section>Account</q-item-section>
-        </q-item>
+        <q-item-label header>Account</q-item-label>
         <q-item v-if="session?.user">
           <q-item-section>
             <q-item-label caption>Username</q-item-label>
@@ -182,9 +176,7 @@
           </q-item-section>
         </q-item>
         <q-separator spaced />
-        <q-item>
-          <q-item-section>Filters</q-item-section>
-        </q-item>
+        <q-item-label header>Filters</q-item-label>
         <q-item>
           <q-item-section>
             <q-radio v-model="itemsStatus" val="unread" label="Unread" />
@@ -194,9 +186,7 @@
           </q-item-section>
         </q-item>
         <q-separator spaced />
-        <q-item>
-          <q-item-section>Page size</q-item-section>
-        </q-item>
+        <q-item-label header>Page size</q-item-label>
         <q-item>
           <q-item-section side>
             {{ itemsLimit }}
@@ -206,9 +196,7 @@
           </q-item-section>
         </q-item>
         <q-separator spaced />
-        <q-item>
-          <q-item-section>Sort options</q-item-section>
-        </q-item>
+        <q-item-label header>Sort options</q-item-label>
         <q-item>
           <q-item-section>
             <q-select

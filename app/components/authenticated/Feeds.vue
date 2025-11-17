@@ -29,9 +29,7 @@
 
     <q-drawer v-model="leftDrawerOpen" bordered persistent side="left" show-if-above>
       <q-list padding>
-        <q-item>
-          <q-item-section>Navigation</q-item-section>
-        </q-item>
+        <q-item-label header>Navigation</q-item-label>
         <q-item clickable @click="$router.push({ hash: '#subscriptions' })">
           <q-item-section>Subscriptions</q-item-section>
         </q-item>
@@ -42,9 +40,7 @@
           <q-item-section>Feeds</q-item-section>
         </q-item>
         <q-separator spaced />
-        <q-item>
-          <q-item-section>Categories</q-item-section>
-        </q-item>
+        <q-item-label header>Categories</q-item-label>
         <template v-for="category in categories" :key="category.id">
           <q-item clickable @click="$router.push({ hash: `#category-${category.id}` })">
             <q-item-section>{{ category.name }}</q-item-section>
