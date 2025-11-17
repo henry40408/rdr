@@ -1,11 +1,11 @@
-export const name = "0007-add-nonce-to-users";
+export const name = "m0007-add-nonce-to-users";
 
 /**
  * @param {import('knex').Knex} knex
  */
 export function up(knex) {
   return knex.schema.table("users", (table) => {
-    table.integer("nonce");
+    table.integer("nonce").defaultTo(0).notNullable();
   });
 }
 

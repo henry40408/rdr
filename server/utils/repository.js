@@ -2,6 +2,7 @@
 
 import { CategoryEntity, EntryEntity, FeedEntity, ImageEntity, JobEntity, UserEntity } from "./entities.js";
 import { compare, hash } from "bcrypt";
+import { LRUCache } from "lru-cache";
 import { add } from "date-fns";
 import chunk from "lodash/chunk.js";
 import get from "lodash/get.js";
@@ -22,6 +23,8 @@ export class Repository {
   constructor({ knex, logger }) {
     this.logger = logger.child({ context: "repository" });
     this.knex = knex;
+    /** @type {LRUCache<number, number>} */
+    this.nonceCache = new LRUCache({ max: 100 });
   }
 
   async init() {
@@ -623,6 +626,20 @@ export class Repository {
   }
 
   /**
+   * @param {number} id
+   * @returns {Promise<number|undefined>}
+   **/
+  async findUserNonceById(id) {
+    if (this.nonceCache.has(id)) return this.nonceCache.get(id);
+
+    const row = await this.knex("users").where({ id }).first();
+    if (!row) return undefined;
+
+    this.nonceCache.set(id, row.nonce);
+    return row.nonce;
+  }
+
+  /**
    * @returns {Promise<UserEntity[]>}
    */
   async findUsers() {
@@ -856,9 +873,10 @@ export class Repository {
 
     const passwordHash = await hash(newPassword, HASH_ROUNDS);
     const updated = await this.knex("users")
-      .where({ username })
+      .where({ username: authenticated.username })
       .update({ password_hash: passwordHash, nonce: Date.now() });
     this.logger.info({ msg: "Updated user password", updated });
+    this.nonceCache.delete(authenticated.id);
     return updated;
   }
 

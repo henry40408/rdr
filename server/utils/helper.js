@@ -409,14 +409,9 @@ export async function validateUserNonce(event) {
   const session = await requireUserSession(event);
   const userId = session.user.id;
 
-  const user = await repository.findUserById(userId);
-  if (!user) {
-    clearUserSession(event);
-    throw createError({ statusCode: 401, statusMessage: "Unauthorized" });
-  }
-
-  const nonce = session.user.nonce;
-  if (nonce !== user.nonce) {
+  const expected = await repository.findUserNonceById(userId);
+  const actual = session.user.nonce;
+  if (actual !== expected) {
     clearUserSession(event);
     throw createError({ statusCode: 401, statusMessage: "Unauthorized" });
   }
