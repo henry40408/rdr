@@ -1,6 +1,6 @@
 // @ts-check
 
-export const name = "0001-initial";
+export const name = "m0001-initial";
 
 /**
  * @param {import('knex').Knex} knex

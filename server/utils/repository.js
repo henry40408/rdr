@@ -31,6 +31,8 @@ export class Repository {
     await this._setPragmas();
     this.logger.info("Database pragmas set");
 
+    await this._fixMigrations();
+
     await this.knex.migrate.latest();
     this.logger.info("Database migrated");
   }
@@ -1017,6 +1019,17 @@ export class Repository {
       .merge();
     if (jobId) job.id = jobId;
     this.logger.debug({ msg: "Upserted job", job });
+  }
+
+  async _fixMigrations() {
+    const exists = await this.knex.schema.hasTable("knex_migrations");
+    if (!exists) return;
+
+    const fixed = await this.knex
+      .table("knex_migrations")
+      .update({ name: "m0001-initial" })
+      .where({ name: "0001-initial" });
+    this.logger.info({ msg: "Fixed initial migration", fixed });
   }
 
   async _setPragmas() {
