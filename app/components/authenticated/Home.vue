@@ -955,7 +955,7 @@ async function markAsRead(entryId: number) {
     entryRead.value[entryId] = "toggling";
     await $fetch(`/api/entries/${entryId}/read`, { method: "PUT" });
     entryRead.value[entryId] = "read";
-    await refreshMetadata();
+    refreshMetadata();
   } catch (err) {
     $q.notify({
       type: "negative",

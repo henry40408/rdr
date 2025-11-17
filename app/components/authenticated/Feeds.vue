@@ -337,10 +337,10 @@ async function addFeed() {
         xmlUrl: xmlUrl.value,
       },
     });
+    refresh();
     categoryName.value = "";
     htmlUrl.value = "";
     xmlUrl.value = "";
-    await refresh();
     $q.notify({
       type: "positive",
       message: "Feed added successfully",
@@ -366,7 +366,7 @@ function deleteCategoryDialog(categoryId: number) {
   }).onOk(async () => {
     try {
       await $fetch(`/api/categories/${categoryId}`, { method: "DELETE" });
-      await refresh();
+      refresh();
       $q.notify({
         type: "positive",
         message: "Category deleted successfully",
@@ -391,7 +391,7 @@ function deleteFeedDialog(feedId: number) {
   }).onOk(async () => {
     try {
       await $fetch(`/api/feeds/${feedId}`, { method: "DELETE" });
-      await refresh();
+      refresh();
       $q.notify({
         type: "positive",
         message: "Feed deleted successfully",
@@ -488,7 +488,7 @@ async function refreshCategory(category: CategoryEntity) {
     const tasks = [];
     for (const feedId of feedIds) tasks.push($fetch(`/api/feeds/${feedId}/refresh`, { method: "POST" }));
     await Promise.all(tasks);
-    await refresh();
+    refresh();
   } catch (err) {
     $q.notify({
       type: "negative",
@@ -506,7 +506,7 @@ async function refreshFeed(feed: FeedEntity) {
   refreshingFeedIds.value.add(feed.id);
   try {
     await $fetch(`/api/feeds/${feed.id}/refresh`, { method: "POST" });
-    await refresh();
+    refresh();
   } catch (err) {
     $q.notify({
       type: "negative",
@@ -575,7 +575,7 @@ async function updateCategoryDialog(categoryId: number) {
         method: "PATCH",
         body: { name: data.name },
       });
-      await refresh();
+      refresh();
       $q.notify({
         type: "positive",
         message: "Category updated successfully",
@@ -613,7 +613,7 @@ async function updateFeedDialog(feedId: number) {
           htmlUrl: data.htmlUrl,
         },
       });
-      await refresh();
+      refresh();
       $q.notify({
         type: "positive",
         message: "Feed updated successfully",
