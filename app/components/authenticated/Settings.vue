@@ -15,15 +15,15 @@
 
     <q-drawer v-model="leftDrawerOpen" bordered persistent side="left" show-if-above>
       <q-list padding>
-        <q-item>
-          <q-item-section>Navigation</q-item-section>
-        </q-item>
+        <q-item-label header>Navigation</q-item-label>
         <q-item clickable @click="$router.push({ hash: '#change-password' })">
           <q-item-section>Change Password</q-item-section>
         </q-item>
         <q-item clickable @click="$router.push({ hash: '#user-settings' })">
           <q-item-section>User Settings</q-item-section>
         </q-item>
+        <q-separator spaced />
+        <q-item-label header>Administration</q-item-label>
         <q-item clickable @click="$router.push({ hash: '#background-jobs' })">
           <q-item-section>Background Jobs</q-item-section>
         </q-item>
@@ -107,7 +107,7 @@
 import { millisecondsToSeconds } from "date-fns";
 import { useQuasar } from "quasar";
 
-const { loggedIn } = useUserSession();
+const { clear: logout, loggedIn } = useUserSession();
 
 const $q = useQuasar();
 const isDark = useDark();
@@ -125,7 +125,11 @@ const leftDrawerOpen = ref(false);
 const triggeringJobs = ref(new Set());
 
 const headers = useRequestHeaders(["cookie"]);
-const { data: jobsData, refresh: refreshJobs } = await useFetch("/api/jobs", { headers });
+const { data: jobsData, error: jobsError, refresh: refreshJobs } = await useFetch("/api/jobs", { headers });
+
+watchEffect(() => {
+  if (jobsError.value?.statusCode === 401) logout();
+});
 
 const jobPaused = computed(() => {
   const map: Record<string, boolean> = {};

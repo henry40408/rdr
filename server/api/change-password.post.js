@@ -15,7 +15,7 @@ const schema = z
 export default defineEventHandler(async (event) => {
   const { container } = useNitroApp();
 
-  const session = await requireUserSession(event);
+  const session = await validateUserNonce(event);
   const userId = session.user.id;
 
   const { currentPassword, newPassword } = await readValidatedBody(event, (body) => schema.parse(body));
@@ -29,7 +29,18 @@ export default defineEventHandler(async (event) => {
   const updated = await repository.updateUserPassword(user.username, currentPassword, newPassword);
   if (!updated) throw createError({ statusCode: 401, statusMessage: "Current password is incorrect" });
 
-  await clearUserSession(event); // log out the user after password change
+  {
+    const user = await repository.findUserById(userId);
+    if (!user) throw createError({ statusCode: 404, statusMessage: "User not found" });
+    await replaceUserSession(event, {
+      user: {
+        id: user.id,
+        username: user.username,
+        nonce: user.nonce,
+      },
+      loggedInAt: new Date(),
+    });
+  }
 
   return { status: "COMPLETED" };
 });

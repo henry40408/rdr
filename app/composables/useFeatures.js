@@ -2,6 +2,6 @@
 
 export default function () {
   const { loggedIn } = useUserSession();
-  const { data, refresh } = useFetch("/api/features", { watch: [loggedIn] });
-  return { data, refresh };
+  const { data, error, refresh } = useFetch("/api/features", { watch: [loggedIn] });
+  return { data, error, refresh };
 }

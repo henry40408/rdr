@@ -30,9 +30,7 @@
 
     <q-drawer v-model="leftDrawerOpen" bordered persistent side="left" show-if-above>
       <q-list padding>
-        <q-item>
-          <q-item-section>Categories</q-item-section>
-        </q-item>
+        <q-item-label header>Categories</q-item-label>
         <q-item>
           <q-item-section>
             <ClientOnly>
@@ -143,9 +141,7 @@
 
     <q-drawer v-model="rightDrawerOpen" bordered persistent side="right" show-if-above>
       <q-list padding>
-        <q-item>
-          <q-item-section>Version</q-item-section>
-        </q-item>
+        <q-item-label header>Version</q-item-label>
         <q-item>
           <q-item-section>
             <q-item-label caption>Version</q-item-label>
@@ -161,9 +157,7 @@
           </q-item-section>
         </q-item>
         <q-separator spaced />
-        <q-item>
-          <q-item-section>Account</q-item-section>
-        </q-item>
+        <q-item-label header>Account</q-item-label>
         <q-item v-if="session?.user">
           <q-item-section>
             <q-item-label caption>Username</q-item-label>
@@ -182,9 +176,7 @@
           </q-item-section>
         </q-item>
         <q-separator spaced />
-        <q-item>
-          <q-item-section>Filters</q-item-section>
-        </q-item>
+        <q-item-label header>Filters</q-item-label>
         <q-item>
           <q-item-section>
             <q-radio v-model="itemsStatus" val="unread" label="Unread" />
@@ -194,9 +186,7 @@
           </q-item-section>
         </q-item>
         <q-separator spaced />
-        <q-item>
-          <q-item-section>Page size</q-item-section>
-        </q-item>
+        <q-item-label header>Page size</q-item-label>
         <q-item>
           <q-item-section side>
             {{ itemsLimit }}
@@ -206,9 +196,7 @@
           </q-item-section>
         </q-item>
         <q-separator spaced />
-        <q-item>
-          <q-item-section>Sort options</q-item-section>
-        </q-item>
+        <q-item-label header>Sort options</q-item-label>
         <q-item>
           <q-item-section>
             <q-select
@@ -552,7 +540,7 @@ import pangu from "pangu";
 import { useQuasar } from "quasar";
 import { useRouteQuery } from "@vueuse/router";
 
-const { data: features } = useFeatures();
+const { data: features, error: featuresError } = useFeatures();
 const { categoriesDirection, categoriesOrder, hideEmpty } = useLocalSettings();
 const { session, clear: logout } = useUserSession();
 
@@ -626,9 +614,16 @@ const summarizationEnabled = computed(() => !!features.value?.summarization);
 const saveEnabled = computed(() => !!features.value?.save);
 
 const headers = useRequestHeaders(["cookie"]);
-const { data: categories } = await useFetch("/api/categories", { headers, default: () => [] });
-const { data: imagePrimaryKeys } = await useFetch<string[]>("/api/images/primary-keys", { headers, default: () => [] });
-const { data: metadata, refresh: refreshMetadata } = await useAsyncData("metadata", (_nuxtApp, { signal }) =>
+const { data: categories, error: categoriesError } = await useFetch("/api/categories", { headers, default: () => [] });
+const { data: imagePrimaryKeys, error: imagePrimaryKeysError } = await useFetch<string[]>("/api/images/primary-keys", {
+  headers,
+  default: () => [],
+});
+const {
+  data: metadata,
+  error: metadataError,
+  refresh: refreshMetadata,
+} = await useAsyncData("metadata", (_nuxtApp, { signal }) =>
   Promise.all([
     $fetch("/api/count", { headers, query: countQuery.value, signal }),
     $fetch("/api/feeds/data", { headers, signal }),
@@ -637,6 +632,7 @@ const { data: metadata, refresh: refreshMetadata } = await useAsyncData("metadat
 
 const {
   data: entriesData,
+  error: entriesError,
   execute: fetchEntries,
   pending,
 } = await useFetch("/api/entries", {
@@ -711,6 +707,17 @@ watchEffect(() => {
 });
 watch([itemsDirection, itemsLimit, itemsOrder, itemsStatus, searchQuery, selectedCategoryId, selectedFeedId], () => {
   resetThenLoad();
+});
+
+watchEffect(() => {
+  const isUnauthorized = [
+    categoriesError.value,
+    entriesError.value,
+    featuresError.value,
+    imagePrimaryKeysError.value,
+    metadataError.value,
+  ].some((e) => e?.statusCode === 401);
+  if (isUnauthorized) logout();
 });
 
 const sortedCategories = computed(() => {
@@ -948,7 +955,7 @@ async function markAsRead(entryId: number) {
     entryRead.value[entryId] = "toggling";
     await $fetch(`/api/entries/${entryId}/read`, { method: "PUT" });
     entryRead.value[entryId] = "read";
-    await refreshMetadata();
+    refreshMetadata();
   } catch (err) {
     $q.notify({
       type: "negative",

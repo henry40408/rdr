@@ -4,14 +4,6 @@ import * as cheerio from "cheerio";
 import { createHash } from "node:crypto";
 import sanitizeHtml from "sanitize-html";
 
-const defaults = sanitizeHtml.defaults;
-const allowedAttributes = {
-  ...defaults.allowedAttributes,
-  a: [...(defaults.allowedAttributes.a ?? []), "href", "name", "target"],
-  img: [...(defaults.allowedAttributes.img ?? []), "src", "alt", "title", "width", "height"],
-};
-const allowedTags = [...defaults.allowedTags, "img"];
-
 export const DIGEST_CONTENT_LENGTH = 16;
 
 /**
@@ -121,7 +113,7 @@ const SRC_PATTERN = /^(https?:)?\/\//;
  * @param {string} baseUrl
  * @return {string}
  */
-function normalizeUrl(url, baseUrl) {
+function _normalizeUrl(url, baseUrl) {
   // handle protocol-relative URLs
   if (url.startsWith("//")) {
     const baseProtocol = new URL(baseUrl).protocol;
@@ -146,7 +138,7 @@ export function proxyImages(content, baseUrl) {
   $("img").each(function () {
     let src = $(this).attr("src");
     if (src) {
-      src = normalizeUrl(src, baseUrl);
+      src = _normalizeUrl(src, baseUrl);
       if (ABSOLUTE_URL_PATTERN.test(src)) {
         const digest = digestUrl(config.imageDigestSecret, src);
         const proxiedUrl = `/api/images/proxy/${digest}?url=${encodeURIComponent(src)}`;
@@ -160,7 +152,7 @@ export function proxyImages(content, baseUrl) {
       const proxiedEntries = entries.map((entry) => {
         const [url, descriptor] = entry.split(" ");
         if (url) {
-          const normalizedUrl = normalizeUrl(url, baseUrl);
+          const normalizedUrl = _normalizeUrl(url, baseUrl);
           if (ABSOLUTE_URL_PATTERN.test(normalizedUrl)) {
             const digest = digestUrl(config.imageDigestSecret, normalizedUrl);
             const proxiedUrl = `/api/images/proxy/${digest}?url=${encodeURIComponent(normalizedUrl)}`;
@@ -181,7 +173,7 @@ export function proxyImages(content, baseUrl) {
       const proxiedEntries = entries.map((entry) => {
         const [url, descriptor] = entry.split(" ");
         if (url) {
-          const normalizedUrl = normalizeUrl(url, baseUrl);
+          const normalizedUrl = _normalizeUrl(url, baseUrl);
           if (ABSOLUTE_URL_PATTERN.test(normalizedUrl)) {
             const digest = digestUrl(config.imageDigestSecret, normalizedUrl);
             const proxiedUrl = `/api/images/proxy/${digest}?url=${encodeURIComponent(normalizedUrl)}`;
@@ -386,6 +378,14 @@ export function rewriteContent(content) {
   return $("body").html() || "";
 }
 
+const defaults = sanitizeHtml.defaults;
+const allowedAttributes = {
+  ...defaults.allowedAttributes,
+  a: [...(defaults.allowedAttributes.a ?? []), "href", "name", "target"],
+  img: [...(defaults.allowedAttributes.img ?? []), "src", "alt", "title", "width", "height"],
+};
+const allowedTags = [...defaults.allowedTags, "img"];
+
 /**
  * @param {string} content
  * @returns {string}
@@ -395,4 +395,26 @@ export function rewriteSanitizedContent(content) {
   processed = sanitizeHtml(processed, { allowedAttributes, allowedTags });
   processed = removePixelTrackers(processed);
   return rewriteContent(processed);
+}
+
+/**
+ * @param {import('h3').H3Event} event
+ */
+export async function validateUserNonce(event) {
+  const { container } = useNitroApp();
+
+  /** @type {Repository} */
+  const repository = container.resolve("repository");
+
+  const session = await requireUserSession(event);
+  const userId = session.user.id;
+
+  const expected = await repository.findUserNonceById(userId);
+  const actual = session.user.nonce;
+  if (actual !== expected) {
+    clearUserSession(event);
+    throw createError({ statusCode: 401, statusMessage: "Unauthorized" });
+  }
+
+  return session;
 }

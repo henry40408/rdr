@@ -2,6 +2,7 @@
 
 import { CategoryEntity, EntryEntity, FeedEntity, ImageEntity, JobEntity, UserEntity } from "./entities.js";
 import { compare, hash } from "bcrypt";
+import { LRUCache } from "lru-cache";
 import { add } from "date-fns";
 import chunk from "lodash/chunk.js";
 import get from "lodash/get.js";
@@ -22,6 +23,8 @@ export class Repository {
   constructor({ knex, logger }) {
     this.logger = logger.child({ context: "repository" });
     this.knex = knex;
+    /** @type {LRUCache<number, number>} */
+    this.nonceCache = new LRUCache({ max: 100 });
   }
 
   async init() {
@@ -44,7 +47,7 @@ export class Repository {
     const match = await compare(password, row.password_hash);
     if (!match) return undefined;
 
-    return new UserEntity({ id: row.id, username: row.username, isAdmin: !!row.is_admin });
+    return new UserEntity({ id: row.id, username: row.username, nonce: row.nonce, isAdmin: !!row.is_admin });
   }
 
   /**
@@ -619,7 +622,21 @@ export class Repository {
   async findUserById(id) {
     const row = await this.knex("users").where({ id }).first();
     if (!row) return undefined;
-    return new UserEntity({ id: row.id, username: row.username, isAdmin: !!row.is_admin });
+    return new UserEntity({ id: row.id, username: row.username, nonce: row.nonce, isAdmin: !!row.is_admin });
+  }
+
+  /**
+   * @param {number} id
+   * @returns {Promise<number|undefined>}
+   **/
+  async findUserNonceById(id) {
+    if (this.nonceCache.has(id)) return this.nonceCache.get(id);
+
+    const row = await this.knex("users").where({ id }).first();
+    if (!row) return undefined;
+
+    this.nonceCache.set(id, row.nonce);
+    return row.nonce;
   }
 
   /**
@@ -627,7 +644,9 @@ export class Repository {
    */
   async findUsers() {
     const rows = await this.knex("users").select();
-    return rows.map((row) => new UserEntity({ id: row.id, username: row.username, isAdmin: !!row.is_admin }));
+    return rows.map(
+      (row) => new UserEntity({ id: row.id, username: row.username, nonce: row.nonce, isAdmin: !!row.is_admin }),
+    );
   }
 
   /**
@@ -853,8 +872,11 @@ export class Repository {
     if (!authenticated) return 0;
 
     const passwordHash = await hash(newPassword, HASH_ROUNDS);
-    const updated = await this.knex("users").where({ username }).update({ password_hash: passwordHash });
-    this.logger.info({ msg: "Updated user password", username });
+    const updated = await this.knex("users")
+      .where({ username: authenticated.username })
+      .update({ password_hash: passwordHash, nonce: Date.now() });
+    this.logger.info({ msg: "Updated user password", updated });
+    this.nonceCache.delete(authenticated.id);
     return updated;
   }
 

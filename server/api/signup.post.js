@@ -23,7 +23,7 @@ export default defineEventHandler(async (event) => {
     if (count > 0) throw createError({ statusCode: 409, statusMessage: "User already exists" });
   }
 
-  const user = new UserEntity({ id: 0, username: body.username });
+  const user = new UserEntity({ id: 0, username: body.username, nonce: 0 });
   await repository.createUser(user, body.password);
 
   await setUserSession(event, { user: { id: user.id, username: user.username }, loggedInAt: new Date() });
