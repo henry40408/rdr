@@ -6,6 +6,7 @@ declare module "#auth-utils" {
   interface User {
     id: number;
     username: string;
+    nonce: number;
   }
 
   interface UserSession {

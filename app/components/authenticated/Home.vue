@@ -552,7 +552,7 @@ import pangu from "pangu";
 import { useQuasar } from "quasar";
 import { useRouteQuery } from "@vueuse/router";
 
-const { data: features } = useFeatures();
+const { data: features, error: featuresError } = useFeatures();
 const { categoriesDirection, categoriesOrder, hideEmpty } = useLocalSettings();
 const { session, clear: logout } = useUserSession();
 
@@ -626,9 +626,16 @@ const summarizationEnabled = computed(() => !!features.value?.summarization);
 const saveEnabled = computed(() => !!features.value?.save);
 
 const headers = useRequestHeaders(["cookie"]);
-const { data: categories } = await useFetch("/api/categories", { headers, default: () => [] });
-const { data: imagePrimaryKeys } = await useFetch<string[]>("/api/images/primary-keys", { headers, default: () => [] });
-const { data: metadata, refresh: refreshMetadata } = await useAsyncData("metadata", (_nuxtApp, { signal }) =>
+const { data: categories, error: categoriesError } = await useFetch("/api/categories", { headers, default: () => [] });
+const { data: imagePrimaryKeys, error: imagePrimaryKeysError } = await useFetch<string[]>("/api/images/primary-keys", {
+  headers,
+  default: () => [],
+});
+const {
+  data: metadata,
+  error: metadataError,
+  refresh: refreshMetadata,
+} = await useAsyncData("metadata", (_nuxtApp, { signal }) =>
   Promise.all([
     $fetch("/api/count", { headers, query: countQuery.value, signal }),
     $fetch("/api/feeds/data", { headers, signal }),
@@ -637,6 +644,7 @@ const { data: metadata, refresh: refreshMetadata } = await useAsyncData("metadat
 
 const {
   data: entriesData,
+  error: entriesError,
   execute: fetchEntries,
   pending,
 } = await useFetch("/api/entries", {
@@ -711,6 +719,17 @@ watchEffect(() => {
 });
 watch([itemsDirection, itemsLimit, itemsOrder, itemsStatus, searchQuery, selectedCategoryId, selectedFeedId], () => {
   resetThenLoad();
+});
+
+watchEffect(() => {
+  const isUnauthorized = [
+    categoriesError.value,
+    entriesError.value,
+    featuresError.value,
+    imagePrimaryKeysError.value,
+    metadataError.value,
+  ].some((e) => e?.statusCode === 401);
+  if (isUnauthorized) logout();
 });
 
 const sortedCategories = computed(() => {

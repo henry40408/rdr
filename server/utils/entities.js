@@ -139,11 +139,13 @@ export class UserEntity {
    * @param {object} opts
    * @param {number} opts.id
    * @param {string} opts.username
+   * @param {number} opts.nonce
    * @param {boolean} [opts.isAdmin]
    */
-  constructor({ id, username, isAdmin = false }) {
+  constructor({ id, username, nonce, isAdmin = false }) {
     this.id = id;
     this.username = username;
+    this.nonce = nonce;
     this.isAdmin = isAdmin;
   }
 }

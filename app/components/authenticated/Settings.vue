@@ -107,7 +107,7 @@
 import { millisecondsToSeconds } from "date-fns";
 import { useQuasar } from "quasar";
 
-const { loggedIn } = useUserSession();
+const { clear: logout, loggedIn } = useUserSession();
 
 const $q = useQuasar();
 const isDark = useDark();
@@ -125,7 +125,11 @@ const leftDrawerOpen = ref(false);
 const triggeringJobs = ref(new Set());
 
 const headers = useRequestHeaders(["cookie"]);
-const { data: jobsData, refresh: refreshJobs } = await useFetch("/api/jobs", { headers });
+const { data: jobsData, error: jobsError, refresh: refreshJobs } = await useFetch("/api/jobs", { headers });
+
+watchEffect(() => {
+  if (jobsError.value?.statusCode === 401) logout();
+});
 
 const jobPaused = computed(() => {
   const map: Record<string, boolean> = {};

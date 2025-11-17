@@ -7,7 +7,7 @@ const schema = z.record(z.string(), z.string());
 export default defineEventHandler(async (event) => {
   const { container } = useNitroApp();
 
-  const session = await requireUserSession(event);
+  const session = await validateUserNonce(event);
   const userId = session.user.id;
 
   const settings = await readValidatedBody(event, (body) => schema.parse(body));

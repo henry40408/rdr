@@ -13,7 +13,7 @@
 export default defineEventHandler(async (event) => {
   const { container } = useNitroApp();
 
-  const session = await requireUserSession(event);
+  const session = await validateUserNonce(event);
   const userId = session.user.id;
 
   /** @type {Repository} */

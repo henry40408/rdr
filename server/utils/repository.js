@@ -44,7 +44,7 @@ export class Repository {
     const match = await compare(password, row.password_hash);
     if (!match) return undefined;
 
-    return new UserEntity({ id: row.id, username: row.username, isAdmin: !!row.is_admin });
+    return new UserEntity({ id: row.id, username: row.username, nonce: row.nonce, isAdmin: !!row.is_admin });
   }
 
   /**
@@ -619,7 +619,7 @@ export class Repository {
   async findUserById(id) {
     const row = await this.knex("users").where({ id }).first();
     if (!row) return undefined;
-    return new UserEntity({ id: row.id, username: row.username, isAdmin: !!row.is_admin });
+    return new UserEntity({ id: row.id, username: row.username, nonce: row.nonce, isAdmin: !!row.is_admin });
   }
 
   /**
@@ -627,7 +627,9 @@ export class Repository {
    */
   async findUsers() {
     const rows = await this.knex("users").select();
-    return rows.map((row) => new UserEntity({ id: row.id, username: row.username, isAdmin: !!row.is_admin }));
+    return rows.map(
+      (row) => new UserEntity({ id: row.id, username: row.username, nonce: row.nonce, isAdmin: !!row.is_admin }),
+    );
   }
 
   /**
@@ -853,8 +855,10 @@ export class Repository {
     if (!authenticated) return 0;
 
     const passwordHash = await hash(newPassword, HASH_ROUNDS);
-    const updated = await this.knex("users").where({ username }).update({ password_hash: passwordHash });
-    this.logger.info({ msg: "Updated user password", username });
+    const updated = await this.knex("users")
+      .where({ username })
+      .update({ password_hash: passwordHash, nonce: Date.now() });
+    this.logger.info({ msg: "Updated user password", updated });
     return updated;
   }
 
