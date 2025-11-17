@@ -360,33 +360,6 @@ export function removeTrackingParameters(url) {
 }
 
 /**
- * @param {import('h3').H3Event} event
- */
-export async function validateUserNonce(event) {
-  const { container } = useNitroApp();
-
-  /** @type {Repository} */
-  const repository = container.resolve("repository");
-
-  const session = await requireUserSession(event);
-  const userId = session.user.id;
-
-  const user = await repository.findUserById(userId);
-  if (!user) {
-    clearUserSession(event);
-    throw createError({ statusCode: 401, statusMessage: "Unauthorized" });
-  }
-
-  const nonce = session.user.nonce;
-  if (nonce !== user.nonce) {
-    clearUserSession(event);
-    throw createError({ statusCode: 401, statusMessage: "Unauthorized" });
-  }
-
-  return session;
-}
-
-/**
  * @param {string} content
  * @return {string}
  */
@@ -422,4 +395,31 @@ export function rewriteSanitizedContent(content) {
   processed = sanitizeHtml(processed, { allowedAttributes, allowedTags });
   processed = removePixelTrackers(processed);
   return rewriteContent(processed);
+}
+
+/**
+ * @param {import('h3').H3Event} event
+ */
+export async function validateUserNonce(event) {
+  const { container } = useNitroApp();
+
+  /** @type {Repository} */
+  const repository = container.resolve("repository");
+
+  const session = await requireUserSession(event);
+  const userId = session.user.id;
+
+  const user = await repository.findUserById(userId);
+  if (!user) {
+    clearUserSession(event);
+    throw createError({ statusCode: 401, statusMessage: "Unauthorized" });
+  }
+
+  const nonce = session.user.nonce;
+  if (nonce !== user.nonce) {
+    clearUserSession(event);
+    throw createError({ statusCode: 401, statusMessage: "Unauthorized" });
+  }
+
+  return session;
 }
