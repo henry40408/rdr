@@ -31,6 +31,7 @@ export default defineEventHandler(async (event) => {
 
   {
     const user = await repository.findUserById(userId);
+    if (!user) throw createError({ statusCode: 404, statusMessage: "User not found" });
     await replaceUserSession(event, {
       user: {
         id: user.id,
