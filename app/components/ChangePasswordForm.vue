@@ -36,9 +36,12 @@ async function onSubmit() {
       },
     });
     fetchSession();
+    currentPassword.value = "";
+    newPassword.value = "";
+    confirmPassword.value = "";
     $q.notify({
-      type: "positive",
-      message: "Password changed successfully. Please log in again.",
+      icon: "info",
+      message: "Password changed successfully. Other sessions have been logged out.",
       actions: [{ label: "Close", color: "white" }],
     });
   } catch (err) {
