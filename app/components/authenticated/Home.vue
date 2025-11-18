@@ -614,21 +614,24 @@ const summarizationEnabled = computed(() => !!features.value?.summarization);
 const saveEnabled = computed(() => !!features.value?.save);
 
 const headers = useRequestHeaders(["cookie"]);
-const { data: categories, error: categoriesError } = await useFetch("/api/categories", { headers, default: () => [] });
+const {
+  data: categories,
+  error: categoriesError,
+  refresh: refreshCategories,
+} = await useFetch("/api/categories", { headers, default: () => [] });
 const { data: imagePrimaryKeys, error: imagePrimaryKeysError } = await useFetch<string[]>("/api/images/primary-keys", {
   headers,
   default: () => [],
 });
 const {
-  data: metadata,
-  error: metadataError,
-  refresh: refreshMetadata,
-} = await useAsyncData("metadata", (_nuxtApp, { signal }) =>
-  Promise.all([
-    $fetch("/api/count", { headers, query: countQuery.value, signal }),
-    $fetch("/api/feeds/data", { headers, signal }),
-  ]),
-);
+  data: countData,
+  error: countError,
+  refresh: refreshCount,
+} = await useFetch("/api/count", {
+  headers,
+  query: computed(() => countQuery.value),
+  default: () => ({ count: 0 }),
+});
 
 const {
   data: entriesData,
@@ -712,10 +715,10 @@ watch([itemsDirection, itemsLimit, itemsOrder, itemsStatus, searchQuery, selecte
 watchEffect(() => {
   const isUnauthorized = [
     categoriesError.value,
+    countError.value,
     entriesError.value,
     featuresError.value,
     imagePrimaryKeysError.value,
-    metadataError.value,
   ].some((e) => e?.statusCode === 401);
   if (isUnauthorized) logout();
 });
@@ -736,7 +739,6 @@ const sortedCategories = computed(() => {
   });
   return cats;
 });
-const countData = computed(() => metadata.value?.[0] ?? { count: 0 });
 useHead(() => ({
   title: selectedFeedId.value
     ? `(${countData.value?.count ?? 0}) Feed: ${getFilteredFeedTitle()} - rdr`
@@ -744,7 +746,6 @@ useHead(() => ({
       ? `(${countData.value?.count ?? 0}) Category: ${getFilteredCategoryName()} - rdr`
       : `(${countData.value?.count ?? 0}) rdr`,
 }));
-const feedsData = computed(() => metadata.value?.[1]);
 const shouldShowNoCategories = computed(() => {
   for (const category of sortedCategories.value) if (shouldShowCategory(category.id)) return false;
   return true;
@@ -795,7 +796,8 @@ async function doMarkManyAsRead(param: MarkAsReadParam) {
     const { updated } = await $fetch("/api/entries/mark-as-read", { method: "POST", body });
     for (const item of items.value)
       if (shouldMarkAsRead(now, item.entry.id, param)) entryRead.value[item.entry.id] = "read";
-    refreshMetadata();
+    refreshCategories();
+    refreshCount();
     $q.notify({
       type: "positive",
       message: `Marked ${updated} entries as read.`,
@@ -811,9 +813,12 @@ async function doMarkManyAsRead(param: MarkAsReadParam) {
 }
 
 function getCategoryUnreadCount(categoryId: number): number {
-  if (!feedsData.value) return 0;
-  const feedIds = categories.value?.filter((c) => c.id === categoryId).flatMap((c) => c.feeds.map((f) => f.id)) ?? [];
-  return feedIds.reduce((sum, feedId) => sum + (feedsData.value?.feeds[feedId]?.unreadCount ?? 0), 0);
+  if (!categories.value) return 0;
+
+  const category = categories.value.find((c) => c.id === categoryId);
+  if (!category) return 0;
+
+  return category.feeds.reduce((sum, feed) => sum + feed.unreadCount, 0);
 }
 
 function getContent(entryId: number): string {
@@ -821,8 +826,13 @@ function getContent(entryId: number): string {
 }
 
 function getFeedUnreadCount(feedId: number): number {
-  if (!feedsData.value) return 0;
-  return feedsData.value?.feeds[feedId]?.unreadCount ?? 0;
+  if (!categories.value) return 0;
+
+  const feeds = categories.value.flatMap((c) => c.feeds);
+  const feed = feeds.find((f) => f.id === feedId);
+  if (!feed) return 0;
+
+  return feed.unreadCount;
 }
 
 function getFilteredCategoryName() {
@@ -955,7 +965,8 @@ async function markAsRead(entryId: number) {
     entryRead.value[entryId] = "toggling";
     await $fetch(`/api/entries/${entryId}/read`, { method: "PUT" });
     entryRead.value[entryId] = "read";
-    refreshMetadata();
+    refreshCategories();
+    refreshCount();
   } catch (err) {
     $q.notify({
       type: "negative",
@@ -1009,7 +1020,7 @@ async function resetThenLoad(done?: (stop?: boolean) => void) {
     summarizing.value = {};
     summarizingControllers.value = {};
 
-    await Promise.all([refreshMetadata(), fetchEntries()]);
+    await Promise.all([refreshCategories(), refreshCount(), fetchEntries()]);
   } catch (e) {
     console.error("Error in resetThenLoad:", e);
   } finally {
@@ -1168,7 +1179,8 @@ async function toggleReadEntry(entryId: number, index: number) {
   const title = items.value.find((i) => i.entry.id === entryId)?.entry.title ?? "";
   try {
     await $fetch(`/api/entries/${entryId}/read`, { method: "PUT" });
-    refreshMetadata();
+    refreshCategories();
+    refreshCount();
   } catch (err) {
     $q.notify({
       type: "negative",
@@ -1190,7 +1202,8 @@ async function toggleStarEntry(entryId: number) {
   const title = items.value.find((i) => i.entry.id === entryId)?.entry.title ?? "";
   try {
     await $fetch(`/api/entries/${entryId}/star`, { method: "PUT" });
-    refreshMetadata();
+    refreshCategories();
+    refreshCount();
     if (value) entryStar.value[entryId] = value;
   } catch (err) {
     $q.notify({

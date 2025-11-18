@@ -185,7 +185,7 @@
                       <q-item-label lines="1">
                         <span
                           :class="{
-                            'text-negative': feedDataByFeedId[feed.id]?.lastError,
+                            'text-negative': feed.lastError,
                           }"
                         >
                           <MarkedText :text="feed.title" :keyword="categoryFeedQuery" />
@@ -208,13 +208,13 @@
                     <q-item>
                       <q-item-section>
                         <q-item-label caption>Error count</q-item-label>
-                        <q-item-label>{{ feedDataByFeedId[feed.id]?.errorCount }}</q-item-label>
+                        <q-item-label>{{ feed.errorCount }}</q-item-label>
                       </q-item-section>
                     </q-item>
                     <q-item>
                       <q-item-section>
                         <q-item-label caption>Last error</q-item-label>
-                        <q-item-label>{{ feedDataByFeedId[feed.id]?.lastError || "-" }}</q-item-label>
+                        <q-item-label>{{ feed.lastError || "-" }}</q-item-label>
                       </q-item-section>
                     </q-item>
                     <q-item>
@@ -303,17 +303,13 @@ const uploadedFile = ref(null);
 const uploading = ref(false);
 
 const headers = useRequestHeaders(["cookie"]);
-const { data, refresh } = await useAsyncData((_nuxtApp, { signal }) =>
-  Promise.all([$fetch("/api/categories", { headers, signal }), $fetch("/api/feeds/data", { headers, signal })]),
-);
-const categories = computed(() => data.value?.[0] ?? []);
+const { data: categories, refresh } = await useFetch("/api/categories", { headers });
 
 const categoryOptions = computed(() => (categories.value ?? []).map((category) => category.name));
 watchEffect(() => {
   filteredCategoryOptions.value = categoryOptions.value;
 });
 
-const feedDataByFeedId = computed(() => data.value?.[1]?.feeds ?? {});
 const shouldShowNoCategories = computed(() => {
   for (const category of categories.value ?? []) if (shouldShowCategory(category.id)) return false;
   return true;
@@ -423,24 +419,26 @@ function filterCategories(
 }
 
 function getFeedFetchedAt(feedId: number): string | undefined {
-  return feedDataByFeedId.value?.[feedId]?.fetchedAt;
+  const feed = categories.value?.flatMap((c) => c.feeds).find((f) => f.id === feedId);
+  if (!feed) return undefined;
+  return feed.fetchedAt;
 }
 
 function getCategoryUnreadCount(categoryId: number): number {
   const category = categories.value?.find((c) => c.id === categoryId);
   if (!category) return 0;
-  return category.feeds.reduce((sum, feed) => {
-    const feedData = feedDataByFeedId.value[feed.id];
-    return sum + (feedData?.unreadCount ?? 0);
-  }, 0);
+  return category.feeds.reduce((sum, feed) => sum + feed.unreadCount, 0);
 }
 
 function getFeedUnreadCount(feedId: number): number {
-  return feedDataByFeedId.value[feedId]?.unreadCount ?? 0;
+  const feed = categories.value?.flatMap((c) => c.feeds).find((f) => f.id === feedId);
+  if (!feed) return 0;
+  return feed.unreadCount;
 }
 
 function imageExists(feedId: number): boolean {
-  return feedDataByFeedId.value[feedId]?.imageExists ?? false;
+  const feed = categories.value?.flatMap((c) => c.feeds).find((f) => f.id === feedId);
+  return feed?.imageExists ?? false;
 }
 
 async function importOPML() {
@@ -532,8 +530,7 @@ function shouldShowCategory(categoryId: number) {
 
   if (showErrorOnly.value) {
     for (const feed of category.feeds) {
-      const feedData = feedDataByFeedId.value[feed.id];
-      if (feedData?.lastError) return true;
+      if (feed.lastError) return true;
     }
     return false;
   }
@@ -549,10 +546,7 @@ function shouldShowFeed(feedId: number) {
 
   if (categoryFeedQuery.value) return feed.title.toLowerCase().includes(categoryFeedQuery.value.toLowerCase());
 
-  if (showErrorOnly.value) {
-    const feedData = feedDataByFeedId.value[feedId];
-    return !!feedData?.lastError;
-  }
+  if (showErrorOnly.value) return !!feed.lastError;
 
   if (hideEmpty.value) return getFeedUnreadCount(feedId) > 0;
 
@@ -560,7 +554,7 @@ function shouldShowFeed(feedId: number) {
 }
 
 async function updateCategoryDialog(categoryId: number) {
-  const category = categories.value.find((c) => c.id === categoryId);
+  const category = categories.value?.find((c) => c.id === categoryId);
   if (!category) return;
 
   $q.dialog({
@@ -592,7 +586,7 @@ async function updateCategoryDialog(categoryId: number) {
 }
 
 async function updateFeedDialog(feedId: number) {
-  const feed = categories.value.flatMap((category) => category.feeds).find((f) => f.id === feedId);
+  const feed = categories.value?.flatMap((category) => category.feeds).find((f) => f.id === feedId);
   if (!feed) return;
 
   $q.dialog({
