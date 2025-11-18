@@ -619,10 +619,6 @@ const {
   error: categoriesError,
   refresh: refreshCategories,
 } = await useFetch("/api/categories", { headers, default: () => [] });
-const { data: imagePrimaryKeys, error: imagePrimaryKeysError } = await useFetch<string[]>("/api/images/primary-keys", {
-  headers,
-  default: () => [],
-});
 const {
   data: countData,
   error: countError,
@@ -713,13 +709,9 @@ watch([itemsDirection, itemsLimit, itemsOrder, itemsStatus, searchQuery, selecte
 });
 
 watchEffect(() => {
-  const isUnauthorized = [
-    categoriesError.value,
-    countError.value,
-    entriesError.value,
-    featuresError.value,
-    imagePrimaryKeysError.value,
-  ].some((e) => e?.statusCode === 401);
+  const isUnauthorized = [categoriesError.value, countError.value, entriesError.value, featuresError.value].some(
+    (e) => e?.statusCode === 401,
+  );
   if (isUnauthorized) logout();
 });
 
@@ -901,8 +893,9 @@ async function loadContent(entryId: number) {
 }
 
 function isImageExists(feedId: number): boolean {
-  const key = buildFeedImageKey(feedId);
-  return imagePrimaryKeys.value?.includes(key) ?? false;
+  const feed = categories.value.flatMap((c) => c.feeds).find((f) => f.id === feedId);
+  if (!feed) return false;
+  return feed.imageExists;
 }
 
 function isOpenEntryStarred() {
