@@ -23,7 +23,6 @@ export default defineEventHandler(async (event) => {
     ...category,
     feeds: category.feeds.map((feed) => ({
       ...feed,
-      count: counts[feed.id]?.total ?? 0,
       imageExists: imagePks.includes(buildFeedImageKey(feed.id)),
       unreadCount: counts[feed.id]?.unread ?? 0,
     })),
