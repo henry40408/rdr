@@ -1,3 +1,16 @@
+// @ts-check
+
+/**
+ * @param {UserEntity[]} users
+ * @param {boolean} singleUser
+ * @param {boolean} disableSignUp
+ */
+function canSignup(users, singleUser, disableSignUp) {
+  if (users.length <= 0) return true;
+  if (singleUser) return false;
+  return !disableSignUp;
+}
+
 export default defineEventHandler(async () => {
   const config = useRuntimeConfig();
   const { container } = useNitroApp();
@@ -6,10 +19,8 @@ export default defineEventHandler(async () => {
   const repository = container.resolve("repository");
 
   const users = await repository.findUsers();
-  const noUsers = users.length <= 0;
-  const canSignup = noUsers && !config.singleUser && !config.disableSignUp;
   return {
-    canLogin: !noUsers,
-    canSignup,
+    canLogin: users.length > 0,
+    canSignup: canSignup(users, config.singleUser, config.disableSignUp),
   };
 });
