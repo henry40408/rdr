@@ -25,7 +25,7 @@ export default defineWebAuthnAuthenticateEventHandler({
 
     const passkeys = await repository.findPasskeysByUsername(userName);
     return passkeys.map((passkey) => ({
-      id: String(passkey.id),
+      id: passkey.credentialId,
       transports: passkey.transports,
     }));
   },
@@ -40,10 +40,11 @@ export default defineWebAuthnAuthenticateEventHandler({
 
     return {
       id: passkey.credentialId,
-      userId: String(passkey.userId),
+      userId: passkey.userId,
       publicKey: passkey.publicKey,
       counter: passkey.counter,
       backedUp: passkey.backedUp,
+      transports: passkey.transports,
     };
   },
   async onSuccess(event, { credential }) {

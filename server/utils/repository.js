@@ -682,6 +682,7 @@ export class Repository {
       counter: row.counter,
       backedUp: row.backed_up,
       transports: JSON.parse(row.transports),
+      createdAt: row.created_at,
     });
   }
 
@@ -704,6 +705,7 @@ export class Repository {
           counter: row.counter,
           backedUp: row.backed_up,
           transports: JSON.parse(row.transports),
+          createdAt: row.created_at,
         }),
     );
   }
