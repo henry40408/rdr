@@ -271,6 +271,10 @@ import CategoryDialog from "../CategoryDialog.vue";
 import FeedDialog from "../FeedDialog.vue";
 import { useQuasar } from "quasar";
 
+useHead({
+  title: "Feeds - rdr",
+});
+
 const { loggedIn } = useUserSession();
 
 const $q = useQuasar();

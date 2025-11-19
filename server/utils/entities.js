@@ -134,6 +134,28 @@ export class JobEntity {
   }
 }
 
+export class PasskeyEntity {
+  /**
+   * @param {object} opts
+   * @param {number} opts.id
+   * @param {string} opts.credentialId
+   * @param {number} opts.userId
+   * @param {string} opts.publicKey
+   * @param {number} opts.counter
+   * @param {boolean} opts.backedUp
+   * @param {import('@simplewebauthn/types').AuthenticatorTransportFuture[]} opts.transports
+   */
+  constructor({ id, credentialId, userId, publicKey, counter, backedUp, transports }) {
+    this.id = id;
+    this.credentialId = credentialId;
+    this.userId = userId;
+    this.publicKey = publicKey;
+    this.counter = counter;
+    this.backedUp = backedUp;
+    this.transports = transports;
+  }
+}
+
 export class UserEntity {
   /**
    * @param {object} opts

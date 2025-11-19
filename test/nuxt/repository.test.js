@@ -75,8 +75,8 @@ describe("Repository", () => {
      */
     async function createUser(username, password) {
       const user = new UserEntity({ id: 0, username, nonce: 0 });
-      await repository.createUser(user, password);
-      return user;
+      const created = await repository.createUser(user, password);
+      return created;
     }
 
     /**
@@ -943,18 +943,16 @@ describe("Repository", () => {
         htmlUrl: "http://example.com/new-feed",
       });
 
-      const id = await repository.createFeed(user.id, category.name, feed);
-      assert.ok(id !== 0);
-
-      const createdFeed = await repository.findFeedById(user.id, id);
+      const createdFeed = await repository.createFeed(user.id, category.name, feed);
       assert.ok(createdFeed);
+      assert.ok(createdFeed.id !== 0);
       assert.strictEqual(createdFeed.title, "New Feed");
       assert.strictEqual(createdFeed.xmlUrl, "http://example.com/new-feed.xml");
       assert.strictEqual(createdFeed.htmlUrl, "http://example.com/new-feed");
 
       // duplicate feed creation should not fail or create duplicates
-      const duplicateId = await repository.createFeed(user.id, category.name, feed);
-      assert.strictEqual(duplicateId, id);
+      const duplicated = await repository.createFeed(user.id, category.name, feed);
+      assert.strictEqual(duplicated.id, createdFeed.id);
 
       const feeds = await repository.findFeedsWithCategoryId(user.id, category.id);
       assert.strictEqual(feeds.length, 1);

@@ -51,6 +51,7 @@ export default defineNuxtConfig({
     },
     singleUser: true,
   },
+  auth: { webAuthn: true },
   quasar: {
     plugins: ["Dialog", "LoadingBar", "Notify"],
     config: {
