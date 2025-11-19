@@ -24,12 +24,12 @@ export default defineEventHandler(async (event) => {
   }
 
   const user = new UserEntity({ id: 0, username: body.username, nonce: 0 });
-  await repository.createUser(user, body.password);
 
+  const created = await repository.createUser(user, body.password);
   await setUserSession(event, {
-    user: { id: user.id, username: user.username, nonce: user.nonce },
+    user: { id: created.id, username: created.username, nonce: created.nonce },
     loggedInAt: new Date(),
   });
 
-  return { userId: user.id };
+  return { userId: created.id };
 });

@@ -7,9 +7,21 @@
           <q-card-section v-if="error" class="bg-negative text-white">
             {{ error }}
           </q-card-section>
+          <q-separator />
           <form @submit.prevent="onSubmit('login')">
             <q-card-section class="q-gutter-md">
-              <q-input v-model="username" outlined required label="Username" />
+              <q-input v-model="username" outlined required label="Username">
+                <template #append>
+                  <q-btn
+                    flat
+                    icon="key"
+                    tabindex="-1"
+                    :loading="loading"
+                    :disabled="!systemSettings?.canLogin || !username"
+                    @click="loginWithWebAuthn"
+                  />
+                </template>
+              </q-input>
               <q-input v-model="password" outlined required type="password" label="Password" />
             </q-card-section>
             <q-card-actions align="right">
@@ -37,12 +49,19 @@
 </template>
 
 <script setup lang="ts">
+import { useQuasar } from "quasar";
+
+const emit = defineEmits<{ authenticated: [] }>();
+
+const $q = useQuasar();
+
 const username = ref("");
 const password = ref("");
 const loading = ref(false);
 const error = ref("");
 
-const { fetch: fetchSession } = useUserSession();
+const { authenticate } = useWebAuthn();
+
 const { data: systemSettings } = await useFetch("/api/system-settings");
 
 async function onSubmit(action: "login" | "signup") {
@@ -61,7 +80,28 @@ async function login() {
         password: password.value,
       },
     });
-    await fetchSession();
+    $q.notify({
+      type: "positive",
+      message: "Log in successfully.",
+    });
+    emit("authenticated");
+  } catch (err) {
+    error.value = String(err);
+  } finally {
+    loading.value = false;
+  }
+}
+
+async function loginWithWebAuthn() {
+  error.value = "";
+  loading.value = true;
+  try {
+    await authenticate(username.value);
+    $q.notify({
+      type: "positive",
+      message: "Authenticate with WebAuthn successfully.",
+    });
+    emit("authenticated");
   } catch (err) {
     error.value = String(err);
   } finally {
@@ -80,7 +120,11 @@ async function signup() {
         password: password.value,
       },
     });
-    await fetchSession();
+    $q.notify({
+      type: "positive",
+      message: "Sign up successfully.",
+    });
+    emit("authenticated");
   } catch (err) {
     error.value = String(err);
   } finally {

@@ -1,6 +1,14 @@
 // @ts-check
 
-import { CategoryEntity, EntryEntity, FeedEntity, ImageEntity, JobEntity, UserEntity } from "./entities.js";
+import {
+  CategoryEntity,
+  EntryEntity,
+  FeedEntity,
+  ImageEntity,
+  JobEntity,
+  PasskeyEntity,
+  UserEntity,
+} from "./entities.js";
 import { compare, hash } from "bcrypt";
 import { LRUCache } from "lru-cache";
 import { add } from "date-fns";
@@ -139,7 +147,7 @@ export class Repository {
    * @param {number} userId
    * @param {string} categoryName
    * @param {FeedEntity} feed
-   * @returns {Promise<number>}
+   * @returns {Promise<FeedEntity>}
    */
   async createFeed(userId, categoryName, feed) {
     return await this.knex.transaction(async (tx) => {
@@ -156,7 +164,42 @@ export class Repository {
 
       const created = await tx("feeds").where({ category_id: categoryId, xml_url: feed.xmlUrl }).first();
       if (!created) throw new Error("Failed to find or create feed");
-      return created.id;
+      return new FeedEntity({
+        id: created.id,
+        categoryId: created.category_id,
+        title: created.title,
+        xmlUrl: created.xml_url,
+        htmlUrl: created.html_url,
+      });
+    });
+  }
+
+  /**
+   * @param {PasskeyEntity} passkey
+   * @returns {Promise<PasskeyEntity>}
+   */
+  async createPasskey(passkey) {
+    return await this.knex.transaction(async (tx) => {
+      await tx("passkeys").insert({
+        user_id: passkey.userId,
+        credential_id: passkey.credentialId,
+        public_key: passkey.publicKey,
+        counter: passkey.counter,
+        backed_up: passkey.backedUp,
+        transports: JSON.stringify(passkey.transports),
+      });
+
+      const created = await tx("passkeys").where({ user_id: passkey.userId }).first();
+      if (!created) throw new Error("Failed to create passkey");
+      return new PasskeyEntity({
+        id: created.id,
+        credentialId: created.credential_id,
+        userId: created.user_id,
+        publicKey: created.public_key,
+        counter: created.counter,
+        backedUp: created.backed_up,
+        transports: JSON.parse(created.transports),
+      });
     });
   }
 
@@ -171,16 +214,23 @@ export class Repository {
       const userCount = await tx("users").count({ count: "*" }).first();
       const isFirstUser = userCount ? Number(userCount.count) === 0 : true;
 
-      const [id] = await tx("users").insert({
+      await tx("users").insert({
         username: user.username,
         password_hash: passwordHash,
+        nonce: user.nonce,
         is_admin: isFirstUser ? 1 : 0,
       });
-      if (id) user.id = id;
-      user.isAdmin = isFirstUser; // Grant admin if first user
 
       this.logger.info({ msg: "Created user", username: user.username, id: user.id, isAdmin: isFirstUser });
-      return user;
+
+      const created = await tx("users").where({ username: user.username }).first();
+      if (!created) throw new Error("Failed to create user");
+      return new UserEntity({
+        id: created.id,
+        username: created.username,
+        nonce: created.nonce,
+        isAdmin: !!created.is_admin,
+      });
     });
   }
 
@@ -618,11 +668,64 @@ export class Repository {
   }
 
   /**
+   * @param {string} credentialId
+   * @returns {Promise<PasskeyEntity|undefined>}
+   */
+  async findPasskeyByCredentialId(credentialId) {
+    const row = await this.knex("passkeys").where({ credential_id: credentialId }).first();
+    if (!row) return undefined;
+    return new PasskeyEntity({
+      id: row.id,
+      credentialId: row.credential_id,
+      userId: row.user_id,
+      publicKey: row.public_key,
+      counter: row.counter,
+      backedUp: row.backed_up,
+      transports: JSON.parse(row.transports),
+      createdAt: row.created_at,
+    });
+  }
+
+  /**
+   * @param {string} username
+   * @returns {Promise<PasskeyEntity[]>}
+   */
+  async findPasskeysByUsername(username) {
+    const user = await this.findUserByUsername(username);
+    if (!user) return [];
+
+    const rows = await this.knex("passkeys").where({ user_id: user.id });
+    return rows.map(
+      (row) =>
+        new PasskeyEntity({
+          id: row.id,
+          credentialId: row.credential_id,
+          userId: row.user_id,
+          publicKey: row.public_key,
+          counter: row.counter,
+          backedUp: row.backed_up,
+          transports: JSON.parse(row.transports),
+          createdAt: row.created_at,
+        }),
+    );
+  }
+
+  /**
    * @param {number} id
    * @returns {Promise<UserEntity|undefined>}
    */
   async findUserById(id) {
     const row = await this.knex("users").where({ id }).first();
+    if (!row) return undefined;
+    return new UserEntity({ id: row.id, username: row.username, nonce: row.nonce, isAdmin: !!row.is_admin });
+  }
+
+  /**
+   * @param {string} username
+   * @returns {Promise<UserEntity|undefined>}
+   */
+  async findUserByUsername(username) {
+    const row = await this.knex("users").where({ username }).first();
     if (!row) return undefined;
     return new UserEntity({ id: row.id, username: row.username, nonce: row.nonce, isAdmin: !!row.is_admin });
   }

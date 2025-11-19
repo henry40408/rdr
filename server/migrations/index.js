@@ -7,6 +7,7 @@ import migration04 from "../migrations/m0004-add-last-error-to-feeds.js";
 import migration05 from "../migrations/m0005-add-error-count-to-feeds.js";
 import migration06 from "../migrations/m0006-index-feed-id-id-date-on-entries.js";
 import migration07 from "../migrations/m0007-add-nonce-to-users.js";
+import migration08 from "../migrations/m0008-add-passkeys.js";
 
 export const migrations = {
   [migration01.name]: migration01,
@@ -16,6 +17,7 @@ export const migrations = {
   [migration05.name]: migration05,
   [migration06.name]: migration06,
   [migration07.name]: migration07,
+  [migration08.name]: migration08,
 };
 
 export const migrationNames = Object.keys(migrations);

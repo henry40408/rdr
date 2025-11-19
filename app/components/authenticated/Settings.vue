@@ -34,27 +34,40 @@
     <q-page-container>
       <q-page>
         <q-list padding>
-          <q-item id="change-password">
-            <q-item-section>Change Password</q-item-section>
+          <q-item-label id="webauthn" header>WebAuthn (Passkey)</q-item-label>
+          <q-item>
+            <q-btn color="primary" @click="onRegisterWebAuthn">Register WebAuthn Device</q-btn>
           </q-item>
+          <q-item v-for="passkey in passkeys" :key="passkey.id">
+            <q-item-section>
+              <q-item-label>{{ passkey.credentialId }}</q-item-label>
+              <q-item-label caption>Registered at: <ClientDateTime :datetime="passkey.createdAt" /></q-item-label>
+            </q-item-section>
+          </q-item>
+          <q-item v-if="passkeys?.length === 0" :class="{ 'q-pa-md': true, 'bg-grey-9': isDark, 'bg-grey-3': !isDark }">
+            <q-item-section side>
+              <q-icon name="info" />
+            </q-item-section>
+            <q-item-section>
+              <q-item-label>No WebAuthn devices registered.</q-item-label>
+            </q-item-section>
+          </q-item>
+          <q-separator spaced />
+          <q-item-label id="change-password" header>Change Password</q-item-label>
           <q-item>
             <q-item-section>
               <ChangePasswordForm />
             </q-item-section>
           </q-item>
           <q-separator spaced />
-          <q-item id="user-settings">
-            <q-item-section>User Settings</q-item-section>
-          </q-item>
+          <q-item-label id="user-settings" header>User Settings</q-item-label>
           <q-item>
             <q-item-section>
               <UserSettingsForm />
             </q-item-section>
           </q-item>
           <q-separator spaced />
-          <q-item id="background-jobs">
-            <q-item-section>Background Jobs</q-item-section>
-          </q-item>
+          <q-item-label id="background-jobs" header>Background Jobs</q-item-label>
           <q-item v-for="job in jobsData" :key="job.name">
             <q-item-section side>
               <JobToggle :name="job.name" :value="!!jobPaused[job.name]" @toggled="refreshJobs()" />
@@ -107,7 +120,12 @@
 import { millisecondsToSeconds } from "date-fns";
 import { useQuasar } from "quasar";
 
-const { clear: logout, loggedIn } = useUserSession();
+useHead({
+  title: "Settings - rdr",
+});
+
+const { clear: logout, loggedIn, session } = useUserSession();
+const { register: registerWebAuthn } = useWebAuthn();
 
 const $q = useQuasar();
 const isDark = useDark();
@@ -125,10 +143,12 @@ const leftDrawerOpen = ref(false);
 const triggeringJobs = ref(new Set());
 
 const headers = useRequestHeaders(["cookie"]);
+const { data: passkeys, error: passkeysError, refresh: refreshPasskeys } = await useFetch("/api/passkeys", { headers });
 const { data: jobsData, error: jobsError, refresh: refreshJobs } = await useFetch("/api/jobs", { headers });
 
 watchEffect(() => {
-  if (jobsError.value?.statusCode === 401) logout();
+  const isUnauthorized = [passkeysError.value, jobsError.value].some((err) => err?.statusCode === 401);
+  if (isUnauthorized) logout();
 });
 
 const jobPaused = computed(() => {
@@ -155,6 +175,34 @@ async function triggerJob(name: string) {
     });
   } finally {
     triggeringJobs.value.delete(name);
+  }
+}
+
+async function onRegisterWebAuthn() {
+  const username = session.value?.user?.username;
+  if (!username) {
+    $q.notify({
+      type: "negative",
+      message: "Cannot register WebAuthn: not logged in",
+      actions: [{ label: "Close", color: "white" }],
+    });
+    return;
+  }
+
+  try {
+    await registerWebAuthn({ userName: username });
+    refreshPasskeys();
+    $q.notify({
+      type: "positive",
+      message: "WebAuthn registered successfully",
+      actions: [{ label: "Close", color: "white" }],
+    });
+  } catch (err) {
+    $q.notify({
+      type: "negative",
+      message: `Failed to register WebAuthn: ${err}`,
+      actions: [{ label: "Close", color: "white" }],
+    });
   }
 }
 </script>

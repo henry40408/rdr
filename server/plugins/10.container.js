@@ -2,6 +2,7 @@
 
 import { asClass, asValue, createContainer } from "awilix";
 import { AwilixManager } from "awilix-manager";
+import { LRUCache } from "lru-cache";
 import knex from "knex";
 import pino from "pino";
 
@@ -28,6 +29,7 @@ export default defineNitroPlugin(
     const diContainer = createContainer();
     diContainer.register({
       config: asValue(config),
+      challengeCache: asValue(new LRUCache({ max: 100 })),
       downloadService: asClass(DownloadService).singleton(),
       featureService: asClass(FeatureService).singleton(),
       feedService: asClass(FeedService).singleton(),
