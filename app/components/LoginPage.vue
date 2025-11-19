@@ -13,8 +13,21 @@
               <q-input v-model="password" outlined required type="password" label="Password" />
             </q-card-section>
             <q-card-actions align="right">
-              <q-btn flat label="Sign Up" color="secondary" :loading="loading" @click="onSubmit('signup')" />
-              <q-btn label="Login" type="submit" color="primary" :loading="loading" />
+              <q-btn
+                flat
+                label="Sign Up"
+                color="secondary"
+                :loading="loading"
+                :disabled="!systemSettings?.canSignup"
+                @click="onSubmit('signup')"
+              />
+              <q-btn
+                label="Login"
+                type="submit"
+                color="primary"
+                :loading="loading"
+                :disabled="!systemSettings?.canLogin"
+              />
             </q-card-actions>
           </form>
         </q-card>
@@ -30,6 +43,7 @@ const loading = ref(false);
 const error = ref("");
 
 const { fetch: fetchSession } = useUserSession();
+const { data: systemSettings } = await useFetch("/api/system-settings");
 
 async function onSubmit(action: "login" | "signup") {
   if (action === "login") login();

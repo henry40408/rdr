@@ -177,7 +177,7 @@ export class Repository {
         is_admin: isFirstUser ? 1 : 0,
       });
       if (id) user.id = id;
-      user.isAdmin = isFirstUser;
+      user.isAdmin = isFirstUser; // Grant admin if first user
 
       this.logger.info({ msg: "Created user", username: user.username, id: user.id, isAdmin: isFirstUser });
       return user;
