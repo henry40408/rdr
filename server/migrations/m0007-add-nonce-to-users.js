@@ -1,3 +1,5 @@
+// @ts-check
+
 export const name = "m0007-add-nonce-to-users";
 
 /**

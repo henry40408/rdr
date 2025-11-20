@@ -39,6 +39,7 @@ export default defineWebAuthnRegisterEventHandler({
       counter: credential.counter,
       backedUp: credential.backedUp,
       transports: credential.transports ?? [],
+      displayName: user.displayName,
     });
     await repository.createPasskey(passkey);
 

@@ -144,9 +144,10 @@ export class PasskeyEntity {
    * @param {number} opts.counter
    * @param {boolean} opts.backedUp
    * @param {import('@simplewebauthn/types').AuthenticatorTransportFuture[]} opts.transports
+   * @param {string} [opts.displayName]
    * @param {string} [opts.createdAt]
    */
-  constructor({ id, credentialId, userId, publicKey, counter, backedUp, transports, createdAt }) {
+  constructor({ id, credentialId, userId, publicKey, counter, backedUp, transports, displayName, createdAt }) {
     this.id = id;
     this.credentialId = credentialId;
     this.userId = userId;
@@ -154,6 +155,7 @@ export class PasskeyEntity {
     this.counter = counter;
     this.backedUp = backedUp;
     this.transports = transports;
+    this.displayName = displayName;
     this.createdAt = createdAt;
   }
 }

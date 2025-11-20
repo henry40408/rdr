@@ -43,7 +43,7 @@
           </q-item>
           <q-item v-for="passkey in passkeys" :key="passkey.id">
             <q-item-section>
-              <q-item-label>{{ passkey.credentialId }}</q-item-label>
+              <q-item-label>{{ passkey.displayName || passkey.credentialId }}</q-item-label>
               <q-item-label caption>Registered at: <ClientDateTime :datetime="passkey.createdAt" /></q-item-label>
             </q-item-section>
             <q-item-section side>
@@ -168,7 +168,6 @@ function onDeletePasskey(id: number) {
     title: "Delete Passkey",
     message: "Are you sure you want to delete this passkey? You will not be able to use it for authentication anymore.",
     cancel: true,
-    persistent: true,
   }).onOk(async () => {
     try {
       await $fetch(`/api/passkeys/${id}`, { method: "DELETE" });
@@ -188,32 +187,38 @@ function onDeletePasskey(id: number) {
   });
 }
 
-async function onRegisterWebAuthn() {
+function onRegisterWebAuthn() {
   const username = session.value?.user?.username;
-  if (!username) {
-    $q.notify({
-      type: "negative",
-      message: "Cannot register WebAuthn: not logged in",
-      actions: [{ label: "Close", color: "white" }],
-    });
-    return;
-  }
+  if (!username) return;
 
-  try {
-    await registerWebAuthn({ userName: username });
-    refreshPasskeys();
-    $q.notify({
-      type: "positive",
-      message: "WebAuthn registered successfully",
-      actions: [{ label: "Close", color: "white" }],
-    });
-  } catch (err) {
-    $q.notify({
-      type: "negative",
-      message: `Failed to register WebAuthn: ${err}`,
-      actions: [{ label: "Close", color: "white" }],
-    });
-  }
+  $q.dialog({
+    title: "Register WebAuthn Device",
+    message:
+      "Please ensure your WebAuthn device (e.g., security key or biometric authenticator) is connected and ready.",
+    prompt: {
+      model: "",
+      type: "text",
+      label: "Display Name (optional)",
+      hint: "You can provide a name to identify this device later.",
+    },
+    cancel: true,
+  }).onOk(async (displayName: string) => {
+    try {
+      await registerWebAuthn({ userName: username, displayName });
+      refreshPasskeys();
+      $q.notify({
+        type: "positive",
+        message: "WebAuthn registered successfully",
+        actions: [{ label: "Close", color: "white" }],
+      });
+    } catch (err) {
+      $q.notify({
+        type: "negative",
+        message: `Failed to register WebAuthn: ${err}`,
+        actions: [{ label: "Close", color: "white" }],
+      });
+    }
+  });
 }
 
 async function triggerJob(name: string) {
