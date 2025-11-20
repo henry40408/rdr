@@ -31,13 +31,20 @@
           <q-item-section>Background Jobs</q-item-section>
         </q-item>
         <q-separator spaced />
+        <q-item>
+          <q-item-section>
+            <q-btn label="Log Out" color="negative" @click="logout()" />
+          </q-item-section>
+        </q-item>
       </q-list>
     </q-drawer>
 
     <q-page-container>
       <q-page>
         <q-list padding>
-          <q-item-label id="webauthn" header>WebAuthn (Passkey)</q-item-label>
+          <q-item id="webauthn">
+            <q-item-section>WebAuthn (Passkey)</q-item-section>
+          </q-item>
           <q-item>
             <q-btn color="primary" @click="onRegisterWebAuthn">Register WebAuthn Device</q-btn>
           </q-item>
@@ -59,21 +66,27 @@
             </q-item-section>
           </q-item>
           <q-separator spaced />
-          <q-item-label id="change-password" header>Change Password</q-item-label>
+          <q-item id="change-password">
+            <q-item-section>Change Password</q-item-section>
+          </q-item>
           <q-item>
             <q-item-section>
               <ChangePasswordForm />
             </q-item-section>
           </q-item>
           <q-separator spaced />
-          <q-item-label id="user-settings" header>User Settings</q-item-label>
+          <q-item id="user-settings">
+            <q-item-section>User Settings</q-item-section>
+          </q-item>
           <q-item>
             <q-item-section>
               <UserSettingsForm />
             </q-item-section>
           </q-item>
           <q-separator spaced />
-          <q-item-label id="background-jobs" header>Background Jobs</q-item-label>
+          <q-item id="background-jobs">
+            <q-item-section>Background Jobs</q-item-section>
+          </q-item>
           <q-item v-for="job in jobsData" :key="job.name">
             <q-item-section side>
               <JobToggle :name="job.name" :value="!!jobPaused[job.name]" @toggled="refreshJobs()" />

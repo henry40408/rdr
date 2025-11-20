@@ -16,7 +16,7 @@ export default defineWebAuthnRegisterEventHandler({
     const challengeCache = container.resolve("challengeCache");
 
     const challenge = challengeCache.get(`auth:challenge:${attemptId}`);
-    if (!challenge) throw createError({ statusCode: 400, statusMessage: "Challenge not found or expired" });
+    if (!challenge) throw createError({ statusCode: 400, statusMessage: "Invalid challenge" });
 
     challengeCache.delete(`auth:challenge:${attemptId}`);
     return challenge;
@@ -29,7 +29,7 @@ export default defineWebAuthnRegisterEventHandler({
     const repository = container.resolve("repository");
 
     const found = await repository.findUserByUsername(user.userName);
-    if (!found) throw createError({ statusCode: 404, statusMessage: "User not found" });
+    if (!found) throw createError({ statusCode: 401, statusMessage: "Unauthorized" });
 
     const passkey = new PasskeyEntity({
       id: 0,
