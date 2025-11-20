@@ -24,8 +24,7 @@ export default defineEventHandler(async (event) => {
   const job = jobs.find((j) => j.name === name);
   if (!job) throw createError({ status: 404, message: "Job not found" });
 
-  const pausedAt = job.pausedAt ? undefined : new Date().toISOString();
-  job.pausedAt = pausedAt;
+  job.pausedAt = job.pausedAt ? null : new Date().toISOString();
   await repository.upsertJob(job);
 
   return job;

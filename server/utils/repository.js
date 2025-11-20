@@ -906,7 +906,7 @@ export class Repository {
   async updateCategory(userId, category) {
     const updated = await this.knex("categories")
       .where({ user_id: userId, id: category.id })
-      .update({ name: category.name });
+      .update({ name: category.name, updated_at: this.knex.fn.now() });
     this.logger.info({ msg: "Updated category", categoryId: category.id, updated });
     return updated;
   }
@@ -922,7 +922,7 @@ export class Repository {
         builder.select("id").from("categories").where("user_id", userId);
       })
       .where({ id: feed.id })
-      .update({ title: feed.title, xml_url: feed.xmlUrl, html_url: feed.htmlUrl });
+      .update({ title: feed.title, xml_url: feed.xmlUrl, html_url: feed.htmlUrl, updated_at: this.knex.fn.now() });
     this.logger.info({ msg: "Updated feed", feedId: feed.id, updated });
     return updated;
   }
@@ -945,6 +945,7 @@ export class Repository {
       logger.debug("No metadata to update");
       return 0;
     }
+    update.updated_at = this.knex.fn.now();
 
     logger.debug({ msg: "Update feed metadata", feed });
     const updated = await this.knex.transaction(async (tx) => {
@@ -957,7 +958,7 @@ export class Repository {
 
       // Increment error_count if there was an error, otherwise reset it to 0
       if (error) await tx("feeds").where({ id: feed.id }).increment("error_count");
-      else await tx("feeds").where({ id: feed.id }).update({ error_count: 0 });
+      else await tx("feeds").where({ id: feed.id }).update({ error_count: 0, updated_at: tx.fn.now() });
 
       return updated;
     });
@@ -979,7 +980,7 @@ export class Repository {
     const passwordHash = await hash(newPassword, HASH_ROUNDS);
     const updated = await this.knex("users")
       .where({ username: authenticated.username })
-      .update({ password_hash: passwordHash, nonce: Date.now() });
+      .update({ password_hash: passwordHash, nonce: Date.now(), updated_at: this.knex.fn.now() });
     this.logger.info({ msg: "Updated user password", updated });
     this.nonceCache.delete(authenticated.id);
     return updated;
@@ -992,7 +993,10 @@ export class Repository {
   async updateUserSettings(userId, settings) {
     await this.knex.transaction(async (tx) => {
       for (const [name, value] of Object.entries(settings)) {
-        await tx("user_settings").insert({ user_id: userId, name, value }).onConflict(["user_id", "name"]).merge();
+        await tx("user_settings").insert({ user_id: userId, name, value }).onConflict(["user_id", "name"]).merge({
+          value,
+          updated_at: tx.fn.now(),
+        });
         this.logger.info({ msg: "Upserted user setting", userId, name });
       }
     });
@@ -1009,7 +1013,7 @@ export class Repository {
         const [categoryId] = await tx("categories")
           .insert({ user_id: userId, name: category.name })
           .onConflict(["user_id", "name"])
-          .merge();
+          .merge({ updated_at: tx.fn.now() });
         this.logger.info({ msg: "Upserted category", userId, name: category.name });
         if (categoryId) category.id = categoryId;
 
@@ -1022,7 +1026,7 @@ export class Repository {
               html_url: feed.htmlUrl,
             })
             .onConflict(["category_id", "xml_url"])
-            .merge();
+            .merge({ title: feed.title, html_url: feed.htmlUrl, updated_at: tx.fn.now() });
           this.logger.info({ msg: "Upserted feed", category: category.name, title: feed.title });
           if (feedId) feed.id = feedId;
         }
@@ -1073,11 +1077,11 @@ export class Repository {
             })),
           )
           .onConflict(["feed_id", "guid"])
-          .merge();
+          .merge({ updated_at: tx.fn.now() });
         logger.debug({ msg: "Upserted chunk of entries", count: chunk.length });
       }
 
-      await tx("feeds").where({ id: feed.id }).update({ fetched_at: now.toISOString() });
+      await tx("feeds").where({ id: feed.id }).update({ fetched_at: now.toISOString(), updated_at: tx.fn.now() });
     });
 
     logger.info({ msg: "Upserted entries", count: items.length, fetchedAt: now });
@@ -1102,7 +1106,14 @@ export class Repository {
         last_modified: image.lastModified,
       })
       .onConflict(["user_id", "external_id"])
-      .merge();
+      .merge({
+        url: image.url,
+        blob: image.blob,
+        content_type: image.contentType,
+        etag: image.etag,
+        last_modified: image.lastModified,
+        updated_at: this.knex.fn.now(),
+      });
     logger.info("Upserted image");
   }
 
@@ -1119,7 +1130,13 @@ export class Repository {
         last_error: job.lastError,
       })
       .onConflict("name")
-      .merge();
+      .merge({
+        paused_at: job.pausedAt,
+        last_date: job.lastDate,
+        last_duration_ms: job.lastDurationMs,
+        last_error: job.lastError,
+        updated_at: this.knex.fn.now(),
+      });
     if (jobId) job.id = jobId;
     this.logger.debug({ msg: "Upserted job", job });
   }
