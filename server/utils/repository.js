@@ -187,6 +187,7 @@ export class Repository {
         counter: passkey.counter,
         backed_up: passkey.backedUp,
         transports: JSON.stringify(passkey.transports),
+        display_name: passkey.displayName,
       });
 
       const created = await tx("passkeys").where({ user_id: passkey.userId }).first();
@@ -199,6 +200,7 @@ export class Repository {
         counter: created.counter,
         backedUp: created.backed_up,
         transports: JSON.parse(created.transports),
+        displayName: created.display_name,
       });
     });
   }
@@ -307,6 +309,17 @@ export class Repository {
 
     logger.info({ msg: "Deleted feed transaction completed" });
     return deletedFeeds;
+  }
+
+  /**
+   * @param {number} userId
+   * @param {number} id
+   * @returns {Promise<number|undefined>}
+   */
+  async deletePasskeyById(userId, id) {
+    const deletedCount = await this.knex("passkeys").where({ user_id: userId, id }).del();
+    this.logger.info({ msg: "Deleted passkey", userId, id, deletedCount });
+    return deletedCount;
   }
 
   /**
@@ -705,6 +718,7 @@ export class Repository {
           counter: row.counter,
           backedUp: row.backed_up,
           transports: JSON.parse(row.transports),
+          displayName: row.display_name,
           createdAt: row.created_at,
         }),
     );

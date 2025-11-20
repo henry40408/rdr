@@ -362,7 +362,7 @@ function deleteCategoryDialog(categoryId: number) {
     title: "Delete Category",
     message: "Are you sure you want to delete this category and all its feeds? This action cannot be undone.",
     cancel: true,
-    persistent: true,
+    ok: { color: "negative" },
   }).onOk(async () => {
     try {
       await $fetch(`/api/categories/${categoryId}`, { method: "DELETE" });
@@ -387,7 +387,7 @@ function deleteFeedDialog(feedId: number) {
     title: "Delete Feed",
     message: "Are you sure you want to delete this feed? This action cannot be undone.",
     cancel: true,
-    persistent: true,
+    ok: { color: "negative" },
   }).onOk(async () => {
     try {
       await $fetch(`/api/feeds/${feedId}`, { method: "DELETE" });

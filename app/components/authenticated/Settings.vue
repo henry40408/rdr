@@ -16,6 +16,9 @@
     <q-drawer v-model="leftDrawerOpen" bordered persistent side="left" show-if-above>
       <q-list padding>
         <q-item-label header>Navigation</q-item-label>
+        <q-item clickable @click="$router.push({ hash: '#webauthn' })">
+          <q-item-section>WebAuthn (Passkey)</q-item-section>
+        </q-item>
         <q-item clickable @click="$router.push({ hash: '#change-password' })">
           <q-item-section>Change Password</q-item-section>
         </q-item>
@@ -40,8 +43,11 @@
           </q-item>
           <q-item v-for="passkey in passkeys" :key="passkey.id">
             <q-item-section>
-              <q-item-label>{{ passkey.credentialId }}</q-item-label>
+              <q-item-label>{{ passkey.displayName || passkey.credentialId }}</q-item-label>
               <q-item-label caption>Registered at: <ClientDateTime :datetime="passkey.createdAt" /></q-item-label>
+            </q-item-section>
+            <q-item-section side>
+              <q-btn flat icon="delete" @click="onDeletePasskey(passkey.id)" />
             </q-item-section>
           </q-item>
           <q-item v-if="passkeys?.length === 0" :class="{ 'q-pa-md': true, 'bg-grey-9': isDark, 'bg-grey-3': !isDark }">
@@ -157,6 +163,65 @@ const jobPaused = computed(() => {
   return map;
 });
 
+function onDeletePasskey(id: number) {
+  $q.dialog({
+    title: "Delete Passkey",
+    message: "Are you sure you want to delete this passkey? You will not be able to use it for authentication anymore.",
+    cancel: true,
+    ok: { color: "negative" },
+  }).onOk(async () => {
+    try {
+      await $fetch(`/api/passkeys/${id}`, { method: "DELETE" });
+      refreshPasskeys();
+      $q.notify({
+        type: "positive",
+        message: "Passkey deleted successfully.",
+        actions: [{ label: "Close", color: "white" }],
+      });
+    } catch (err) {
+      $q.notify({
+        type: "negative",
+        message: `Failed to delete passkey: ${err}`,
+        actions: [{ label: "Close", color: "white" }],
+      });
+    }
+  });
+}
+
+function onRegisterWebAuthn() {
+  const username = session.value?.user?.username;
+  if (!username) return;
+
+  $q.dialog({
+    title: "Register WebAuthn Device",
+    message:
+      "Please ensure your WebAuthn device (e.g., security key or biometric authenticator) is connected and ready.",
+    prompt: {
+      model: "",
+      type: "text",
+      label: "Display Name (optional)",
+      hint: "You can provide a name to identify this device later.",
+    },
+    cancel: true,
+  }).onOk(async (displayName: string) => {
+    try {
+      await registerWebAuthn({ userName: username, displayName });
+      refreshPasskeys();
+      $q.notify({
+        type: "positive",
+        message: "WebAuthn registered successfully",
+        actions: [{ label: "Close", color: "white" }],
+      });
+    } catch (err) {
+      $q.notify({
+        type: "negative",
+        message: `Failed to register WebAuthn: ${err}`,
+        actions: [{ label: "Close", color: "white" }],
+      });
+    }
+  });
+}
+
 async function triggerJob(name: string) {
   if (triggeringJobs.value.has(name)) return;
   triggeringJobs.value.add(name);
@@ -175,34 +240,6 @@ async function triggerJob(name: string) {
     });
   } finally {
     triggeringJobs.value.delete(name);
-  }
-}
-
-async function onRegisterWebAuthn() {
-  const username = session.value?.user?.username;
-  if (!username) {
-    $q.notify({
-      type: "negative",
-      message: "Cannot register WebAuthn: not logged in",
-      actions: [{ label: "Close", color: "white" }],
-    });
-    return;
-  }
-
-  try {
-    await registerWebAuthn({ userName: username });
-    refreshPasskeys();
-    $q.notify({
-      type: "positive",
-      message: "WebAuthn registered successfully",
-      actions: [{ label: "Close", color: "white" }],
-    });
-  } catch (err) {
-    $q.notify({
-      type: "negative",
-      message: `Failed to register WebAuthn: ${err}`,
-      actions: [{ label: "Close", color: "white" }],
-    });
   }
 }
 </script>

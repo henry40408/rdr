@@ -926,8 +926,8 @@ function markManyAsReadDialog() {
         { label: "Older than 1 year", value: "year" },
       ],
     },
-    ok: { color: "negative" },
     cancel: true,
+    ok: { color: "primary" },
   }).onOk(async (olderThan: "day" | "week" | "month" | "year" | "all") => {
     const mostRecentDate = items.value.reduce<Date | null>((latest, item) => {
       const itemDate = new Date(item.entry.date);
