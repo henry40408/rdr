@@ -50,6 +50,14 @@ export default defineNuxtConfig({
       password: process.env.NUXT_SESSION_PASSWORD || "",
     },
     singleUser: true,
+    webauthn: {
+      register: {
+        authenticatorSelection: {
+          residentKey: "required",
+          userVerification: "preferred",
+        },
+      },
+    },
   },
   auth: { webAuthn: true },
   quasar: {

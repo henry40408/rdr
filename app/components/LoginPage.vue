@@ -8,12 +8,13 @@
             {{ error }}
           </q-card-section>
           <q-separator />
-          <q-card-section v-if="systemSettings?.canLogin" class="q-gutter-md">
+          <q-card-section>
             <q-btn
               icon="key"
               color="primary"
               :loading="loading"
               label="Login with WebAuthn"
+              :disable="!systemSettings?.canLogin"
               @click="loginWithWebAuthn"
             />
           </q-card-section>
