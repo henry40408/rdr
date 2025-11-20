@@ -8,32 +8,32 @@
             {{ error }}
           </q-card-section>
           <q-separator />
+          <q-card-section v-if="systemSettings?.canLogin" class="q-gutter-md">
+            <q-btn
+              icon="key"
+              color="primary"
+              :loading="loading"
+              label="Login with WebAuthn"
+              @click="loginWithWebAuthn"
+            />
+          </q-card-section>
+          <q-separator />
           <form @submit.prevent="onSubmit('login')">
             <q-card-section class="q-gutter-md">
-              <q-input v-model="username" outlined required label="Username">
-                <template #append>
-                  <q-btn
-                    flat
-                    icon="key"
-                    tabindex="-1"
-                    :loading="loading"
-                    :disabled="!systemSettings?.canLogin || !username"
-                    @click="loginWithWebAuthn"
-                  />
-                </template>
-              </q-input>
+              <q-input v-model="username" outlined required label="Username" />
               <q-input v-model="password" outlined required type="password" label="Password" />
             </q-card-section>
             <q-card-actions align="right">
               <q-btn
                 flat
                 label="Sign Up"
-                color="secondary"
+                icon="person_add"
                 :loading="loading"
                 :disabled="!systemSettings?.canSignup"
                 @click="onSubmit('signup')"
               />
               <q-btn
+                icon="login"
                 label="Login"
                 type="submit"
                 color="primary"
@@ -96,7 +96,7 @@ async function loginWithWebAuthn() {
   error.value = "";
   loading.value = true;
   try {
-    await authenticate(username.value);
+    await authenticate();
     $q.notify({
       type: "positive",
       message: "Authenticate with WebAuthn successfully.",

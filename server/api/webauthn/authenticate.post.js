@@ -36,7 +36,7 @@ export default defineWebAuthnAuthenticateEventHandler({
     const repository = container.resolve("repository");
 
     const passkey = await repository.findPasskeyByCredentialId(credentialId);
-    if (!passkey) throw createError({ statusCode: 404, statusMessage: "Passkey not found" });
+    if (!passkey) throw createError({ statusCode: 401, statusMessage: "Invalid passkey" });
 
     return {
       id: passkey.credentialId,
@@ -54,10 +54,10 @@ export default defineWebAuthnAuthenticateEventHandler({
     const repository = container.resolve("repository");
 
     const passkey = await repository.findPasskeyByCredentialId(credential.id);
-    if (!passkey) throw createError({ statusCode: 404, statusMessage: "Passkey not found" });
+    if (!passkey) throw createError({ statusCode: 401, statusMessage: "Invalid passkey" });
 
     const user = await repository.findUserById(passkey.userId);
-    if (!user) throw createError({ statusCode: 404, statusMessage: "User not found" });
+    if (!user) throw createError({ statusCode: 401, statusMessage: "Invalid passkey" });
 
     await setUserSession(event, {
       user: {

@@ -31,6 +31,11 @@
           <q-item-section>Background Jobs</q-item-section>
         </q-item>
         <q-separator spaced />
+        <q-item>
+          <q-item-section>
+            <q-btn label="Log Out" color="negative" @click="logout()" />
+          </q-item-section>
+        </q-item>
       </q-list>
     </q-drawer>
 
