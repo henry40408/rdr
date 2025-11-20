@@ -1,6 +1,6 @@
 // @ts-check
 
-export const name = "m0009-add-description-to-passkeys";
+export const name = "m0009-add-display-name-to-passkeys";
 
 /**
  * @param {import('knex').Knex} knex
