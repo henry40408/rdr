@@ -132,6 +132,9 @@ export class FeedService {
       if (result.type === "ok") {
         await this.repository.upsertEntries(userId, feed, result.items, result.meta);
         await this.repository.updateFeedMetadata({ userId, feed: result.feed, error: "" });
+      } else if (result.type === "not_modified") {
+        // No new entries, just update feed metadata to clear any previous errors
+        await this.repository.updateFeedMetadata({ userId, feed, error: "" });
       }
     } catch (e) {
       const err = /** @type {Error} */ (e);
