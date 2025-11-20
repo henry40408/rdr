@@ -311,6 +311,17 @@ export class Repository {
 
   /**
    * @param {number} userId
+   * @param {number} id
+   * @returns {Promise<number|undefined>}
+   */
+  async deletePasskeyById(userId, id) {
+    const deletedCount = await this.knex("passkeys").where({ user_id: userId, id }).del();
+    this.logger.info({ msg: "Deleted passkey", userId, id, deletedCount });
+    return deletedCount;
+  }
+
+  /**
+   * @param {number} userId
    * @returns {Promise<CategoryEntity[]>}
    */
   async findCategoriesWithFeed(userId) {

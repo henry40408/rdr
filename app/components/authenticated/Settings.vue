@@ -16,6 +16,9 @@
     <q-drawer v-model="leftDrawerOpen" bordered persistent side="left" show-if-above>
       <q-list padding>
         <q-item-label header>Navigation</q-item-label>
+        <q-item clickable @click="$router.push({ hash: '#webauthn' })">
+          <q-item-section>WebAuthn (Passkey)</q-item-section>
+        </q-item>
         <q-item clickable @click="$router.push({ hash: '#change-password' })">
           <q-item-section>Change Password</q-item-section>
         </q-item>
@@ -42,6 +45,9 @@
             <q-item-section>
               <q-item-label>{{ passkey.credentialId }}</q-item-label>
               <q-item-label caption>Registered at: <ClientDateTime :datetime="passkey.createdAt" /></q-item-label>
+            </q-item-section>
+            <q-item-section side>
+              <q-btn flat icon="delete" @click="onDeletePasskey(passkey.id)" />
             </q-item-section>
           </q-item>
           <q-item v-if="passkeys?.length === 0" :class="{ 'q-pa-md': true, 'bg-grey-9': isDark, 'bg-grey-3': !isDark }">
@@ -157,25 +163,29 @@ const jobPaused = computed(() => {
   return map;
 });
 
-async function triggerJob(name: string) {
-  if (triggeringJobs.value.has(name)) return;
-  triggeringJobs.value.add(name);
-  try {
-    await $fetch(`/api/jobs/${name}/run`, { method: "POST" });
-    $q.notify({
-      type: "positive",
-      message: `Job ${name} triggered successfully`,
-      actions: [{ label: "Close", color: "white" }],
-    });
-  } catch (err) {
-    $q.notify({
-      type: "negative",
-      message: `Failed to trigger job: ${err}`,
-      actions: [{ label: "Close", color: "white" }],
-    });
-  } finally {
-    triggeringJobs.value.delete(name);
-  }
+function onDeletePasskey(id: number) {
+  $q.dialog({
+    title: "Delete Passkey",
+    message: "Are you sure you want to delete this passkey? You will not be able to use it for authentication anymore.",
+    cancel: true,
+    persistent: true,
+  }).onOk(async () => {
+    try {
+      await $fetch(`/api/passkeys/${id}`, { method: "DELETE" });
+      refreshPasskeys();
+      $q.notify({
+        type: "positive",
+        message: "Passkey deleted successfully.",
+        actions: [{ label: "Close", color: "white" }],
+      });
+    } catch (err) {
+      $q.notify({
+        type: "negative",
+        message: `Failed to delete passkey: ${err}`,
+        actions: [{ label: "Close", color: "white" }],
+      });
+    }
+  });
 }
 
 async function onRegisterWebAuthn() {
@@ -203,6 +213,27 @@ async function onRegisterWebAuthn() {
       message: `Failed to register WebAuthn: ${err}`,
       actions: [{ label: "Close", color: "white" }],
     });
+  }
+}
+
+async function triggerJob(name: string) {
+  if (triggeringJobs.value.has(name)) return;
+  triggeringJobs.value.add(name);
+  try {
+    await $fetch(`/api/jobs/${name}/run`, { method: "POST" });
+    $q.notify({
+      type: "positive",
+      message: `Job ${name} triggered successfully`,
+      actions: [{ label: "Close", color: "white" }],
+    });
+  } catch (err) {
+    $q.notify({
+      type: "negative",
+      message: `Failed to trigger job: ${err}`,
+      actions: [{ label: "Close", color: "white" }],
+    });
+  } finally {
+    triggeringJobs.value.delete(name);
   }
 }
 </script>
