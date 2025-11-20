@@ -8,20 +8,28 @@
             {{ error }}
           </q-card-section>
           <q-separator />
-          <q-card-section v-if="systemSettings?.canLogin" class="q-gutter-md">
+          <q-card-section>
             <q-btn
               icon="key"
               color="primary"
               :loading="loading"
               label="Login with WebAuthn"
+              :disable="!isWebAuthnSupported"
               @click="loginWithWebAuthn"
             />
           </q-card-section>
           <q-separator />
           <form @submit.prevent="onSubmit('login')">
             <q-card-section class="q-gutter-md">
-              <q-input v-model="username" outlined required label="Username" />
-              <q-input v-model="password" outlined required type="password" label="Password" />
+              <q-input v-model="username" outlined required label="Username" autocomplete="username" />
+              <q-input
+                v-model="password"
+                outlined
+                required
+                type="password"
+                label="Password"
+                autocomplete="current-password"
+              />
             </q-card-section>
             <q-card-actions align="right">
               <q-btn
@@ -60,9 +68,10 @@ const password = ref("");
 const loading = ref(false);
 const error = ref("");
 
-const { authenticate } = useWebAuthn();
+const { authenticate, isSupported } = useWebAuthn();
 
 const { data: systemSettings } = await useFetch("/api/system-settings");
+const isWebAuthnSupported = computed(() => systemSettings.value?.canLogin && isSupported.value);
 
 async function onSubmit(action: "login" | "signup") {
   if (action === "login") login();
