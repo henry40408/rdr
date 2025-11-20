@@ -25,6 +25,9 @@ export default defineWebAuthnRegisterEventHandler({
   onSuccess: async (event, { user, credential }) => {
     const { container } = useNitroApp();
 
+    const session = await validateUserNonce(event);
+    if (session.user.username !== user.userName) throw createError({ statusCode: 401, statusMessage: "Unauthorized" });
+
     /** @type {Repository} */
     const repository = container.resolve("repository");
 
