@@ -119,7 +119,7 @@ export class JobEntity {
    * @param {object} opts
    * @param {number} opts.id
    * @param {string} opts.name
-   * @param {string} [opts.pausedAt]
+   * @param {string|null} [opts.pausedAt]
    * @param {string} [opts.lastDate]
    * @param {number} [opts.lastDurationMs]
    * @param {string} [opts.lastError]

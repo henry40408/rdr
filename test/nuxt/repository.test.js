@@ -869,7 +869,7 @@ describe("Repository", () => {
       assert.strictEqual(jobs[0].pausedAt, pausedAt);
 
       // Unpause a job
-      job.pausedAt = undefined;
+      job.pausedAt = null;
       await repository.upsertJob(job);
 
       jobs = await repository.findJobs();
