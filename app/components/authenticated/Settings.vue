@@ -168,6 +168,7 @@ function onDeletePasskey(id: number) {
     title: "Delete Passkey",
     message: "Are you sure you want to delete this passkey? You will not be able to use it for authentication anymore.",
     cancel: true,
+    ok: { color: "negative" },
   }).onOk(async () => {
     try {
       await $fetch(`/api/passkeys/${id}`, { method: "DELETE" });
