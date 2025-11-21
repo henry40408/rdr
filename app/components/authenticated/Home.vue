@@ -417,12 +417,19 @@
                         <q-btn
                           v-if="!fullContents[item.entry.id]"
                           :padding="$q.screen.lt.sm ? 'md sm' : 'sm'"
-                          :icon="scrapping[item.entry.id] ? 'cancel' : 'article'"
-                          :label="scrapping[item.entry.id] ? 'Cancel' : 'Full Content'"
                           @click="
                             scrapping[item.entry.id] ? cancelScraping(item.entry.id) : getFullContent(item.entry.id)
                           "
-                        />
+                        >
+                          <template v-if="scrapping[item.entry.id]">
+                            <q-spinner size="xs" class="q-mr-md" />
+                            Cancel
+                          </template>
+                          <template v-else>
+                            <q-icon name="article" class="q-mr-md" />
+                            Full content
+                          </template>
+                        </q-btn>
                         <q-btn
                           v-else
                           icon="undo"
@@ -442,14 +449,21 @@
                           <q-btn
                             v-if="!summarizations[item.entry.id]"
                             :padding="$q.screen.lt.sm ? 'md sm' : 'sm'"
-                            :icon="summarizing[item.entry.id] ? 'cancel' : 'psychology'"
-                            :label="summarizing[item.entry.id] ? 'Cancel' : 'Summarize'"
                             @click="
                               summarizing[item.entry.id]
                                 ? cancelSummarization(item.entry.id)
                                 : summarizeEntry(item.entry.id)
                             "
-                          />
+                          >
+                            <template v-if="summarizing[item.entry.id]">
+                              <q-spinner size="xs" class="q-mr-md" />
+                              Cancel
+                            </template>
+                            <template v-else>
+                              <q-icon class="q-mr-md" name="psychology" />
+                              Summarize
+                            </template>
+                          </q-btn>
                           <q-btn
                             v-else
                             icon="delete"
@@ -519,13 +533,27 @@
               <q-btn
                 fab
                 color="secondary"
+                :loading="starringOpened"
                 :icon="isOpenEntryStarred() ? 'star' : 'star_border'"
                 @click="toggleStarOpenEntry()"
               />
-              <q-btn fab icon="done" color="secondary" @click="markOpenAsReadAndCollapse()" />
+              <q-btn
+                fab
+                icon="done"
+                color="secondary"
+                :loading="markingOpenedAsRead"
+                @click="markOpenAsReadAndCollapse()"
+              />
               <q-btn fab icon="close" color="primary" @click="collapseOpenItem()" />
             </template>
-            <q-btn v-else fab color="primary" icon="done_all" @click="markManyAsReadDialog()" />
+            <q-btn
+              v-else
+              fab
+              color="primary"
+              icon="done_all"
+              :loading="markingAllAsRead"
+              @click="markManyAsReadDialog()"
+            />
           </div>
         </q-page-sticky>
       </q-page>
@@ -579,10 +607,13 @@ const expanded: Ref<boolean[]> = ref([]);
 const hasMore = ref(true);
 const items: Ref<import("../../../server/api/entries.get").EntryEntityWithFeed[]> = ref([]);
 const leftDrawerOpen = ref(false);
+const markingAllAsRead = ref(false);
+const markingOpenedAsRead = ref(false);
 const rightDrawerOpen = ref(false);
 const saving: Ref<Record<string, boolean>> = ref({});
 const scrapping: Ref<Record<string, boolean>> = ref({});
 const scrappingControllers: Ref<Record<string, AbortController | undefined>> = ref({});
+const starringOpened = ref(false);
 const summarizations: Ref<{ [key: string]: string }> = ref({});
 const summarizing: Ref<Record<string, boolean>> = ref({});
 const summarizingControllers: Ref<Record<string, AbortController | undefined>> = ref({});
@@ -671,7 +702,7 @@ watch(entriesData, (newEntriesData) => {
       if (selectedFeedId.value && selectedCategoryId.value) {
         $q.notify({
           icon: "info",
-          message: `No entries found for the selected feed ${getFilteredFeedTitle()}.`,
+          message: `No entries found for the selected feed "${getFilteredFeedTitle()}".`,
           actions: [{ icon: "close", color: "white" }],
         });
         selectedFeedId.value = undefined;
@@ -681,7 +712,7 @@ watch(entriesData, (newEntriesData) => {
       if (selectedCategoryId.value) {
         $q.notify({
           icon: "info",
-          message: `No entries found for the selected category ${getFilteredCategoryName()}.`,
+          message: `No entries found for the selected category "${getFilteredCategoryName()}".`,
           actions: [{ icon: "close", color: "white" }],
         });
         selectedCategoryId.value = undefined;
@@ -784,6 +815,7 @@ async function doMarkManyAsRead(param: MarkAsReadParam) {
     body.selectedId = selectedCategoryId.value;
   }
   if (searchQuery.value) body.search = searchQuery.value;
+  markingAllAsRead.value = true;
   try {
     const { updated } = await $fetch("/api/entries/mark-as-read", { method: "POST", body });
     for (const item of items.value)
@@ -801,6 +833,8 @@ async function doMarkManyAsRead(param: MarkAsReadParam) {
       message: `Failed to mark all as read: ${err}`,
       actions: [{ icon: "close", color: "white" }],
     });
+  } finally {
+    markingAllAsRead.value = false;
   }
 }
 
@@ -848,6 +882,7 @@ async function getFullContent(entryId: number) {
   scrappingControllers.value[entryId] = controller;
 
   scrapping.value[entryId] = true;
+  const title = items.value.find((i) => i.entry.id === entryId)?.entry.title ?? "";
   try {
     const parsed = await $fetch(`/api/entries/${entryId}/full-content`, {
       signal: controller.signal,
@@ -857,13 +892,13 @@ async function getFullContent(entryId: number) {
     if (scrappingControllers.value[entryId]?.signal.aborted) {
       $q.notify({
         type: "info",
-        message: "Full content download cancelled.",
+        message: `Full content of entry "${title}" download cancelled.`,
         actions: [{ icon: "close", color: "white" }],
       });
     } else {
       $q.notify({
         type: "negative",
-        message: `Failed to download full content: ${err}`,
+        message: `Failed to download full content of entry "${title}": ${err}`,
         actions: [{ icon: "close", color: "white" }],
       });
     }
@@ -971,9 +1006,14 @@ async function markAsRead(entryId: number) {
 }
 
 async function markAsReadAndCollapse(entryId: number, index: number) {
-  await markAsRead(entryId);
-  expanded.value[index] = false;
-  scrollToContentRef(index);
+  markingOpenedAsRead.value = true;
+  try {
+    await markAsRead(entryId);
+    expanded.value[index] = false;
+    scrollToContentRef(index);
+  } finally {
+    markingOpenedAsRead.value = false;
+  }
 }
 
 function markOpenAsReadAndCollapse() {
@@ -1148,13 +1188,13 @@ ${pangu.spacingText(content ?? "")}`;
     if (summarizingControllers.value[entryId]?.signal.aborted) {
       $q.notify({
         type: "info",
-        message: `Summarization for entry ${entryTitle} was canceled.`,
+        message: `Summarization for entry "${entryTitle}" was canceled.`,
         actions: [{ icon: "close", color: "white" }],
       });
     } else {
       $q.notify({
         type: "negative",
-        message: `Failed to summarize entry ${entryTitle}: ${err}`,
+        message: `Failed to summarize entry "${entryTitle}": ${err}`,
         actions: [{ icon: "close", color: "white" }],
       });
     }
@@ -1215,7 +1255,12 @@ async function toggleStarOpenEntry() {
   if (entryId) {
     // manually toggle the value first because the checkbox is not used here
     entryStar.value[entryId] = entryStar.value[entryId] === "starred" ? "unstarred" : "starred";
-    await toggleStarEntry(entryId);
+    starringOpened.value = true;
+    try {
+      await toggleStarEntry(entryId);
+    } finally {
+      starringOpened.value = false;
+    }
   }
 }
 </script>
