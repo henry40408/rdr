@@ -137,6 +137,27 @@ export class Repository {
     return counts;
   }
 
+  /**
+   * @param {number} userId
+   * @param {"all"|"error"} [status="all"]
+   * @returns {Promise<number>}
+   */
+  async countFeeds(userId, status = "all") {
+    let q = this.knex("feeds").whereIn("category_id", (builder) => {
+      builder.select("id").from("categories").where("user_id", userId);
+    });
+    switch (status) {
+      case "all":
+        break;
+      case "error":
+        q = q.whereNotNull("last_error");
+        break;
+    }
+    console.log(q.toSQL());
+    const result = await q.count({ count: "*" }).first();
+    return result ? Number(result.count) : 0;
+  }
+
   /** @returns {Promise<number>} */
   async countUsers() {
     const result = await this.knex("users").count({ count: "*" }).first();
@@ -945,7 +966,7 @@ export class Repository {
    * @param {object} opts
    * @param {number} opts.userId
    * @param {FeedEntity} opts.feed
-   * @param {string} [opts.error]
+   * @param {string|null} [opts.error]
    * @returns {Promise<number>}
    */
   async updateFeedMetadata({ userId, feed, error }) {
@@ -971,7 +992,8 @@ export class Repository {
         .update(update);
 
       // Increment error_count if there was an error, otherwise reset it to 0
-      if (error) await tx("feeds").where({ id: feed.id }).increment("error_count");
+      if (typeof error !== "undefined" && error !== null)
+        await tx("feeds").where({ id: feed.id }).increment("error_count");
       else await tx("feeds").where({ id: feed.id }).update({ error_count: 0, updated_at: tx.fn.now() });
 
       return updated;

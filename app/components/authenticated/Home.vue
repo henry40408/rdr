@@ -655,7 +655,7 @@ const {
   data: countData,
   error: countError,
   refresh: refreshCount,
-} = await useFetch("/api/count", {
+} = await useFetch("/api/entries/count", {
   headers,
   query: computed(() => countQuery.value),
   default: () => ({ count: 0 }),
