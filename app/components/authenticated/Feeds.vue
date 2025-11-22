@@ -185,7 +185,7 @@
                       <q-item-label lines="1">
                         <span
                           :class="{
-                            'text-negative': feed.lastError,
+                            'text-negative': feed.lastError !== null,
                           }"
                         >
                           <MarkedText :text="feed.title" :keyword="categoryFeedQuery" />
@@ -534,7 +534,7 @@ function shouldShowCategory(categoryId: number) {
 
   if (showErrorOnly.value) {
     for (const feed of category.feeds) {
-      if (feed.lastError) return true;
+      if (feed.lastError !== null) return true;
     }
     return false;
   }
@@ -550,7 +550,7 @@ function shouldShowFeed(feedId: number) {
 
   if (categoryFeedQuery.value) return feed.title.toLowerCase().includes(categoryFeedQuery.value.toLowerCase());
 
-  if (showErrorOnly.value) return !!feed.lastError;
+  if (showErrorOnly.value) return feed.lastError !== null;
 
   if (hideEmpty.value) return getFeedUnreadCount(feedId) > 0;
 
