@@ -165,8 +165,8 @@
                   :group="`category-${category.id}`"
                 >
                   <template #header>
-                    <q-item-section avatar>
-                      <q-avatar v-if="imageExists(feed.id)" square>
+                    <q-item-section side>
+                      <q-avatar v-if="imageExists(feed.id)" square size="xs">
                         <img
                           loading="lazy"
                           alt="Feed image"

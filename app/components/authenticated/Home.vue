@@ -101,8 +101,8 @@
                   selectedFeedId = String(feed.id);
                 "
               >
-                <q-item-section avatar>
-                  <q-avatar v-if="isImageExists(feed.id)" square>
+                <q-item-section side>
+                  <q-avatar v-if="isImageExists(feed.id)" square size="xs">
                     <img
                       loading="lazy"
                       alt="Feed image"
@@ -351,6 +351,7 @@
                               decoding="async"
                               :src="`/api/images/external/${buildFeedImageKey(item.feed.id)}`"
                             />
+                            <q-icon v-else size="xs" name="rss_feed" />
                           </q-avatar>
                           <MarkedText :keyword="searchQuery" :text="item.entry.title" />
                         </q-item-label>
