@@ -153,7 +153,6 @@ export class Repository {
         q = q.whereNotNull("last_error");
         break;
     }
-    console.log(q.toSQL());
     const result = await q.count({ count: "*" }).first();
     return result ? Number(result.count) : 0;
   }
@@ -167,7 +166,7 @@ export class Repository {
   /**
    * @param {number} userId
    * @param {string} categoryName
-   * @param {FeedEntity} feed
+   * @param {NewCategoryFeedEntity} feed
    * @returns {Promise<FeedEntity>}
    */
   async createFeed(userId, categoryName, feed) {
@@ -179,12 +178,20 @@ export class Repository {
       const categoryId = category.id;
 
       await tx("feeds")
-        .insert({ category_id: categoryId, title: feed.title, xml_url: feed.xmlUrl, html_url: feed.htmlUrl })
+        .insert({
+          category_id: categoryId,
+          title: feed.title,
+          xml_url: feed.xmlUrl,
+          html_url: feed.htmlUrl,
+          disable_http2: feed.disableHttp2,
+        })
         .onConflict(["category_id", "xml_url"])
         .ignore();
 
       const created = await tx("feeds").where({ category_id: categoryId, xml_url: feed.xmlUrl }).first();
       if (!created) throw new Error("Failed to find or create feed");
+
+      this.logger.info({ msg: "Created feed", userId, feedId: created.id, categoryId });
       return new FeedEntity({
         id: created.id,
         categoryId: created.category_id,
@@ -197,7 +204,7 @@ export class Repository {
   }
 
   /**
-   * @param {PasskeyEntity} passkey
+   * @param {NewPasskeyEntity} passkey
    * @returns {Promise<PasskeyEntity>}
    */
   async createPasskey(passkey) {
@@ -214,6 +221,8 @@ export class Repository {
 
       const created = await tx("passkeys").where({ user_id: passkey.userId }).first();
       if (!created) throw new Error("Failed to create passkey");
+
+      this.logger.info({ msg: "Created passkey", userId: passkey.userId, passkeyId: created.id });
       return new PasskeyEntity({
         id: created.id,
         credentialId: created.credential_id,
@@ -245,10 +254,10 @@ export class Repository {
         is_admin: isFirstUser ? 1 : 0,
       });
 
-      this.logger.info({ msg: "Created user", username: user.username, id: user.id, isAdmin: isFirstUser });
-
       const created = await tx("users").where({ username: user.username }).first();
       if (!created) throw new Error("Failed to create user");
+
+      this.logger.info({ msg: "Created user", username: user.username, id: user.id, isAdmin: isFirstUser });
       return new UserEntity({
         id: created.id,
         username: created.username,
@@ -858,16 +867,30 @@ export class Repository {
 
     const updated = await q.update({ read_at: nowISO, updated_at: nowISO });
     this.logger.info({ msg: "Marked entries as read", updated });
-
     return updated;
   }
 
   /**
    * @param {string} name
+   * @returns {Promise<JobEntity>}
    */
   async registerJob(name) {
-    await this.knex("jobs").insert({ name }).onConflict("name").ignore();
-    this.logger.info({ msg: "Registered job", name });
+    return await this.knex.transaction(async (tx) => {
+      await tx("jobs").insert({ name }).onConflict("name").ignore();
+
+      const row = await tx("jobs").where({ name }).first();
+      if (!row) throw new Error("Failed to register job");
+
+      this.logger.info({ msg: "Registered job", name });
+      return new JobEntity({
+        id: row.id,
+        name: row.name,
+        pausedAt: row.paused_at,
+        lastDate: row.last_date,
+        lastDurationMs: row.last_duration_ms,
+        lastError: row.last_error,
+      });
+    });
   }
 
   /**
@@ -1054,34 +1077,69 @@ export class Repository {
 
   /**
    * @param {number} userId
-   * @param {CategoryEntity[]} categories
+   * @param {NewCategoryEntity[]} newCategories
+   * @returns {Promise<CategoryEntity[]>}
    */
-  async upsertCategories(userId, categories) {
+  async upsertCategories(userId, newCategories) {
+    /** @type {CategoryEntity[]} */
+    const categories = [];
+
     await this.knex.transaction(async (tx) => {
-      for (const category of categories) {
-        const [categoryId] = await tx("categories")
-          .insert({ user_id: userId, name: category.name })
+      for (const newCategory of newCategories) {
+        await tx("categories")
+          .insert({ user_id: userId, name: newCategory.name })
           .onConflict(["user_id", "name"])
           .merge({ updated_at: tx.fn.now() });
-        this.logger.info({ msg: "Upserted category", userId, name: category.name });
-        if (categoryId) category.id = categoryId;
+        this.logger.info({ msg: "Upserted category", userId, name: newCategory.name });
 
-        for (const feed of category.feeds) {
-          const [feedId] = await tx("feeds")
+        const createdCategory = await tx("categories").where({ user_id: userId, name: newCategory.name }).first();
+        if (!createdCategory) throw new Error("Failed to upsert category");
+
+        const categoryEntity = new CategoryEntity({
+          id: createdCategory.id,
+          userId: createdCategory.user_id,
+          name: createdCategory.name,
+        });
+
+        for (const feed of newCategory.feeds) {
+          await tx("feeds")
             .insert({
-              category_id: categoryId,
+              category_id: createdCategory.id,
               title: feed.title,
               xml_url: feed.xmlUrl,
               html_url: feed.htmlUrl,
             })
             .onConflict(["category_id", "xml_url"])
             .merge({ title: feed.title, html_url: feed.htmlUrl, updated_at: tx.fn.now() });
-          this.logger.info({ msg: "Upserted feed", category: category.name, title: feed.title });
-          if (feedId) feed.id = feedId;
+
+          const createdFeed = await tx("feeds")
+            .where({ category_id: createdCategory.id, xml_url: feed.xmlUrl })
+            .first();
+          if (!createdFeed) throw new Error("Failed to upsert feed");
+
+          const feedEntity = new FeedEntity({
+            id: createdFeed.id,
+            categoryId: createdFeed.category_id,
+            title: createdFeed.title,
+            xmlUrl: createdFeed.xml_url,
+            htmlUrl: createdFeed.html_url,
+            fetchedAt: createdFeed.fetched_at,
+            etag: createdFeed.etag,
+            lastModified: createdFeed.last_modified,
+            lastError: createdFeed.last_error,
+            disableHttp2: createdFeed.disable_http2,
+          });
+          categoryEntity.feeds.push(feedEntity);
+
+          this.logger.info({ msg: "Upserted feed", category: createdCategory.name, title: feed.title });
         }
+
+        categories.push(categoryEntity);
       }
     });
+
     this.logger.info({ msg: "Upserted categories", count: categories.length });
+    return categories;
   }
 
   /**
@@ -1089,19 +1147,23 @@ export class Repository {
    * @param {FeedEntity} feed
    * @param {FeedItem[]} items
    * @param {import('feedparser').Meta|undefined} [meta]
+   * @returns {Promise<EntryEntity[]>}
    */
   async upsertEntries(userId, feed, items, meta) {
     const logger = this.logger.child({ feedId: feed.id, userId });
 
     if (items.length === 0) {
       logger.warn({ msg: "No entries to upsert" });
-      return;
+      return [];
     }
 
     const now = new Date();
     logger.debug({ msg: "Upserting entries", count: items.length });
 
-    await this.knex.transaction(async (tx) => {
+    return await this.knex.transaction(async (tx) => {
+      /** @type {EntryEntity[]} */
+      const entries = [];
+
       const found = await tx("feeds")
         .whereIn("category_id", (builder) => {
           builder.select("id").from("categories").where("user_id", userId);
@@ -1127,67 +1189,119 @@ export class Repository {
           )
           .onConflict(["feed_id", "guid"])
           .merge({ updated_at: tx.fn.now() });
+
+        const createdEntries = await tx("entries")
+          .whereIn("feed_id", [feed.id])
+          .whereIn(
+            "guid",
+            chunk.map((e) => e.guid),
+          )
+          .select();
+        for (const row of createdEntries) {
+          entries.push(
+            new EntryEntity({
+              id: row.id,
+              feedId: row.feed_id,
+              guid: row.guid,
+              title: row.title,
+              link: row.link,
+              date: row.date,
+              author: row.author,
+            }),
+          );
+        }
+
         logger.debug({ msg: "Upserted chunk of entries", count: chunk.length });
       }
 
       await tx("feeds").where({ id: feed.id }).update({ fetched_at: now.toISOString(), updated_at: tx.fn.now() });
+      logger.info({ msg: "Upserted entries", count: items.length, fetchedAt: now });
+      return entries;
     });
-
-    logger.info({ msg: "Upserted entries", count: items.length, fetchedAt: now });
   }
 
   /**
    * @param {number} userId
-   * @param {ImageEntity} image
+   * @param {NewImageEntity} image
+   * @returns {Promise<ImageEntity>}
    */
   async upsertImage(userId, image) {
     const logger = this.logger.child({ externalId: image.externalId, userId });
-
     logger.debug("Upserting image");
-    await this.knex("images")
-      .insert({
-        user_id: userId,
-        external_id: image.externalId,
-        url: image.url,
-        blob: image.blob,
-        content_type: image.contentType,
-        etag: image.etag,
-        last_modified: image.lastModified,
-      })
-      .onConflict(["user_id", "external_id"])
-      .merge({
-        url: image.url,
-        blob: image.blob,
-        content_type: image.contentType,
-        etag: image.etag,
-        last_modified: image.lastModified,
-        updated_at: this.knex.fn.now(),
+
+    return this.knex.transaction(async (tx) => {
+      await tx("images")
+        .insert({
+          user_id: userId,
+          external_id: image.externalId,
+          url: image.url,
+          blob: image.blob,
+          content_type: image.contentType,
+          etag: image.etag,
+          last_modified: image.lastModified,
+        })
+        .onConflict(["user_id", "external_id"])
+        .merge({
+          url: image.url,
+          blob: image.blob,
+          content_type: image.contentType,
+          etag: image.etag,
+          last_modified: image.lastModified,
+          updated_at: this.knex.fn.now(),
+        });
+
+      const upsertedImage = await tx("images").where({ user_id: userId, external_id: image.externalId }).first();
+      if (!upsertedImage) throw new Error("Failed to upsert image");
+
+      logger.info("Upserted image");
+      return new ImageEntity({
+        externalId: upsertedImage.external_id,
+        url: upsertedImage.url,
+        blob: upsertedImage.blob,
+        contentType: upsertedImage.content_type,
+        etag: upsertedImage.etag,
+        lastModified: upsertedImage.last_modified,
       });
-    logger.info("Upserted image");
+    });
   }
 
   /**
-   * @param {JobEntity} job
+   * @param {NewJobEntity} job
+   * @return {Promise<JobEntity>}
    */
   async upsertJob(job) {
-    const [jobId] = await this.knex("jobs")
-      .insert({
-        name: job.name,
-        paused_at: job.pausedAt,
-        last_date: job.lastDate,
-        last_duration_ms: job.lastDurationMs,
-        last_error: job.lastError,
-      })
-      .onConflict("name")
-      .merge({
-        paused_at: job.pausedAt,
-        last_date: job.lastDate,
-        last_duration_ms: job.lastDurationMs,
-        last_error: job.lastError,
-        updated_at: this.knex.fn.now(),
+    return this.knex.transaction(async (tx) => {
+      await tx("jobs")
+        .insert({
+          name: job.name,
+          paused_at: job.pausedAt,
+          last_date: job.lastDate,
+          last_duration_ms: job.lastDurationMs,
+          last_error: job.lastError,
+        })
+        .onConflict("name")
+        .merge({
+          paused_at: job.pausedAt,
+          last_date: job.lastDate,
+          last_duration_ms: job.lastDurationMs,
+          last_error: job.lastError,
+          updated_at: this.knex.fn.now(),
+        });
+      this.logger.debug({ msg: "Upserted job", job });
+
+      const row = await tx("jobs").where({ name: job.name }).first();
+      if (!row) throw new Error("Failed to upsert job");
+
+      this.logger.info({ msg: "Upserted job", jobId: row.id });
+      return new JobEntity({
+        id: row.id,
+        name: row.name,
+        pausedAt: row.paused_at,
+        lastDate: row.last_date,
+        lastDurationMs: row.last_duration_ms,
+        lastError: row.last_error,
       });
-    if (jobId) job.id = jobId;
-    this.logger.debug({ msg: "Upserted job", job });
+    });
   }
 
   async _fixMigrations() {

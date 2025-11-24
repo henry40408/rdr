@@ -21,19 +21,17 @@ export class OpmlService {
    * @returns {Promise<CategoryEntity[]>}
    */
   async importOpml(userId, content) {
-    /** @type {CategoryEntity[]} */
+    /** @type {NewCategoryEntity[]} */
     const categories = [];
 
     const parsed = await xml2js.parseStringPromise(content);
     for (const outline of parsed.opml.body[0].outline) {
       const categoryName = outline.$.text;
-      const category = new CategoryEntity({ id: 0, userId, name: categoryName });
+      const category = new NewCategoryEntity({ userId, name: categoryName });
 
       if (outline.outline) {
         for (const feedOutline of outline.outline) {
-          const feed = new FeedEntity({
-            id: 0,
-            categoryId: 0,
+          const feed = new NewCategoryFeedEntity({
             title: feedOutline.$.title ?? feedOutline.$.text,
             xmlUrl: feedOutline.$.xmlUrl,
             htmlUrl: feedOutline.$.htmlUrl,
@@ -50,9 +48,7 @@ export class OpmlService {
       feedsCount: categories.flatMap((c) => c.feeds).length,
     });
 
-    await this.repository.upsertCategories(userId, categories);
-
-    return categories;
+    return await this.repository.upsertCategories(userId, categories);
   }
 
   /**

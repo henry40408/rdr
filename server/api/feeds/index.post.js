@@ -19,22 +19,14 @@ export default defineEventHandler(async (event) => {
 
   /** @type {Repository} */
   const repository = container.resolve("repository");
-  /** @type {FeedService} */
-  const feedService = container.resolve("feedService");
 
-  const entity = new FeedEntity({
-    id: 0,
-    categoryId: 0,
-    title: "",
-    xmlUrl: body.xmlUrl,
-    htmlUrl: body.htmlUrl || "",
-  });
   try {
-    const fetched = await feedService.fetchEntries(entity);
-    entity.title = fetched.meta?.title || "(No title)";
-
-    const created = await repository.createFeed(userId, body.categoryName, entity);
-    return await repository.findFeedById(userId, created.id);
+    const entity = new NewCategoryFeedEntity({
+      title: body.categoryName,
+      xmlUrl: body.xmlUrl,
+      htmlUrl: body.htmlUrl,
+    });
+    return await repository.createFeed(userId, body.categoryName, entity);
   } catch (e) {
     if (e instanceof HTTPError) throw createError({ statusCode: 400, statusMessage: `Failed to fetch feed: ${e}` });
     throw e;
