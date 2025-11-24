@@ -68,7 +68,7 @@ export class NewCategoryFeedEntity {
    * @param {string} opts.title
    * @param {string} opts.xmlUrl
    * @param {string} [opts.htmlUrl]
-   * @param {string} [opts.disableHttp2]
+   * @param {boolean} [opts.disableHttp2]
    */
   constructor({ title, xmlUrl, htmlUrl, disableHttp2 }) {
     this.title = title;
@@ -85,7 +85,7 @@ export class NewFeedEntity {
    * @param {string} opts.title
    * @param {string} opts.xmlUrl
    * @param {string} [opts.htmlUrl]
-   * @param {string} [opts.disableHttp2]
+   * @param {boolean} [opts.disableHttp2]
    */
   constructor({ categoryId, title, xmlUrl, htmlUrl, disableHttp2 }) {
     this.categoryId = categoryId;

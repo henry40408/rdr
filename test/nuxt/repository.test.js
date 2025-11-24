@@ -7,6 +7,7 @@ import {
   ImageEntity,
   JobEntity,
   NewCategoryEntity,
+  NewCategoryFeedEntity,
   NewJobEntity,
   UserEntity,
 } from "../../server/utils/entities.js";
@@ -936,14 +937,11 @@ describe("Repository", () => {
       assert.strictEqual(categories.length, 1);
       const category = categories[0];
 
-      const feed = new FeedEntity({
-        id: 0,
-        categoryId: category.id,
+      const feed = new NewCategoryFeedEntity({
         title: "New Feed",
         xmlUrl: "http://example.com/new-feed.xml",
         htmlUrl: "http://example.com/new-feed",
       });
-
       const createdFeed = await repository.createFeed(user.id, category.name, feed);
       assert.ok(createdFeed);
       assert.ok(createdFeed.id !== 0);

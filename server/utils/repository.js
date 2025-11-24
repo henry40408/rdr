@@ -183,7 +183,7 @@ export class Repository {
           title: feed.title,
           xml_url: feed.xmlUrl,
           html_url: feed.htmlUrl,
-          disable_http2: feed.disableHttp2,
+          disable_http2: feed.disableHttp2 ?? false,
         })
         .onConflict(["category_id", "xml_url"])
         .ignore();
@@ -992,7 +992,7 @@ export class Repository {
         xml_url: feed.xmlUrl,
         html_url: feed.htmlUrl,
         updated_at: this.knex.fn.now(),
-        disable_http2: feed.disableHttp2,
+        disable_http2: feed.disableHttp2 ?? false,
       });
     this.logger.info({ msg: "Updated feed", feedId: feed.id, updated });
     return updated;
