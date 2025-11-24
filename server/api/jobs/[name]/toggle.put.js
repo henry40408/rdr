@@ -21,11 +21,12 @@ export default defineEventHandler(async (event) => {
   if (!user?.isAdmin) throw createError({ status: 403, message: "Forbidden" });
 
   const jobs = await repository.findJobs();
-  const job = jobs.find((j) => j.name === name);
-  if (!job) throw createError({ status: 404, message: "Job not found" });
+  const found = jobs.find((j) => j.name === name);
+  if (!found) throw createError({ status: 404, message: "Job not found" });
 
-  job.pausedAt = job.pausedAt ? null : new Date().toISOString();
-  await repository.upsertJob(job);
-
-  return job;
+  const entity = new NewJobEntity({
+    name: found.name,
+    pausedAt: found.pausedAt ? null : new Date().toISOString(),
+  });
+  return await repository.upsertJob(entity);
 });

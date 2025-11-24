@@ -1,5 +1,19 @@
 // @ts-check
 
+export class NewCategoryEntity {
+  /**
+   * @param {object} opts
+   * @param {number} opts.userId
+   * @param {string} opts.name
+   * @param {NewCategoryFeedEntity[]} [opts.feeds]
+   */
+  constructor({ userId, name, feeds = [] }) {
+    this.userId = userId;
+    this.name = name;
+    this.feeds = feeds;
+  }
+}
+
 export class CategoryEntity {
   /**
    * @param {object} opts
@@ -48,6 +62,40 @@ export class EntryEntity {
   }
 }
 
+export class NewCategoryFeedEntity {
+  /**
+   * @param {object} opts
+   * @param {string} opts.title
+   * @param {string} opts.xmlUrl
+   * @param {string} [opts.htmlUrl]
+   * @param {boolean} [opts.disableHttp2]
+   */
+  constructor({ title, xmlUrl, htmlUrl, disableHttp2 }) {
+    this.title = title;
+    this.xmlUrl = xmlUrl;
+    this.htmlUrl = htmlUrl;
+    this.disableHttp2 = disableHttp2;
+  }
+}
+
+export class NewFeedEntity {
+  /**
+   * @param {object} opts
+   * @param {number} opts.categoryId
+   * @param {string} opts.title
+   * @param {string} opts.xmlUrl
+   * @param {string} [opts.htmlUrl]
+   * @param {boolean} [opts.disableHttp2]
+   */
+  constructor({ categoryId, title, xmlUrl, htmlUrl, disableHttp2 }) {
+    this.categoryId = categoryId;
+    this.title = title;
+    this.xmlUrl = xmlUrl;
+    this.htmlUrl = htmlUrl;
+    this.disableHttp2 = disableHttp2;
+  }
+}
+
 export class FeedEntity {
   /**
    * @param {object} opts
@@ -56,12 +104,12 @@ export class FeedEntity {
    * @param {string} opts.title
    * @param {string} opts.xmlUrl
    * @param {string} opts.htmlUrl
+   * @param {boolean} [opts.disableHttp2]
    * @param {string} [opts.fetchedAt]
    * @param {string} [opts.etag]
    * @param {string} [opts.lastModified]
    * @param {string} [opts.lastError]
    * @param {number} [opts.errorCount]
-   * @param {boolean} [opts.disableHttp2]
    * @param {string} [opts.date]
    */
   constructor({
@@ -70,11 +118,11 @@ export class FeedEntity {
     title,
     xmlUrl,
     htmlUrl,
+    disableHttp2,
     fetchedAt,
     etag,
     lastModified,
     lastError,
-    disableHttp2,
     date,
     errorCount = 0,
   }) {
@@ -92,6 +140,28 @@ export class FeedEntity {
 
     // virtual field, should not be stored in the database
     this.date = date;
+  }
+}
+
+export class NewImageEntity {
+  /**
+   * @param {object} opts
+   * @param {string} opts.externalId
+   * @param {string} opts.url
+   * @param {Buffer} opts.blob
+   * @param {string} opts.contentType
+   * @param {string} [opts.etag]
+   * @param {string} [opts.lastModified]
+   */
+  constructor({ externalId, url, blob, contentType, etag, lastModified }) {
+    this.externalId = externalId;
+
+    this.url = url;
+    this.blob = blob;
+    this.contentType = contentType;
+
+    this.etag = etag;
+    this.lastModified = lastModified;
   }
 }
 
@@ -117,6 +187,24 @@ export class ImageEntity {
   }
 }
 
+export class NewJobEntity {
+  /**
+   * @param {object} opts
+   * @param {string} opts.name
+   * @param {string|null} [opts.pausedAt]
+   * @param {string} [opts.lastDate]
+   * @param {number} [opts.lastDurationMs]
+   * @param {string} [opts.lastError]
+   */
+  constructor({ name, pausedAt = null, lastDate, lastDurationMs, lastError }) {
+    this.name = name;
+    this.pausedAt = pausedAt;
+    this.lastDate = lastDate;
+    this.lastDurationMs = lastDurationMs;
+    this.lastError = lastError;
+  }
+}
+
 export class JobEntity {
   /**
    * @param {object} opts
@@ -134,6 +222,28 @@ export class JobEntity {
     this.lastDate = lastDate;
     this.lastDurationMs = lastDurationMs;
     this.lastError = lastError;
+  }
+}
+
+export class NewPasskeyEntity {
+  /**
+   * @param {object} opts
+   * @param {string} opts.credentialId
+   * @param {number} opts.userId
+   * @param {string} opts.publicKey
+   * @param {number} opts.counter
+   * @param {boolean} opts.backedUp
+   * @param {import('@simplewebauthn/types').AuthenticatorTransportFuture[]} opts.transports
+   * @param {string} [opts.displayName]
+   */
+  constructor({ credentialId, userId, publicKey, counter, backedUp, transports, displayName }) {
+    this.credentialId = credentialId;
+    this.userId = userId;
+    this.publicKey = publicKey;
+    this.counter = counter;
+    this.backedUp = backedUp;
+    this.transports = transports;
+    this.displayName = displayName;
   }
 }
 

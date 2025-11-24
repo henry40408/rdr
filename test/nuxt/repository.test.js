@@ -6,6 +6,9 @@ import {
   FeedEntity,
   ImageEntity,
   JobEntity,
+  NewCategoryEntity,
+  NewCategoryFeedEntity,
+  NewJobEntity,
   UserEntity,
 } from "../../server/utils/entities.js";
 import { afterEach, beforeEach, describe, it } from "vitest";
@@ -802,13 +805,10 @@ describe("Repository", () => {
     });
 
     it("should upsert job", async () => {
-      const job = new JobEntity({
-        id: 0,
-        name: "sample-job",
-      });
+      const newJob = new NewJobEntity({ name: "sample-job" });
 
       // First upsert
-      await repository.upsertJob(job);
+      const job = await repository.upsertJob(newJob);
       assert.ok(job.id !== 0);
 
       let jobs = await repository.findJobs();
@@ -928,21 +928,20 @@ describe("Repository", () => {
     it("should create feed", async () => {
       const user = await createUser("createfeeduser", "createfeedpassword");
 
-      const category = new CategoryEntity({
-        id: 0,
+      const newCategory = new NewCategoryEntity({
         userId: user.id,
         name: "News",
       });
-      await repository.upsertCategories(user.id, [category]);
+      const categories = await repository.upsertCategories(user.id, [newCategory]);
 
-      const feed = new FeedEntity({
-        id: 0,
-        categoryId: category.id,
+      assert.strictEqual(categories.length, 1);
+      const category = categories[0];
+
+      const feed = new NewCategoryFeedEntity({
         title: "New Feed",
         xmlUrl: "http://example.com/new-feed.xml",
         htmlUrl: "http://example.com/new-feed",
       });
-
       const createdFeed = await repository.createFeed(user.id, category.name, feed);
       assert.ok(createdFeed);
       assert.ok(createdFeed.id !== 0);
@@ -961,14 +960,16 @@ describe("Repository", () => {
     it("should update category", async () => {
       const user = await createUser("updatecategoryuser", "updatecategorypassword");
 
-      const category = new CategoryEntity({
-        id: 0,
+      const newCategory = new NewCategoryEntity({
         userId: user.id,
         name: "Original Name",
       });
-      await repository.upsertCategories(user.id, [category]);
+      const categories = await repository.upsertCategories(user.id, [newCategory]);
 
+      assert.strictEqual(categories.length, 1);
+      const category = categories[0];
       category.name = "Updated Name";
+
       const updatedCount = await repository.updateCategory(user.id, category);
       assert.strictEqual(updatedCount, 1);
 

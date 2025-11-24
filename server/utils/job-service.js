@@ -66,10 +66,10 @@ export class JobService {
     const now = new Date();
     const name = job.name;
 
-    const entity = await this.repository.findJobByName(name);
-    if (!entity) throw new Error(`Job entity for ${name} not found`);
+    const found = await this.repository.findJobByName(name);
+    if (!found) throw new Error(`Job entity for ${name} not found`);
 
-    if (entity.pausedAt) {
+    if (found.pausedAt) {
       logger.info(`Job ${name} is paused, skipping execution`);
       return;
     }
@@ -77,17 +77,17 @@ export class JobService {
     try {
       await job.run();
 
-      entity.lastDate = now.toISOString();
-      entity.lastDurationMs = Date.now() - now.valueOf();
-      entity.lastError = undefined;
-
+      const entity = new NewJobEntity({
+        name,
+        lastDate: now.toISOString(),
+        lastDurationMs: Date.now() - now.valueOf(),
+        lastError: undefined,
+      });
       await this.repository.upsertJob(entity).catch((error) => {
         logger.error({ msg: "Failed to record job execution", name, error });
       });
     } catch (err) {
-      entity.lastDate = now.toISOString();
-      entity.lastError = `${err}`;
-
+      const entity = new NewJobEntity({ name, lastDate: now.toISOString(), lastError: `${err}` });
       await this.repository.upsertJob(entity).catch((error) => {
         logger.error({ msg: "Failed to record job execution failure", name, error });
       });
