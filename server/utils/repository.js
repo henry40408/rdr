@@ -191,6 +191,7 @@ export class Repository {
         title: created.title,
         xmlUrl: created.xml_url,
         htmlUrl: created.html_url,
+        disableHttp2: created.disable_http2,
       });
     });
   }
@@ -363,6 +364,7 @@ export class Repository {
         this.knex.ref("feeds.last_modified").as("feed_last_modified"),
         this.knex.ref("feeds.last_error").as("feed_last_error"),
         this.knex.ref("feeds.error_count").as("feed_error_count"),
+        this.knex.ref("feeds.disable_http2").as("feed_disable_http2"),
       )
       .where("categories.user_id", userId);
 
@@ -384,6 +386,7 @@ export class Repository {
             lastModified: row.feed_last_modified,
             lastError: row.feed_last_error,
             errorCount: row.feed_error_count,
+            disableHttp2: row.feed_disable_http2,
           }),
         );
       } else {
@@ -403,6 +406,7 @@ export class Repository {
             etag: row.feed_etag,
             lastModified: row.feed_last_modified,
             lastError: row.feed_last_error,
+            disableHttp2: row.feed_disable_http2,
           }),
         );
         categories.push(newCategory);
@@ -587,6 +591,7 @@ export class Repository {
       lastModified: row.last_modified,
       lastError: row.last_error,
       errorCount: row.error_count,
+      disableHttp2: row.disable_http2,
     });
   }
 
@@ -607,6 +612,7 @@ export class Repository {
           etag: row.etag,
           lastModified: row.last_modified,
           lastError: row.last_error,
+          disableHttp2: row.disable_http2,
         }),
     );
   }
@@ -635,6 +641,7 @@ export class Repository {
           etag: row.etag,
           lastModified: row.last_modified,
           lastError: row.last_error,
+          disableHttp2: row.disable_http2,
         }),
     );
   }
@@ -957,7 +964,13 @@ export class Repository {
         builder.select("id").from("categories").where("user_id", userId);
       })
       .where({ id: feed.id })
-      .update({ title: feed.title, xml_url: feed.xmlUrl, html_url: feed.htmlUrl, updated_at: this.knex.fn.now() });
+      .update({
+        title: feed.title,
+        xml_url: feed.xmlUrl,
+        html_url: feed.htmlUrl,
+        updated_at: this.knex.fn.now(),
+        disable_http2: feed.disableHttp2,
+      });
     this.logger.info({ msg: "Updated feed", feedId: feed.id, updated });
     return updated;
   }

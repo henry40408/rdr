@@ -60,8 +60,9 @@ export class FeedEntity {
    * @param {string} [opts.etag]
    * @param {string} [opts.lastModified]
    * @param {string} [opts.lastError]
-   * @param {string} [opts.date]
    * @param {number} [opts.errorCount]
+   * @param {boolean} [opts.disableHttp2]
+   * @param {string} [opts.date]
    */
   constructor({
     id,
@@ -73,6 +74,7 @@ export class FeedEntity {
     etag,
     lastModified,
     lastError,
+    disableHttp2,
     date,
     errorCount = 0,
   }) {
@@ -86,6 +88,7 @@ export class FeedEntity {
     this.lastModified = lastModified;
     this.lastError = lastError;
     this.errorCount = errorCount;
+    this.disableHttp2 = disableHttp2;
 
     // virtual field, should not be stored in the database
     this.date = date;

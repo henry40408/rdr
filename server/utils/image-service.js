@@ -17,9 +17,10 @@ export class ImageService {
    * @param {number} userId
    * @param {string} externalId
    * @param {string} url
+   * @param {boolean} disableHttp2
    * @returns {Promise<ImageEntity|undefined>}
    */
-  async download(userId, externalId, url) {
+  async download(userId, externalId, url, disableHttp2) {
     const logger = this.logger.child({ externalId });
     try {
       const parsed = new URL(url);
@@ -43,6 +44,7 @@ export class ImageService {
         url,
         etag: existing?.etag,
         lastModified: existing?.lastModified,
+        disableHttp2,
         priority: Number.MIN_SAFE_INTEGER, // lowerest priority
       });
       if (!res) {
