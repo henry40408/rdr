@@ -166,8 +166,9 @@
                 >
                   <template #header>
                     <q-item-section side>
-                      <q-avatar v-if="imageExists(feed.id)" square size="xs">
+                      <q-avatar square size="xs">
                         <img
+                          v-if="isImageExists(feed.id)"
                           loading="lazy"
                           alt="Feed image"
                           decoding="async"
@@ -175,7 +176,6 @@
                           :src="`/api/images/external/${buildFeedImageKey(feed.id)}`"
                         />
                       </q-avatar>
-                      <q-icon v-else name="rss_feed" class="feed-image" />
                     </q-item-section>
                     <q-item-section
                       v-ripple
@@ -440,11 +440,6 @@ function getFeedUnreadCount(feedId: number): number {
   return feed.unreadCount;
 }
 
-function imageExists(feedId: number): boolean {
-  const feed = categories.value?.flatMap((c) => c.feeds).find((f) => f.id === feedId);
-  return feed?.imageExists ?? false;
-}
-
 async function importOPML() {
   if (!uploadedFile.value) return;
   const formData = new FormData();
@@ -469,6 +464,11 @@ async function importOPML() {
   } finally {
     uploading.value = false;
   }
+}
+
+function isImageExists(feedId: number): boolean {
+  const feed = categories.value?.flatMap((c) => c.feeds).find((f) => f.id === feedId);
+  return feed?.imageExists ?? false;
 }
 
 async function refreshAll() {

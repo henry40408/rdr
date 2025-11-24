@@ -102,8 +102,9 @@
                 "
               >
                 <q-item-section side>
-                  <q-avatar v-if="isImageExists(feed.id)" square size="xs">
+                  <q-avatar square size="xs">
                     <img
+                      v-if="isImageExists(feed.id)"
                       loading="lazy"
                       alt="Feed image"
                       decoding="async"
@@ -111,7 +112,6 @@
                       :src="`/api/images/external/${buildFeedImageKey(feed.id)}`"
                     />
                   </q-avatar>
-                  <q-icon v-else name="rss_feed" />
                 </q-item-section>
                 <q-item-section>
                   <q-item-label lines="1">
@@ -351,7 +351,6 @@
                               decoding="async"
                               :src="`/api/images/external/${buildFeedImageKey(item.feed.id)}`"
                             />
-                            <q-icon v-else size="xs" name="rss_feed" />
                           </q-avatar>
                           <MarkedText :keyword="searchQuery" :text="item.entry.title" />
                         </q-item-label>
