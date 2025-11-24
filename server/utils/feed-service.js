@@ -39,6 +39,7 @@ export class FeedService {
         url: feed.xmlUrl,
         etag: feed.etag,
         lastModified: feed.lastModified,
+        disableHttp2: feed.disableHttp2,
         priority: Number.MIN_SAFE_INTEGER, // lowest priority
       });
       logger.info("Fetched feed");
@@ -100,14 +101,14 @@ export class FeedService {
       {
         logger.debug("Trying to fetch favicon from base URL");
         const url = new URL("/favicon.ico", feed.htmlUrl).toString();
-        const result = await this.imageService.download(userId, buildFeedImageKey(feed.id), url);
+        const result = await this.imageService.download(userId, buildFeedImageKey(feed.id), url, !!feed.disableHttp2);
         if (result) return result;
       }
       {
         logger.debug("Trying to find favicon from HTML");
         const url = await this.downloadService.findFavicon(feed.htmlUrl);
         if (url) {
-          const result = await this.imageService.download(userId, buildFeedImageKey(feed.id), url);
+          const result = await this.imageService.download(userId, buildFeedImageKey(feed.id), url, !!feed.disableHttp2);
           if (result) {
             logger.debug({ msg: "Fetched favicon from HTML", url });
             return result;
