@@ -600,8 +600,9 @@ async function updateFeedDialog(feedId: number) {
       title: feed.title,
       xmlUrl: feed.xmlUrl,
       htmlUrl: feed.htmlUrl,
+      disableHttp2: !!feed.disableHttp2,
     },
-  }).onOk(async (data: { title: string; xmlUrl: string; htmlUrl?: string }) => {
+  }).onOk(async (data: { title: string; xmlUrl: string; htmlUrl?: string; disableHttp2?: boolean }) => {
     try {
       await $fetch(`/api/feeds/${feedId}`, {
         method: "PATCH",
@@ -609,6 +610,7 @@ async function updateFeedDialog(feedId: number) {
           title: data.title,
           xmlUrl: data.xmlUrl,
           htmlUrl: data.htmlUrl,
+          disableHttp2: data.disableHttp2,
         },
       });
       refresh();
