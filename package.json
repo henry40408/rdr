@@ -20,7 +20,7 @@
   "license": "MIT",
   "dependencies": {
     "@mozilla/readability": "^0.6.0",
-    "@simplewebauthn/browser": "^11.0.0",
+    "@simplewebauthn/browser": "^13.2.2",
     "@simplewebauthn/server": "^11.0.0",
     "@vueuse/components": "^14.0.0",
     "@vueuse/core": "^14.0.0",
