@@ -54,30 +54,30 @@ export class ImageService {
         logger.warn({ msg: "Response is undefined", url });
         return existing;
       }
-      if (res.statusCode === 304) {
+      if (res.status === 304) {
         logger.debug({ msg: "Image not modified", url });
         return existing;
       }
 
-      const data = res.body;
-      if (data.length === 0) {
+      const data = await res.blob();
+      if (data.size === 0) {
         logger.warn({ msg: "Image response is empty", url });
         return existing;
       }
 
-      const contentType = res.headers["content-type"] ?? "application/octet-stream";
+      const contentType = res.headers.get("content-type") ?? "application/octet-stream";
       if (ImageService._isNotImageOrBinary(contentType)) {
         logger.warn({ msg: "Content-Type is not image or binary", url, contentType });
         return existing;
       }
 
-      const etag = res.headers["etag"];
-      const lastModified = res.headers["last-modified"];
+      const etag = res.headers.get("etag") ?? undefined;
+      const lastModified = res.headers.get("last-modified") ?? undefined;
 
       const newImage = new ImageEntity({
         externalId,
         url,
-        blob: data,
+        blob: Buffer.from(await data.arrayBuffer()),
         contentType,
         etag,
         lastModified,

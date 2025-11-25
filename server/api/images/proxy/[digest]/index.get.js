@@ -1,7 +1,6 @@
 // @ts-check
 
-import got from "got";
-import { pipeline as streamPipeline } from "node:stream/promises";
+import { Readable } from "node:stream";
 import { z } from "zod";
 
 const schema = z.object({
@@ -38,32 +37,31 @@ export default defineEventHandler(async (event) => {
   const expectedDigest = digestUrl(config.imageDigestSecret, url);
   if (expectedDigest !== digest) throw createError({ statusCode: 400, statusMessage: "Invalid digest" });
 
-  /** @type {import('got').Headers} */
-  const headers = {};
+  /** @type {Headers} */
+  const headers = new Headers();
   const proxyHeaderKeys = ["accept", "accept-encoding", "range", "referer"];
   for (const headerName of proxyHeaderKeys) {
     const value = getHeader(event, headerName);
-    if (value) headers[headerName] = value;
+    if (value) headers.set(headerName, value);
   }
 
   const userAgent = getHeader(event, "user-agent") ?? config.userAgent;
-  if (userAgent) headers["user-agent"] = userAgent;
+  if (userAgent) headers.set("user-agent", userAgent);
 
   logger.info({ message: "Proxying image from URL", url, headers });
-  const stream = got.stream(url, {
-    headers,
-    timeout: { request: config.httpTimeoutMs },
-  });
+  try {
+    const res = await fetch(url, { headers });
 
-  stream.on("response", (response) => {
-    for (const key of Object.keys(response.headers)) if (!ALLOWED_HEADERS.has(key)) delete response.headers[key];
-  });
+    for (const key of Object.keys(res.headers))
+      if (!ALLOWED_HEADERS.has(key)) setHeader(event, key, res.headers.get(key));
 
-  stream.on("error", (error) => {
+    if (!res.body) throw createError({ statusCode: 502, statusMessage: "No response body from image URL" });
+
+    const stream = Readable.fromWeb(/** @type {any} */ (res.body));
+    stream.pipe(event.node.res);
+  } catch (error) {
     logger.error(error);
     logger.error(`Failed to proxy image from URL: ${url}`);
-    sendError(event, createError({ statusCode: 502, statusMessage: "Failed to fetch image" }));
-  });
-
-  await streamPipeline(stream, event.node.res);
+    throw createError({ statusCode: 502, statusMessage: "Failed to fetch image" });
+  }
 });

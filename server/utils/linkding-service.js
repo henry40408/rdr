@@ -1,7 +1,5 @@
 // @ts-check
 
-import got from "got";
-
 export class LinkdingService {
   /**
    * @param {object} opts
@@ -44,13 +42,16 @@ export class LinkdingService {
     const apiUrl = new URL("/api/bookmarks/", linkdingApiUrl);
     const json = { url, title, description, tag_names: tagNames };
 
+    const headers = new Headers();
+    headers.set("Authorization", `Token ${linkdingApiToken}`);
+    headers.set("Content-Type", "application/json");
+
     await this.downloadService.queue.add(() =>
-      got
-        .post(apiUrl.toString(), {
-          headers: { Authorization: `Token ${linkdingApiToken}` },
-          json,
-        })
-        .json(),
+      fetch(apiUrl.toString(), {
+        method: "POST",
+        headers,
+        body: JSON.stringify(json),
+      }).then((res) => res.json()),
     );
 
     return url;

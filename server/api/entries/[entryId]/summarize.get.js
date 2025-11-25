@@ -62,15 +62,11 @@ export default defineEventHandler(async (event) => {
   url.searchParams.set("target_language", settings.kagiLanguage ?? "EN");
   url.searchParams.set("url", entry.link);
 
+  const headers = new Headers();
+  headers.set("Authorization", token);
+
   /** @type {KagiSummarizationResponse|void} */
-  const data = await downloadService.queue.add(() =>
-    downloadService.client
-      .get(url.toString(), {
-        headers: { Authorization: token },
-        responseType: "json",
-      })
-      .json(),
-  );
+  const data = await downloadService.queue.add(() => fetch(url, { headers }).then((res) => res.json()));
   if (!data || data.output_data.status !== "completed")
     throw createError({ statusCode: 500, message: "Failed to get summarization from Kagi." });
 
