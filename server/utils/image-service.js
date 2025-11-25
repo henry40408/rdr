@@ -66,6 +66,11 @@ export class ImageService {
       }
 
       const contentType = res.headers["content-type"] ?? "application/octet-stream";
+      if (ImageService._isNotImageOrBinary(contentType)) {
+        logger.warn({ msg: "Content-Type is not image or binary", url, contentType });
+        return existing;
+      }
+
       const etag = res.headers["etag"];
       const lastModified = res.headers["last-modified"];
 
@@ -84,5 +89,14 @@ export class ImageService {
       this.logger.error({ msg: "Failed to download image", externalId, url });
       return undefined;
     }
+  }
+
+  /**
+   * @param {string} contentType
+   * @returns {boolean}
+   */
+  static _isNotImageOrBinary(contentType) {
+    const trimmed = contentType.split(";")[0].trim().toLowerCase();
+    return !trimmed.startsWith("image/") && trimmed !== "application/octet-stream";
   }
 }

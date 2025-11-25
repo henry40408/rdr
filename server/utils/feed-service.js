@@ -100,18 +100,6 @@ export class FeedService {
     const logger = this.logger.child({ feedId: feed.id });
     try {
       {
-        logger.debug("Trying to fetch favicon from base URL");
-        const url = new URL("/favicon.ico", feed.htmlUrl).toString();
-        const result = await this.imageService.download({
-          userId,
-          externalId: buildFeedImageKey(feed.id),
-          url,
-          disableHttp2: feed.disableHttp2,
-          userAgent: feed.userAgent,
-        });
-        if (result) return result;
-      }
-      {
         logger.debug("Trying to find favicon from HTML");
         const url = await this.downloadService.findFavicon(feed.htmlUrl);
         if (url) {
@@ -127,6 +115,18 @@ export class FeedService {
             return result;
           }
         }
+      }
+      {
+        logger.debug("Trying to fetch favicon from base URL");
+        const url = new URL("/favicon.ico", feed.htmlUrl).toString();
+        const result = await this.imageService.download({
+          userId,
+          externalId: buildFeedImageKey(feed.id),
+          url,
+          disableHttp2: feed.disableHttp2,
+          userAgent: feed.userAgent,
+        });
+        if (result) return result;
       }
       return undefined;
     } catch (err) {
