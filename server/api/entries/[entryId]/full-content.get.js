@@ -35,7 +35,7 @@ export default defineEventHandler(async (event) => {
   });
   if (!res) throw createError({ statusCode: 400, statusMessage: "Failed to download entry content" });
 
-  const doc = new JSDOM(res.body, { url: entry.link });
+  const doc = new JSDOM(await res.text(), { url: entry.link });
   const reader = new Readability(doc.window.document);
   const parsed = reader.parse();
 

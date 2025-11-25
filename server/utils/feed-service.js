@@ -49,12 +49,12 @@ export class FeedService {
         logger.error("Response is undefined");
         throw new Error("Response is undefined");
       }
-      if (res.statusCode === 304) {
+      if (res.status === 304) {
         logger.info("Feed is not modified");
         return { type: "not_modified", feed, items: [] };
       }
 
-      const body = res.body;
+      const body = await res.text();
       const parser = new FeedParser({});
 
       /** @type {import('feedparser').Item[]} */
@@ -80,8 +80,8 @@ export class FeedService {
       });
 
       const cloned = structuredClone(feed);
-      cloned.etag = res.headers["etag"];
-      cloned.lastModified = res.headers["last-modified"];
+      cloned.etag = res.headers.get("etag") ?? undefined;
+      cloned.lastModified = res.headers.get("last-modified") ?? undefined;
 
       return { type: "ok", items, meta, feed: cloned };
     } catch (err) {
@@ -101,7 +101,7 @@ export class FeedService {
     try {
       {
         logger.debug("Trying to find favicon from HTML");
-        const url = await this.downloadService.findFavicon(feed.htmlUrl);
+        const url = await this.downloadService.findFavicon({ htmlUrl: feed.htmlUrl, disableHttp2: feed.disableHttp2 });
         if (url) {
           const result = await this.imageService.download({
             userId,
@@ -118,11 +118,11 @@ export class FeedService {
       }
       {
         logger.debug("Trying to fetch favicon from base URL");
-        const url = new URL("/favicon.ico", feed.htmlUrl).toString();
+        const url = new URL("/favicon.ico", feed.htmlUrl);
         const result = await this.imageService.download({
           userId,
           externalId: buildFeedImageKey(feed.id),
-          url,
+          url: String(url),
           disableHttp2: feed.disableHttp2,
           userAgent: feed.userAgent,
         });

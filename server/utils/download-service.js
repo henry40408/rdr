@@ -1,8 +1,8 @@
 // @ts-check
 
 import * as cheerio from "cheerio";
+import { Agent, fetch } from "undici";
 import PQueue from "p-queue";
-import got from "got";
 import os from "node:os";
 
 export class DownloadService {
@@ -14,11 +14,6 @@ export class DownloadService {
   constructor({ config, logger }) {
     this.config = config;
     this.logger = logger.child({ context: "download-service" });
-
-    this.client = got.extend({
-      headers: { "User-Agent": this.config.userAgent },
-      timeout: { request: this.config.httpTimeoutMs },
-    });
     this.queue = new PQueue({ concurrency: os.cpus().length });
   }
 
@@ -32,15 +27,17 @@ export class DownloadService {
    * @param {number} [params.priority=0]
    */
   async downloadBinary({ url, etag, lastModified, disableHttp2, userAgent, priority = 0 }) {
-    /** @type {Record<string, string>} */
-    const headers = {};
-    if (etag) headers["If-None-Match"] = etag;
-    if (lastModified) headers["If-Modified-Since"] = lastModified;
-    if (userAgent) headers["User-Agent"] = userAgent;
+    const headers = new Headers();
+    headers.set("User-Agent", this.config.userAgent);
+
+    if (etag) headers.set("If-None-Match", etag);
+    if (lastModified) headers.set("If-Modified-Since", lastModified);
+    if (userAgent) headers.set("User-Agent", userAgent);
+
     this.logger.debug({ url, etag, lastModified, disableHttp2, userAgent, priority });
-    return await this.queue.add(() => this.client.get(url, { responseType: "buffer", headers, http2: !disableHttp2 }), {
-      priority,
-    });
+
+    const dispatcher = new Agent({ allowH2: !disableHttp2, bodyTimeout: this.config.httpTimeoutMs });
+    return await this.queue.add(() => fetch(url, { headers, dispatcher }), { priority });
   }
 
   /**
@@ -53,30 +50,38 @@ export class DownloadService {
    * @param {number} [params.priority=0]
    */
   async downloadText({ url, etag, lastModified, disableHttp2, userAgent, priority = 0 }) {
-    /** @type {Record<string, string>} */
-    const headers = {};
-    if (etag) headers["If-None-Match"] = etag;
-    if (lastModified) headers["If-Modified-Since"] = lastModified;
-    if (userAgent) headers["User-Agent"] = userAgent;
+    const headers = new Headers();
+    headers.set("User-Agent", this.config.userAgent);
+
+    if (etag) headers.set("If-None-Match", etag);
+    if (lastModified) headers.set("If-Modified-Since", lastModified);
+    if (userAgent) headers.set("User-Agent", userAgent);
+
     this.logger.debug({ url, etag, lastModified, disableHttp2, userAgent, priority });
-    return await this.queue.add(() => this.client.get(url, { responseType: "text", headers, http2: !disableHttp2 }), {
-      priority,
-    });
+
+    const dispatcher = new Agent({ allowH2: !disableHttp2, bodyTimeout: this.config.httpTimeoutMs });
+    return await this.queue.add(() => fetch(url, { headers, dispatcher }), { priority });
   }
 
   /**
-   * @param {string} htmlUrl
+   * @param {object} opts
+   * @param {string} opts.htmlUrl
+   * @param {boolean} [opts.disableHttp2]
    * @returns {Promise<string|undefined>}
    */
-  async findFavicon(htmlUrl) {
+  async findFavicon({ htmlUrl, disableHttp2 }) {
     try {
-      const content = await this.client.get(htmlUrl, {}).text();
+      const headers = new Headers();
+      headers.set("User-Agent", this.config.userAgent);
+
+      const dispatcher = new Agent({ allowH2: !disableHttp2, bodyTimeout: this.config.httpTimeoutMs });
+      const content = await fetch(htmlUrl, { headers, dispatcher }).then((res) => res.text());
       const $ = cheerio.load(content);
       const href =
         $('link[rel="icon"]').attr("href") ??
         $('link[rel="shortcut icon"]').attr("href") ??
         $('link[rel="apple-touch-icon"]').attr("href");
-      if (href) return new URL(href, htmlUrl).toString();
+      if (href) return String(new URL(href, htmlUrl));
       return undefined;
     } catch (err) {
       this.logger.error(err);

@@ -1,6 +1,5 @@
 // @ts-check
 
-import { HTTPError } from "got";
 import { z } from "zod";
 
 const schema = z.object({
@@ -20,15 +19,10 @@ export default defineEventHandler(async (event) => {
   /** @type {Repository} */
   const repository = container.resolve("repository");
 
-  try {
-    const entity = new NewCategoryFeedEntity({
-      title: body.categoryName,
-      xmlUrl: body.xmlUrl,
-      htmlUrl: body.htmlUrl,
-    });
-    return await repository.createFeed(userId, body.categoryName, entity);
-  } catch (e) {
-    if (e instanceof HTTPError) throw createError({ statusCode: 400, statusMessage: `Failed to fetch feed: ${e}` });
-    throw e;
-  }
+  const entity = new NewCategoryFeedEntity({
+    title: body.categoryName,
+    xmlUrl: body.xmlUrl,
+    htmlUrl: body.htmlUrl,
+  });
+  return await repository.createFeed(userId, body.categoryName, entity);
 });
