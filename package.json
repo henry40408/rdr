@@ -58,7 +58,6 @@
     "@types/bcrypt": "^6.0.0",
     "@types/feedparser": "^2.2.8",
     "@types/jsdom": "^27.0.0",
-    "@types/knex": "^0.15.2",
     "@types/lodash": "^4.17.20",
     "@types/node": "^24.5.2",
     "@types/pangu": "^4.0.2",
