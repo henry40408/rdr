@@ -96,7 +96,7 @@ export class ImageService {
    * @returns {boolean}
    */
   static _isNotImageOrBinary(contentType) {
-    const trimmed = contentType.split(";")[0].trim().toLowerCase();
+    const trimmed = (contentType.split(";")[0] ?? "").trim().toLowerCase();
     return !trimmed.startsWith("image/") && trimmed !== "application/octet-stream";
   }
 }
