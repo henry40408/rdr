@@ -37,6 +37,7 @@ export class DownloadService {
     if (etag) headers["If-None-Match"] = etag;
     if (lastModified) headers["If-Modified-Since"] = lastModified;
     if (userAgent) headers["User-Agent"] = userAgent;
+    this.logger.debug({ url, etag, lastModified, disableHttp2, userAgent, priority });
     return await this.queue.add(() => this.client.get(url, { responseType: "buffer", headers, http2: !disableHttp2 }), {
       priority,
     });
@@ -57,6 +58,7 @@ export class DownloadService {
     if (etag) headers["If-None-Match"] = etag;
     if (lastModified) headers["If-Modified-Since"] = lastModified;
     if (userAgent) headers["User-Agent"] = userAgent;
+    this.logger.debug({ url, etag, lastModified, disableHttp2, userAgent, priority });
     return await this.queue.add(() => this.client.get(url, { responseType: "text", headers, http2: !disableHttp2 }), {
       priority,
     });
