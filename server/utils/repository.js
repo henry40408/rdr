@@ -375,6 +375,7 @@ export class Repository {
         this.knex.ref("feeds.last_error").as("feed_last_error"),
         this.knex.ref("feeds.error_count").as("feed_error_count"),
         this.knex.ref("feeds.disable_http2").as("feed_disable_http2"),
+        this.knex.ref("feeds.user_agent").as("feed_user_agent"),
       )
       .where("categories.user_id", userId);
 
