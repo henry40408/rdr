@@ -28,7 +28,11 @@ export default defineEventHandler(async (event) => {
   const feed = await repository.findFeedById(userId, entry.feedId);
   if (!feed) throw createError({ statusCode: 404, statusMessage: "Feed not found" });
 
-  const res = await downloadService.downloadText({ url: entry.link, disableHttp2: feed.disableHttp2 });
+  const res = await downloadService.downloadText({
+    url: entry.link,
+    disableHttp2: feed.disableHttp2,
+    userAgent: feed.userAgent,
+  });
   if (!res) throw createError({ statusCode: 400, statusMessage: "Failed to download entry content" });
 
   const doc = new JSDOM(res.body, { url: entry.link });

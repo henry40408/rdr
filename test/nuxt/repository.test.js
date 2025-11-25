@@ -537,6 +537,7 @@ describe("Repository", () => {
           title: "Feed 1",
           xmlUrl: "http://example.com/feed1.xml",
           htmlUrl: "http://example.com/feed1",
+          disableHttp2: false,
         }),
         new FeedEntity({
           id: 0,
@@ -544,6 +545,7 @@ describe("Repository", () => {
           title: "Feed 2",
           xmlUrl: "http://example.com/feed2.xml",
           htmlUrl: "http://example.com/feed2",
+          disableHttp2: false,
         }),
       ];
 
@@ -992,6 +994,44 @@ describe("Repository", () => {
       const updatedUser = await repository.findUserById(user.id);
       assert.ok(updatedUser);
       assert.strictEqual(updatedUser.nonce, updatedNonce);
+    });
+
+    it("should set or unset disableHttp2 of feed", async () => {
+      const user = await createUser("http2user", "http2password");
+      const { feedId } = await createEntries(repository, user);
+
+      let feed = await repository.findFeedById(user.id, feedId);
+      assert.ok(feed);
+      assert.strictEqual(feed.disableHttp2, false);
+
+      // enable then disable
+      feed.disableHttp2 = true;
+      let updatedCount = await repository.updateFeed(user.id, feed);
+      assert.strictEqual(updatedCount, 1);
+      {
+        const updatedFeed = await repository.findFeedById(user.id, feedId);
+        assert.ok(updatedFeed);
+        assert.strictEqual(updatedFeed.disableHttp2, true);
+      }
+
+      feed.disableHttp2 = false;
+      updatedCount = await repository.updateFeed(user.id, feed);
+      assert.strictEqual(updatedCount, 1);
+      {
+        const updatedFeed = await repository.findFeedById(user.id, feedId);
+        assert.ok(updatedFeed);
+        assert.strictEqual(updatedFeed.disableHttp2, false);
+      }
+
+      // try to set undefined
+      feed.disableHttp2 = true;
+      updatedCount = await repository.updateFeed(user.id, feed);
+      assert.strictEqual(updatedCount, 1);
+      {
+        const updatedFeed = await repository.findFeedById(user.id, feedId);
+        assert.ok(updatedFeed);
+        assert.strictEqual(updatedFeed.disableHttp2, true);
+      }
     });
   });
 });

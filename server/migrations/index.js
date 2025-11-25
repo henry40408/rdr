@@ -10,6 +10,7 @@ import migration0007 from "../migrations/m0007-add-nonce-to-users.js";
 import migration0008 from "../migrations/m0008-add-passkeys.js";
 import migration0009 from "../migrations/m0009-add-display-name-to-passkeys.js";
 import migration0010 from "../migrations/m0010-add-disable-http2-to-feeds.js";
+import migration0011 from "../migrations/m0011-add-user-agent-to-feeds.js";
 
 export const migrations = {
   [migration0001.name]: migration0001,
@@ -22,6 +23,7 @@ export const migrations = {
   [migration0008.name]: migration0008,
   [migration0009.name]: migration0009,
   [migration0010.name]: migration0010,
+  [migration0011.name]: migration0011,
 };
 
 export const migrationNames = Object.keys(migrations);

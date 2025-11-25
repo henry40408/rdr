@@ -600,32 +600,36 @@ async function updateFeedDialog(feedId: number) {
       title: feed.title,
       xmlUrl: feed.xmlUrl,
       htmlUrl: feed.htmlUrl,
-      disableHttp2: !!feed.disableHttp2,
+      disableHttp2: feed.disableHttp2,
+      userAgent: feed.userAgent || "",
     },
-  }).onOk(async (data: { title: string; xmlUrl: string; htmlUrl?: string; disableHttp2?: boolean }) => {
-    try {
-      await $fetch(`/api/feeds/${feedId}`, {
-        method: "PATCH",
-        body: {
-          title: data.title,
-          xmlUrl: data.xmlUrl,
-          htmlUrl: data.htmlUrl,
-          disableHttp2: data.disableHttp2,
-        },
-      });
-      refresh();
-      $q.notify({
-        type: "positive",
-        message: "Feed updated successfully",
-        actions: [{ icon: "close", color: "white" }],
-      });
-    } catch (err) {
-      $q.notify({
-        type: "negative",
-        message: `Error updating feed: ${err}`,
-        actions: [{ icon: "close", color: "white" }],
-      });
-    }
-  });
+  }).onOk(
+    async (data: { title: string; xmlUrl: string; htmlUrl?: string; disableHttp2?: boolean; userAgent?: string }) => {
+      try {
+        await $fetch(`/api/feeds/${feedId}`, {
+          method: "PATCH",
+          body: {
+            title: data.title,
+            xmlUrl: data.xmlUrl,
+            htmlUrl: data.htmlUrl,
+            disableHttp2: data.disableHttp2,
+            userAgent: data.userAgent,
+          },
+        });
+        refresh();
+        $q.notify({
+          type: "positive",
+          message: "Feed updated successfully",
+          actions: [{ icon: "close", color: "white" }],
+        });
+      } catch (err) {
+        $q.notify({
+          type: "negative",
+          message: `Error updating feed: ${err}`,
+          actions: [{ icon: "close", color: "white" }],
+        });
+      }
+    },
+  );
 }
 </script>

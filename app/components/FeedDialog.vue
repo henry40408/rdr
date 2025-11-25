@@ -10,6 +10,7 @@
         <q-input v-model="title" label="Feed Title *" :rules="[(val) => !!val || 'Feed Title is required']" />
         <q-input v-model="htmlUrl" label="Feed HTML URL" />
         <q-toggle v-model="disableHttp2" label="Disable HTTP/2" />
+        <q-input v-model="userAgent" label="User agent" />
       </q-card-section>
 
       <q-card-actions align="right">
@@ -29,6 +30,7 @@ const props = defineProps({
   htmlUrl: { type: String, default: undefined },
   title: { type: String, required: true },
   disableHttp2: { type: Boolean, default: false },
+  userAgent: { type: String, default: "" },
 });
 
 defineEmits({
@@ -39,11 +41,18 @@ const title = ref(props.title);
 const xmlUrl = ref(props.xmlUrl);
 const htmlUrl = ref(props.htmlUrl);
 const disableHttp2 = ref(props.disableHttp2);
+const userAgent = ref(props.userAgent);
 const valid = computed(() => title.value.trim().length > 0 && xmlUrl.value.trim().length > 0);
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
 
 function onOKClick() {
-  onDialogOK({ title: title.value, xmlUrl: xmlUrl.value, htmlUrl: htmlUrl.value, disableHttp2: disableHttp2.value });
+  onDialogOK({
+    title: title.value,
+    xmlUrl: xmlUrl.value,
+    htmlUrl: htmlUrl.value,
+    disableHttp2: disableHttp2.value,
+    userAgent: userAgent.value,
+  });
 }
 </script>

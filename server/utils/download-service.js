@@ -28,15 +28,16 @@ export class DownloadService {
    * @param {string} [params.etag]
    * @param {string} [params.lastModified]
    * @param {boolean} [params.disableHttp2]
+   * @param {string} [params.userAgent]
    * @param {number} [params.priority=0]
    */
-  async downloadBinary({ url, etag, lastModified, disableHttp2, priority = 0 }) {
+  async downloadBinary({ url, etag, lastModified, disableHttp2, userAgent, priority = 0 }) {
     /** @type {Record<string, string>} */
     const headers = {};
-    if (etag || lastModified) {
-      if (etag) headers["If-None-Match"] = etag;
-      if (lastModified) headers["If-Modified-Since"] = lastModified;
-    }
+    if (etag) headers["If-None-Match"] = etag;
+    if (lastModified) headers["If-Modified-Since"] = lastModified;
+    if (userAgent) headers["User-Agent"] = userAgent;
+    this.logger.debug({ url, etag, lastModified, disableHttp2, userAgent, priority });
     return await this.queue.add(() => this.client.get(url, { responseType: "buffer", headers, http2: !disableHttp2 }), {
       priority,
     });
@@ -48,15 +49,16 @@ export class DownloadService {
    * @param {string} [params.etag]
    * @param {string} [params.lastModified]
    * @param {boolean} [params.disableHttp2]
+   * @param {string} [params.userAgent]
    * @param {number} [params.priority=0]
    */
-  async downloadText({ url, etag, lastModified, disableHttp2, priority = 0 }) {
+  async downloadText({ url, etag, lastModified, disableHttp2, userAgent, priority = 0 }) {
     /** @type {Record<string, string>} */
     const headers = {};
-    if (etag || lastModified) {
-      if (etag) headers["If-None-Match"] = etag;
-      if (lastModified) headers["If-Modified-Since"] = lastModified;
-    }
+    if (etag) headers["If-None-Match"] = etag;
+    if (lastModified) headers["If-Modified-Since"] = lastModified;
+    if (userAgent) headers["User-Agent"] = userAgent;
+    this.logger.debug({ url, etag, lastModified, disableHttp2, userAgent, priority });
     return await this.queue.add(() => this.client.get(url, { responseType: "text", headers, http2: !disableHttp2 }), {
       priority,
     });

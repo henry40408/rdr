@@ -11,6 +11,7 @@ const bodySchema = z.object({
   xmlUrl: z.url(),
   htmlUrl: z.url().or(z.literal("")),
   disableHttp2: z.boolean().optional(),
+  userAgent: z.string().optional(),
 });
 
 export default defineEventHandler(async (event) => {
@@ -36,6 +37,7 @@ export default defineEventHandler(async (event) => {
     xmlUrl,
     htmlUrl,
     disableHttp2: body.disableHttp2 ?? feed.disableHttp2,
+    userAgent: body.userAgent ?? feed.userAgent,
   });
   await repository.updateFeed(userId, entity);
 
