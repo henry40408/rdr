@@ -353,7 +353,7 @@ export function removeTrackingParameters(url) {
         }
       }
     }
-    return parsedUrl.toString();
+    return String(parsedUrl);
   } catch {
     return url;
   }

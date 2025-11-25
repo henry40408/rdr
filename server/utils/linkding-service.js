@@ -47,7 +47,7 @@ export class LinkdingService {
     headers.set("Content-Type", "application/json");
 
     await this.downloadService.queue.add(() =>
-      fetch(apiUrl.toString(), {
+      fetch(apiUrl, {
         method: "POST",
         headers,
         body: JSON.stringify(json),

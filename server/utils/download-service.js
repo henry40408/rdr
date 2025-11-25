@@ -81,7 +81,7 @@ export class DownloadService {
         $('link[rel="icon"]').attr("href") ??
         $('link[rel="shortcut icon"]').attr("href") ??
         $('link[rel="apple-touch-icon"]').attr("href");
-      if (href) return new URL(href, htmlUrl).toString();
+      if (href) return String(new URL(href, htmlUrl));
       return undefined;
     } catch (err) {
       this.logger.error(err);

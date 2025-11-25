@@ -118,11 +118,11 @@ export class FeedService {
       }
       {
         logger.debug("Trying to fetch favicon from base URL");
-        const url = new URL("/favicon.ico", feed.htmlUrl).toString();
+        const url = new URL("/favicon.ico", feed.htmlUrl);
         const result = await this.imageService.download({
           userId,
           externalId: buildFeedImageKey(feed.id),
-          url,
+          url: String(url),
           disableHttp2: feed.disableHttp2,
           userAgent: feed.userAgent,
         });
