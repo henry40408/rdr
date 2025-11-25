@@ -104,7 +104,8 @@ export class FeedEntity {
    * @param {string} opts.title
    * @param {string} opts.xmlUrl
    * @param {string} opts.htmlUrl
-   * @param {boolean} [opts.disableHttp2]
+   * @param {boolean} opts.disableHttp2
+   * @param {string} [opts.userAgent]
    * @param {string} [opts.fetchedAt]
    * @param {string} [opts.etag]
    * @param {string} [opts.lastModified]
@@ -119,6 +120,7 @@ export class FeedEntity {
     xmlUrl,
     htmlUrl,
     disableHttp2,
+    userAgent,
     fetchedAt,
     etag,
     lastModified,
@@ -137,6 +139,7 @@ export class FeedEntity {
     this.lastError = lastError;
     this.errorCount = errorCount;
     this.disableHttp2 = disableHttp2;
+    this.userAgent = userAgent;
 
     // virtual field, should not be stored in the database
     this.date = date;

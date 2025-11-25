@@ -198,7 +198,8 @@ export class Repository {
         title: created.title,
         xmlUrl: created.xml_url,
         htmlUrl: created.html_url,
-        disableHttp2: created.disable_http2,
+        disableHttp2: created.disable_http2 === 0 ? false : true,
+        userAgent: created.user_agent,
       });
     });
   }
@@ -395,7 +396,8 @@ export class Repository {
             lastModified: row.feed_last_modified,
             lastError: row.feed_last_error,
             errorCount: row.feed_error_count,
-            disableHttp2: row.feed_disable_http2,
+            disableHttp2: row.feed_disable_http2 === 0 ? false : true,
+            userAgent: row.feed_user_agent,
           }),
         );
       } else {
@@ -415,7 +417,8 @@ export class Repository {
             etag: row.feed_etag,
             lastModified: row.feed_last_modified,
             lastError: row.feed_last_error,
-            disableHttp2: row.feed_disable_http2,
+            disableHttp2: row.feed_disable_http2 === 0 ? false : true,
+            userAgent: row.feed_user_agent,
           }),
         );
         categories.push(newCategory);
@@ -600,7 +603,8 @@ export class Repository {
       lastModified: row.last_modified,
       lastError: row.last_error,
       errorCount: row.error_count,
-      disableHttp2: row.disable_http2,
+      disableHttp2: row.disable_http2 === 0 ? false : true,
+      userAgent: row.user_agent,
     });
   }
 
@@ -621,7 +625,8 @@ export class Repository {
           etag: row.etag,
           lastModified: row.last_modified,
           lastError: row.last_error,
-          disableHttp2: row.disable_http2,
+          disableHttp2: row.disable_http2 === 0 ? false : true,
+          userAgent: row.user_agent,
         }),
     );
   }
@@ -650,7 +655,8 @@ export class Repository {
           etag: row.etag,
           lastModified: row.last_modified,
           lastError: row.last_error,
-          disableHttp2: row.disable_http2,
+          disableHttp2: row.disable_http2 === 0 ? false : true,
+          userAgent: row.user_agent,
         }),
     );
   }
@@ -969,9 +975,15 @@ export class Repository {
    * @returns {Promise<number>}
    */
   async updateCategory(userId, category) {
-    const updated = await this.knex("categories")
-      .where({ user_id: userId, id: category.id })
-      .update({ name: category.name, updated_at: this.knex.fn.now() });
+    const update = {};
+    if ("name" in category) update.name = category.name;
+    if (Object.keys(update).length === 0) {
+      this.logger.debug({ msg: "No category fields to update", categoryId: category.id });
+      return 0;
+    }
+    update.updated_at = this.knex.fn.now();
+
+    const updated = await this.knex("categories").where({ user_id: userId, id: category.id }).update(update);
     this.logger.info({ msg: "Updated category", categoryId: category.id, updated });
     return updated;
   }
@@ -982,18 +994,24 @@ export class Repository {
    * @returns {Promise<number>}
    */
   async updateFeed(userId, feed) {
+    const update = {};
+    if ("title" in feed) update.title = feed.title;
+    if ("xmlUrl" in feed) update.xml_url = feed.xmlUrl;
+    if ("htmlUrl" in feed) update.html_url = feed.htmlUrl;
+    if ("disableHttp2" in feed) update.disable_http2 = feed.disableHttp2 ?? false;
+    if ("userAgent" in feed) update.user_agent = feed.userAgent ?? null;
+    if (Object.keys(update).length === 0) {
+      this.logger.debug({ msg: "No feed fields to update", feedId: feed.id });
+      return 0;
+    }
+    update.updated_at = this.knex.fn.now();
+
     const updated = await this.knex("feeds")
       .whereIn("category_id", (builder) => {
         builder.select("id").from("categories").where("user_id", userId);
       })
       .where({ id: feed.id })
-      .update({
-        title: feed.title,
-        xml_url: feed.xmlUrl,
-        html_url: feed.htmlUrl,
-        updated_at: this.knex.fn.now(),
-        disable_http2: feed.disableHttp2 ?? false,
-      });
+      .update(update);
     this.logger.info({ msg: "Updated feed", feedId: feed.id, updated });
     return updated;
   }
@@ -1127,7 +1145,8 @@ export class Repository {
             etag: createdFeed.etag,
             lastModified: createdFeed.last_modified,
             lastError: createdFeed.last_error,
-            disableHttp2: createdFeed.disable_http2,
+            disableHttp2: createdFeed.disable_http2 === 0 ? false : true,
+            userAgent: createdFeed.user_agent,
           });
           categoryEntity.feeds.push(feedEntity);
 
