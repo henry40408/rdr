@@ -21,7 +21,7 @@
   "dependencies": {
     "@mozilla/readability": "^0.6.0",
     "@simplewebauthn/browser": "^11.0.0",
-    "@simplewebauthn/server": "^11.0.0",
+    "@simplewebauthn/server": "^13.2.2",
     "@vueuse/components": "^14.0.0",
     "@vueuse/core": "^14.0.0",
     "@vueuse/nuxt": "^14.0.0",
