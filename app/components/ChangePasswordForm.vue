@@ -3,9 +3,9 @@
     <q-banner v-if="error" class="bg-negative text-white">
       {{ error }}
     </q-banner>
-    <q-input v-model="currentPassword" filled required type="password" label="Current Password" />
-    <q-input v-model="newPassword" filled required type="password" label="New Password" />
-    <q-input v-model="confirmPassword" filled required type="password" label="Confirm New Password" />
+    <q-input v-model="currentPassword" filled required type="password" label="Current Password *" />
+    <q-input v-model="newPassword" filled required type="password" label="New Password *" />
+    <q-input v-model="confirmPassword" filled required type="password" label="Confirm New Password *" />
     <q-btn type="submit" color="primary" :loading="loading" label="Change Password" />
   </q-form>
 </template>

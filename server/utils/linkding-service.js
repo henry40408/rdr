@@ -1,5 +1,7 @@
 // @ts-check
 
+import retry from "p-retry";
+
 export class LinkdingService {
   /**
    * @param {object} opts
@@ -46,12 +48,14 @@ export class LinkdingService {
     headers.set("Authorization", `Token ${linkdingApiToken}`);
     headers.set("Content-Type", "application/json");
 
-    await this.downloadService.queue.add(() =>
-      fetch(apiUrl, {
-        method: "POST",
-        headers,
-        body: JSON.stringify(json),
-      }).then((res) => res.json()),
+    await retry(() =>
+      this.downloadService.queue.add(() =>
+        fetch(apiUrl, {
+          method: "POST",
+          headers,
+          body: JSON.stringify(json),
+        }).then((res) => res.json()),
+      ),
     );
 
     return url;

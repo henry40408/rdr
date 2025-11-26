@@ -1,15 +1,12 @@
 <template>
   <q-tabs shrink>
     <q-route-tab to="/" label="Home" />
-    <q-route-tab to="/feeds" label="Feeds">
-      <q-badge v-if="loggedIn" floating color="negative">
-        <AuthenticatedErrorFeedCount />
-      </q-badge>
-    </q-route-tab>
+    <AuthenticatedFeedsTab v-if="loggedIn" />
+    <q-route-tab v-else to="/feeds" label="Feeds" />
     <q-route-tab to="/settings" label="Settings" />
   </q-tabs>
 </template>
 
-<script setup>
+<script setup lang="ts">
 const { loggedIn } = useUserSession();
 </script>

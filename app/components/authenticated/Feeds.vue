@@ -57,7 +57,7 @@
           </q-item>
           <q-item>
             <q-item-section>
-              <q-file v-model="uploadedFile" label="Upload OPML">
+              <q-file v-model="uploadedFile" label="Upload OPML *">
                 <template #prepend>
                   <q-icon name="attach_file" />
                 </template>
@@ -88,7 +88,7 @@
                 outlined
                 use-chips
                 use-input
-                label="Category Name"
+                label="Category Name *"
                 :options="filteredCategoryOptions"
                 @new-value="addCategory"
                 @filter="filterCategories"
@@ -96,11 +96,11 @@
               <div class="text-caption q-px-sm">
                 Create a new category by typing a name and pressing Enter. Clear to select existing.
               </div>
-              <q-input v-model="xmlUrl" outlined type="url" class="q-mt-sm" label="URL to discover feed" />
+              <q-input v-model="xmlUrl" outlined type="url" class="q-mt-sm" label="URL to discover feed *" />
               <div class="text-caption q-px-sm">
                 Enter the website or feed URL. The system will try to discover the feed automatically.
               </div>
-              <q-input v-model="htmlUrl" outlined type="url" class="q-mt-sm" label="Website URL (Optional)" />
+              <q-input v-model="htmlUrl" outlined type="url" class="q-mt-sm" label="Website URL" />
               <q-btn
                 class="q-mt-sm"
                 color="primary"

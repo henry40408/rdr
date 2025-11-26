@@ -41,6 +41,7 @@
     "nuxt-quasar-ui": "^2.1.13",
     "nuxt-security": "^2.4.0",
     "p-queue": "^9.0.0",
+    "p-retry": "^7.1.0",
     "pangu": "^7.2.0",
     "pino": "^10.1.0",
     "pino-http": "^11.0.0",
