@@ -50,12 +50,19 @@ export class ImageService {
         userAgent,
         priority: Number.MIN_SAFE_INTEGER, // lowerest priority
       });
-      if (!res) {
-        logger.warn({ msg: "Response is undefined", url });
-        return existing;
-      }
       if (res.status === 304) {
         logger.debug({ msg: "Image not modified", url });
+        return existing;
+      }
+
+      if (!res.ok) {
+        logger.warn({
+          msg: "Failed to download image",
+          url,
+          status: res.status,
+          statusText: res.statusText,
+          body: await res.text(),
+        });
         return existing;
       }
 
