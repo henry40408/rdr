@@ -48,15 +48,19 @@ export class LinkdingService {
     headers.set("Authorization", `Token ${linkdingApiToken}`);
     headers.set("Content-Type", "application/json");
 
-    await retry(() =>
+    const res = await retry(() =>
       this.downloadService.queue.add(() =>
         fetch(apiUrl, {
           method: "POST",
           headers,
           body: JSON.stringify(json),
-        }).then((res) => res.json()),
+        }),
       ),
     );
+    if (!res.ok) {
+      this.logger.error({ status: res.status, statusText: res.statusText, body: await res.text() });
+      throw new Error("Failed to save bookmark to Linkding");
+    }
 
     return url;
   }

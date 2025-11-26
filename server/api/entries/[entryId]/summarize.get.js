@@ -43,7 +43,8 @@ export default defineEventHandler(async (event) => {
 
   /** @type {DownloadService} */
   const downloadService = container.resolve("downloadService");
-
+  /** @type {import('pino').Logger} */
+  const logger = container.resolve("logger");
   /** @type {Repository} */
   const repository = container.resolve("repository");
 
@@ -66,8 +67,14 @@ export default defineEventHandler(async (event) => {
   const headers = new Headers();
   headers.set("Authorization", token);
 
-  /** @type {KagiSummarizationResponse|void} */
-  const data = await retry(() => downloadService.queue.add(() => fetch(url, { headers }).then((res) => res.json())));
+  const res = await retry(() => downloadService.queue.add(() => fetch(url, { headers })));
+  if (!res.ok) {
+    logger.error({ status: res.status, statusText: res.statusText, body: await res.text() });
+    throw createError({ statusCode: 500, message: "Failed to fetch summarization from Kagi." });
+  }
+
+  /** @type {KagiSummarizationResponse} */
+  const data = await res.json();
   if (!data || data.output_data.status !== "completed")
     throw createError({ statusCode: 500, message: "Failed to get summarization from Kagi." });
 
