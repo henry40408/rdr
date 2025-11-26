@@ -16,10 +16,12 @@ export default defineEventHandler(async (event) => {
 
   const { entryId } = await getValidatedRouterParams(event, (params) => schema.parse(params));
 
-  /** @type {Repository} */
-  const repository = container.resolve("repository");
   /** @type {DownloadService} */
   const downloadService = container.resolve("downloadService");
+  /** @type {import('pino').Logger} */
+  const logger = container.resolve("logger");
+  /** @type {Repository} */
+  const repository = container.resolve("repository");
 
   const entry = await repository.findEntryById(userId, entryId);
   if (!entry) throw createError({ statusCode: 404, statusMessage: "Entry not found" });
@@ -33,7 +35,10 @@ export default defineEventHandler(async (event) => {
     disableHttp2: feed.disableHttp2,
     userAgent: feed.userAgent,
   });
-  if (!res) throw createError({ statusCode: 400, statusMessage: "Failed to download entry content" });
+  if (!res.ok) {
+    logger.error({ status: res.status, statusText: res.statusText, body: await res.text() });
+    throw createError({ statusCode: 500, statusMessage: "Failed to fetch entry content" });
+  }
 
   const doc = new JSDOM(await res.text(), { url: entry.link });
   const reader = new Readability(doc.window.document);

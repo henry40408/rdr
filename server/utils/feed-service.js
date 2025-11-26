@@ -46,13 +46,14 @@ export class FeedService {
       });
       logger.info("Fetched feed");
 
-      if (!res) {
-        logger.error("Response is undefined");
-        throw new Error("Response is undefined");
-      }
       if (res.status === 304) {
         logger.info("Feed is not modified");
         return { type: "not_modified", feed, items: [] };
+      }
+
+      if (!res.ok) {
+        logger.error({ status: res.status, statusText: res.statusText, body: await res.text() });
+        throw new Error(`Failed to fetch feed: ${res.status} ${res.statusText}`);
       }
 
       const body = await res.text();
@@ -187,6 +188,11 @@ export class FeedService {
     try {
       // Using HTTP/1.1 to maximize compatibility with various feed discovery implementations
       const res = await this.downloadService.downloadText({ url, disableHttp2: true });
+      if (!res.ok) {
+        this.logger.error({ status: res.status, statusText: res.statusText, body: await res.text() });
+        throw new Error(`Failed to fetch feed: ${res.status} ${res.statusText}`);
+      }
+
       const content = await res.text();
 
       try {
@@ -209,6 +215,11 @@ export class FeedService {
       this.logger.info({ message: "Trying discovered feed URL", feedUrl: absoluteFeedUrl });
       try {
         const feedRes = await this.downloadService.downloadText({ url: absoluteFeedUrl, disableHttp2: true });
+        if (!feedRes.ok) {
+          this.logger.error({ status: feedRes.status, statusText: feedRes.statusText, body: await feedRes.text() });
+          throw new Error(`Failed to fetch discovered feed: ${feedRes.status} ${feedRes.statusText}`);
+        }
+
         const feedContent = await feedRes.text();
         const parsed = await this.parseFeed(feedContent);
         if (parsed?.meta) {
