@@ -96,7 +96,10 @@
               <div class="text-caption q-px-sm">
                 Create a new category by typing a name and pressing Enter. Clear to select existing.
               </div>
-              <q-input v-model="xmlUrl" outlined type="url" class="q-mt-sm" label="Feed URL" />
+              <q-input v-model="xmlUrl" outlined type="url" class="q-mt-sm" label="URL to discover feed" />
+              <div class="text-caption q-px-sm">
+                Enter the website or feed URL. The system will try to discover the feed automatically.
+              </div>
               <q-input v-model="htmlUrl" outlined type="url" class="q-mt-sm" label="Website URL (Optional)" />
               <q-btn
                 class="q-mt-sm"
@@ -338,7 +341,7 @@ async function addFeed() {
       },
     });
     refresh();
-    categoryName.value = "";
+    categoryName.value = null;
     htmlUrl.value = "";
     xmlUrl.value = "";
     $q.notify({

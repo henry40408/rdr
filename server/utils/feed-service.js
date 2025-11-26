@@ -1,5 +1,6 @@
 // @ts-check
 
+import * as cheerio from "cheerio";
 import FeedParser from "feedparser";
 import { Readable } from "node:stream";
 
@@ -55,29 +56,7 @@ export class FeedService {
       }
 
       const body = await res.text();
-      const parser = new FeedParser({});
-
-      /** @type {import('feedparser').Item[]} */
-      const items = [];
-
-      /** @type {import('feedparser').Meta|undefined} */
-      let meta = undefined;
-
-      await new Promise((resolve, reject) => {
-        parser.on("error", (/** @type {unknown} */ err) => reject(err));
-        parser.on("meta", (/** @type {import('feedparser').Meta} */ m) => {
-          meta = m;
-        });
-        parser.on("readable", () => {
-          /** @type {import('feedparser').Item} */
-          let item;
-          while ((item = parser.read())) {
-            items.push(item);
-          }
-        });
-        parser.on("end", () => resolve(items));
-        Readable.from(body).pipe(parser);
-      });
+      const { items, meta } = await this.parseFeed(body);
 
       const cloned = structuredClone(feed);
       cloned.etag = res.headers.get("etag") ?? undefined;
@@ -156,6 +135,96 @@ export class FeedService {
         this.logger.error(err);
         this.logger.error({ msg: "Failed to update feed metadata with error", feedId: feed.id });
       });
+    }
+  }
+
+  /**
+   * @typedef {object} ParseFeedResult
+   * @property {import('feedparser').Meta|undefined} meta
+   * @property {import('feedparser').Item[]} items
+   *
+   * @param {string} content
+   * @returns {Promise<ParseFeedResult>}
+   */
+  async parseFeed(content) {
+    return new Promise((resolve, reject) => {
+      const parser = new FeedParser({});
+
+      /** @type {import('feedparser').Item[]} */
+      const items = [];
+
+      /** @type {import('feedparser').Meta|undefined} */
+      let meta = undefined;
+
+      parser.on("error", (/** @type {unknown} */ err) => reject(err));
+      parser.on("meta", (/** @type {import('feedparser').Meta} */ m) => {
+        meta = m;
+      });
+      parser.on("readable", () => {
+        /** @type {import('feedparser').Item} */
+        let item;
+        while ((item = parser.read())) {
+          items.push(item);
+        }
+      });
+      parser.on("end", () => resolve({ items, meta }));
+
+      Readable.from(content).pipe(parser);
+    });
+  }
+
+  /**
+   * @typedef {object} DiscoverFeedResult
+   * @property {string} xmlUrl
+   * @property {import('feedparser').Meta} meta
+   */
+
+  /**
+   * @param {string} url
+   * @returns {Promise<DiscoverFeedResult|undefined>}
+   */
+  async discoverFeed(url) {
+    try {
+      // Using HTTP/1.1 to maximize compatibility with various feed discovery implementations
+      const res = await this.downloadService.downloadText({ url, disableHttp2: true });
+      const content = await res.text();
+
+      try {
+        const parsed = await this.parseFeed(content);
+        if (parsed?.meta) return { xmlUrl: url, meta: parsed.meta };
+      } catch (err) {
+        this.logger.error(err);
+        this.logger.info({ message: "Not a feed. Trying to discover feeds from HTML.", url });
+      }
+
+      const $ = cheerio.load(content);
+      const feedLink =
+        $('link[type="application/rss+xml"]').attr("href") || $('link[type="application/atom+xml"]').attr("href");
+      if (!feedLink) {
+        this.logger.warn({ message: "No feed link found in HTML", url });
+        return undefined;
+      }
+
+      const absoluteFeedUrl = String(new URL(feedLink, url));
+      this.logger.info({ message: "Trying discovered feed URL", feedUrl: absoluteFeedUrl });
+      try {
+        const feedRes = await this.downloadService.downloadText({ url: absoluteFeedUrl, disableHttp2: true });
+        const feedContent = await feedRes.text();
+        const parsed = await this.parseFeed(feedContent);
+        if (parsed?.meta) {
+          this.logger.info({ message: "Successfully discovered feed", feedUrl: absoluteFeedUrl });
+          return { xmlUrl: absoluteFeedUrl, meta: parsed.meta };
+        }
+      } catch (err) {
+        this.logger.error(err);
+        this.logger.warn({ message: "Failed to parse discovered feed URL", feedUrl: absoluteFeedUrl });
+      }
+
+      this.logger.info({ message: "No feeds discovered from HTML", url });
+      return undefined;
+    } catch (err) {
+      this.logger.error(err);
+      throw err;
     }
   }
 }
