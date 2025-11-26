@@ -1,6 +1,7 @@
 // @ts-check
 
 import { Readable } from "node:stream";
+import retry from "p-retry";
 import { z } from "zod";
 
 const schema = z.object({
@@ -50,7 +51,7 @@ export default defineEventHandler(async (event) => {
 
   logger.info({ message: "Proxying image from URL", url, headers });
   try {
-    const res = await fetch(url, { headers });
+    const res = await retry(() => fetch(url, { headers }));
     if (!res.body) throw createError({ statusCode: 502, statusMessage: "No response body from image URL" });
 
     for (const key of res.headers.keys()) {

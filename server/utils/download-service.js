@@ -4,6 +4,7 @@ import * as cheerio from "cheerio";
 import { Agent, fetch } from "undici";
 import PQueue from "p-queue";
 import os from "node:os";
+import retry from "p-retry";
 
 export class DownloadService {
   /**
@@ -37,7 +38,7 @@ export class DownloadService {
     this.logger.debug({ url, etag, lastModified, disableHttp2, userAgent, priority });
 
     const dispatcher = new Agent({ allowH2: !disableHttp2, bodyTimeout: this.config.httpTimeoutMs });
-    return await this.queue.add(() => fetch(url, { headers, dispatcher }), { priority });
+    return await retry(() => this.queue.add(() => fetch(url, { headers, dispatcher }), { priority }));
   }
 
   /**
@@ -60,7 +61,7 @@ export class DownloadService {
     this.logger.debug({ url, etag, lastModified, disableHttp2, userAgent, priority });
 
     const dispatcher = new Agent({ allowH2: !disableHttp2, bodyTimeout: this.config.httpTimeoutMs });
-    return await this.queue.add(() => fetch(url, { headers, dispatcher }), { priority });
+    return await retry(() => this.queue.add(() => fetch(url, { headers, dispatcher }), { priority }));
   }
 
   /**
@@ -75,7 +76,7 @@ export class DownloadService {
       headers.set("User-Agent", this.config.userAgent);
 
       const dispatcher = new Agent({ allowH2: !disableHttp2, bodyTimeout: this.config.httpTimeoutMs });
-      const content = await fetch(htmlUrl, { headers, dispatcher }).then((res) => res.text());
+      const content = await retry(() => fetch(htmlUrl, { headers, dispatcher }).then((res) => res.text()));
       const $ = cheerio.load(content);
       const href =
         $('link[rel="icon"]').attr("href") ??

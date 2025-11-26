@@ -1,5 +1,6 @@
 // @ts-check
 
+import retry from "p-retry";
 import { z } from "zod";
 
 const schema = z.object({ entryId: z.coerce.number() });
@@ -66,7 +67,7 @@ export default defineEventHandler(async (event) => {
   headers.set("Authorization", token);
 
   /** @type {KagiSummarizationResponse|void} */
-  const data = await downloadService.queue.add(() => fetch(url, { headers }).then((res) => res.json()));
+  const data = await retry(() => downloadService.queue.add(() => fetch(url, { headers }).then((res) => res.json())));
   if (!data || data.output_data.status !== "completed")
     throw createError({ statusCode: 500, message: "Failed to get summarization from Kagi." });
 
