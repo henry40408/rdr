@@ -11,7 +11,8 @@ const querySchema = z.object({
   url: z.url(),
 });
 
-const ALLOWED_HEADERS = new Set([
+const ALLOWED_REQUEST_HEADERS = new Set(["accept", "accept-encoding", "range", "referer"]);
+const ALLOWED_RESPONSE_HEADERS = new Set([
   "cache-control",
   "content-disposition",
   "content-length",
@@ -39,8 +40,7 @@ export default defineEventHandler(async (event) => {
 
   /** @type {Headers} */
   const headers = new Headers();
-  const proxyHeaderKeys = ["accept", "accept-encoding", "range", "referer"];
-  for (const headerName of proxyHeaderKeys) {
+  for (const headerName of ALLOWED_REQUEST_HEADERS) {
     const value = getHeader(event, headerName);
     if (value) headers.set(headerName, value);
   }
@@ -51,14 +51,13 @@ export default defineEventHandler(async (event) => {
   logger.info({ message: "Proxying image from URL", url, headers });
   try {
     const res = await fetch(url, { headers });
-
-    for (const key of Object.keys(res.headers))
-      if (!ALLOWED_HEADERS.has(key)) setHeader(event, key, res.headers.get(key));
-
     if (!res.body) throw createError({ statusCode: 502, statusMessage: "No response body from image URL" });
 
-    const stream = Readable.fromWeb(/** @type {any} */ (res.body));
-    stream.pipe(event.node.res);
+    for (const key of res.headers.keys()) {
+      if (!ALLOWED_RESPONSE_HEADERS.has(key)) continue;
+      setHeader(event, key, res.headers.get(key));
+    }
+    return Readable.fromWeb(/** @type {any} */ (res.body));
   } catch (error) {
     logger.error(error);
     logger.error(`Failed to proxy image from URL: ${url}`);
