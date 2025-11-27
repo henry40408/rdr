@@ -18,11 +18,11 @@ export default defineEventHandler(async (event) => {
   const repository = container.resolve("repository");
 
   const user = await repository.findUserById(userId);
-  if (!user?.isAdmin) throw createError({ status: 403, message: "Forbidden" });
+  if (!user?.isAdmin) throw createError({ status: 403, statusMessage: "Forbidden" });
 
   const jobs = await repository.findJobs();
   const found = jobs.find((j) => j.name === name);
-  if (!found) throw createError({ status: 404, message: "Job not found" });
+  if (!found) throw createError({ status: 404, statusMessage: "Job not found" });
 
   const entity = new NewJobEntity({
     name: found.name,

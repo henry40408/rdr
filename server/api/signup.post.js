@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
   const { container } = useNitroApp();
   const config = useRuntimeConfig();
 
-  if (config.disableSignUp) throw createError({ status: 503, message: "Sign ups are disabled" });
+  if (config.disableSignUp) throw createError({ status: 503, statusMessage: "Sign ups are disabled" });
 
   const body = await readValidatedBody(event, (body) => schema.parse(body));
 

@@ -1,6 +1,5 @@
 // @ts-check
 
-import * as cheerio from "cheerio";
 import FeedParser from "feedparser";
 import { Readable } from "node:stream";
 
@@ -200,18 +199,15 @@ export class FeedService {
         if (parsed?.meta) return { xmlUrl: url, meta: parsed.meta };
       } catch (err) {
         this.logger.error(err);
-        this.logger.info({ message: "Not a feed. Trying to discover feeds from HTML.", url });
+        this.logger.warn({ message: "Not a feed. Trying to discover feeds from HTML.", url });
       }
 
-      const $ = cheerio.load(content);
-      const feedLink =
-        $('link[type="application/rss+xml"]').attr("href") || $('link[type="application/atom+xml"]').attr("href");
-      if (!feedLink) {
+      const absoluteFeedUrl = await this.downloadService.findFeed(url);
+      if (!absoluteFeedUrl) {
         this.logger.warn({ message: "No feed link found in HTML", url });
         return undefined;
       }
 
-      const absoluteFeedUrl = String(new URL(feedLink, url));
       this.logger.info({ message: "Trying discovered feed URL", feedUrl: absoluteFeedUrl });
       try {
         const feedRes = await this.downloadService.downloadText({ url: absoluteFeedUrl, disableHttp2: true });
@@ -231,7 +227,7 @@ export class FeedService {
         this.logger.warn({ message: "Failed to parse discovered feed URL", feedUrl: absoluteFeedUrl });
       }
 
-      this.logger.info({ message: "No feeds discovered from HTML", url });
+      this.logger.warn({ message: "No feeds discovered from HTML", url });
       return undefined;
     } catch (err) {
       this.logger.error(err);

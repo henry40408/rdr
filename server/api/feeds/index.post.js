@@ -22,15 +22,17 @@ export default defineEventHandler(async (event) => {
   const repository = container.resolve("repository");
 
   const discovered = await feedService.discoverFeed(body.xmlUrl);
-  if (!discovered) throw createError({ statusCode: 400, message: "Unable to discover feed from the provided URL." });
+  if (!discovered)
+    throw createError({ statusCode: 400, statusMessage: "Unable to discover feed from the provided URL." });
 
   const { xmlUrl, meta } = discovered;
   const title = meta?.title;
-  if (!title) throw createError({ statusCode: 400, message: "Unable to discover feed title from the provided URL." });
+  if (!title)
+    throw createError({ statusCode: 400, statusMessage: "Unable to discover feed title from the provided URL." });
 
   const htmlUrl = body.htmlUrl ?? meta?.link;
   if (!htmlUrl)
-    throw createError({ statusCode: 400, message: "Unable to discover feed HTML URL from the provided URL." });
+    throw createError({ statusCode: 400, statusMessage: "Unable to discover feed HTML URL from the provided URL." });
 
   const entity = new NewCategoryFeedEntity({ title, xmlUrl, htmlUrl });
   return await repository.createFeed(userId, body.categoryName, entity);
