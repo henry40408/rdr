@@ -51,7 +51,7 @@ export default defineEventHandler(async (event) => {
 
   logger.info({ message: "Proxying image from URL", url, headers });
   try {
-    const res = await retry(() => fetch(url, { headers }));
+    const res = await retry(() => fetch(url, { headers, signal: AbortSignal.timeout(config.httpTimeoutMs) }));
     if (!res.ok) {
       logger.error({ status: res.status, statusText: res.statusText, body: await res.text() });
       throw createError({ statusCode: 502, statusMessage: "Failed to fetch image from URL" });

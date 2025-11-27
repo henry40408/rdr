@@ -237,34 +237,16 @@
           <q-item v-if="filtersEnabled">
             <q-item-section>
               <div>
-                <q-chip
-                  v-if="selectedCategoryId"
-                  removable
-                  icon="category"
-                  color="secondary"
-                  :outline="!isDark"
-                  @remove="selectedCategoryId = undefined"
-                >
+                <q-chip v-if="selectedCategoryId" removable :outline="!isDark" @remove="selectedCategoryId = undefined">
+                  <q-avatar icon="category" color="secondary" text-color="white" />
                   Category: {{ getFilteredCategoryName() }}
                 </q-chip>
-                <q-chip
-                  v-if="selectedFeedId"
-                  removable
-                  color="primary"
-                  icon="rss_feed"
-                  :outline="!isDark"
-                  @remove="selectedFeedId = undefined"
-                >
+                <q-chip v-if="selectedFeedId" removable :outline="!isDark" @remove="selectedFeedId = undefined">
+                  <q-avatar icon="rss_feed" color="secondary" text-color="white" />
                   Feed: {{ getFilteredFeedTitle() }}
                 </q-chip>
-                <q-chip
-                  v-if="searchQuery"
-                  removable
-                  icon="search"
-                  color="accent"
-                  :outline="!isDark"
-                  @remove="searchQuery = ''"
-                >
+                <q-chip v-if="searchQuery" removable :outline="!isDark" @remove="searchQuery = ''">
+                  <q-avatar icon="search" color="accent" text-color="white" />
                   Search: {{ searchQuery }}
                 </q-chip>
               </div>
@@ -384,32 +366,28 @@
                       />
                     </div>
                     <div class="q-my-sm">
-                      <q-chip v-if="item.entry.author" icon="person" :outline="!isDark">
-                        Author{{ " | " }}{{ item.entry.author }}
+                      <q-chip v-if="item.entry.author" :outline="!isDark">
+                        <q-avatar icon="person" color="primary" text-color="white" />
+                        Author: {{ item.entry.author }}
+                      </q-chip>
+                      <q-chip clickable :outline="!isDark" @click="selectedCategoryId = String(item.category.id)">
+                        <q-avatar icon="category" color="secondary" text-color="white" />
+                        Category: {{ item.category.name }}
                       </q-chip>
                       <q-chip
                         clickable
-                        icon="category"
-                        color="secondary"
-                        :outline="!isDark"
-                        @click="selectedCategoryId = String(item.category.id)"
-                      >
-                        Category{{ " | " }}{{ item.category.name }}
-                      </q-chip>
-                      <q-chip
-                        clickable
-                        color="primary"
-                        icon="rss_feed"
                         :outline="!isDark"
                         @click="
                           selectedCategoryId = String(item.category.id);
                           selectedFeedId = String(item.feed.id);
                         "
                       >
-                        Feed{{ " | " }}{{ item.feed.title }}
+                        <q-avatar icon="rss_feed" color="secondary" text-color="white" />
+                        Feed: {{ item.feed.title }}
                       </q-chip>
-                      <q-chip color="accent" :outline="!isDark" icon="calendar_today">
-                        Date{{ " | " }}<ClientDateTime :datetime="item.entry.date" />
+                      <q-chip :outline="!isDark">
+                        <q-avatar color="accent" :outline="!isDark" text-color="white" icon="calendar_today" />
+                        Date: <ClientDateTime :datetime="item.entry.date" />
                       </q-chip>
                     </div>
                   </q-card-section>

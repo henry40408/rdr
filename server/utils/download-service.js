@@ -37,8 +37,13 @@ export class DownloadService {
 
     this.logger.debug({ url, etag, lastModified, disableHttp2, userAgent, priority });
 
-    const dispatcher = new Agent({ allowH2: !disableHttp2, bodyTimeout: this.config.httpTimeoutMs });
-    const res = await retry(() => this.queue.add(() => fetch(url, { headers, dispatcher }), { priority }));
+    const dispatcher = new Agent({ allowH2: !disableHttp2 });
+    const res = await retry(() =>
+      this.queue.add(
+        () => fetch(url, { headers, dispatcher, signal: AbortSignal.timeout(this.config.httpTimeoutMs) }),
+        { priority },
+      ),
+    );
 
     this.logger.debug({ url, status: res.status, statusText: res.statusText });
     return res;
@@ -63,8 +68,13 @@ export class DownloadService {
 
     this.logger.debug({ url, etag, lastModified, disableHttp2, userAgent, priority });
 
-    const dispatcher = new Agent({ allowH2: !disableHttp2, bodyTimeout: this.config.httpTimeoutMs });
-    const res = await retry(() => this.queue.add(() => fetch(url, { headers, dispatcher }), { priority }));
+    const dispatcher = new Agent({ allowH2: !disableHttp2 });
+    const res = await retry(() =>
+      this.queue.add(
+        () => fetch(url, { headers, dispatcher, signal: AbortSignal.timeout(this.config.httpTimeoutMs) }),
+        { priority },
+      ),
+    );
 
     this.logger.debug({ url, status: res.status, statusText: res.statusText });
     return res;
@@ -81,8 +91,12 @@ export class DownloadService {
       const headers = new Headers();
       headers.set("User-Agent", this.config.userAgent);
 
-      const dispatcher = new Agent({ allowH2: !disableHttp2, bodyTimeout: this.config.httpTimeoutMs });
-      const content = await retry(() => fetch(htmlUrl, { headers, dispatcher }).then((res) => res.text()));
+      const dispatcher = new Agent({ allowH2: !disableHttp2 });
+      const content = await retry(() =>
+        fetch(htmlUrl, { headers, dispatcher, signal: AbortSignal.timeout(this.config.httpTimeoutMs) }).then((res) =>
+          res.text(),
+        ),
+      );
       const $ = cheerio.load(content);
       const href =
         $('link[rel="icon"]').attr("href") ??
