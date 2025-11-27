@@ -188,7 +188,7 @@
                       <q-item-label lines="1">
                         <span
                           :class="{
-                            'text-negative': feed.lastError !== null,
+                            'text-negative text-weight-bold': feed.lastError !== null,
                           }"
                         >
                           <MarkedText :text="feed.title" :keyword="categoryFeedQuery" />
@@ -210,10 +210,12 @@
                   <q-list padding>
                     <q-item>
                       <q-item-section>
+                        <q-item-label caption>Feed updated at</q-item-label>
+                        <q-item-label><ClientAgo :datetime="feed.feedUpdatedAt" /></q-item-label>
+                      </q-item-section>
+                      <q-item-section>
                         <q-item-label caption>Fetched at</q-item-label>
-                        <q-item-label>
-                          <ClientAgo :datetime="feed.fetchedAt" />
-                        </q-item-label>
+                        <q-item-label><ClientAgo :datetime="feed.fetchedAt" /></q-item-label>
                       </q-item-section>
                     </q-item>
                     <q-item>
@@ -221,11 +223,27 @@
                         <q-item-label caption>Error count</q-item-label>
                         <q-item-label>{{ feed.errorCount }}</q-item-label>
                       </q-item-section>
+                      <q-item-section>
+                        <q-item-label caption>Last error</q-item-label>
+                        <q-item-label>
+                          {{ feed.lastError ?? "-" }}
+                        </q-item-label>
+                      </q-item-section>
                     </q-item>
                     <q-item>
                       <q-item-section>
-                        <q-item-label caption>Last error</q-item-label>
-                        <q-item-label>{{ feed.lastError || "-" }}</q-item-label>
+                        <q-item-label caption>HTTP protocol</q-item-label>
+                        <q-item-label>
+                          <q-badge color="primary" :outline="!feed.disableHttp2">
+                            {{ feed.disableHttp2 ? "HTTP/1.1" : "HTTP/2" }}
+                          </q-badge>
+                        </q-item-label>
+                      </q-item-section>
+                    </q-item>
+                    <q-item>
+                      <q-item-section>
+                        <q-item-label caption>User agent</q-item-label>
+                        <q-item-label>{{ feed.userAgent ?? "-" }}</q-item-label>
                       </q-item-section>
                     </q-item>
                     <q-item>

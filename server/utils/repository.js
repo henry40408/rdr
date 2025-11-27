@@ -1007,7 +1007,7 @@ export class Repository {
     if ("xmlUrl" in feed) update.xml_url = feed.xmlUrl;
     if ("htmlUrl" in feed) update.html_url = feed.htmlUrl;
     if ("disableHttp2" in feed) update.disable_http2 = feed.disableHttp2 ?? false;
-    if ("userAgent" in feed) update.user_agent = feed.userAgent ?? null;
+    if ("userAgent" in feed) update.user_agent = feed.userAgent || null;
     if (Object.keys(update).length === 0) {
       this.logger.debug({ msg: "No feed fields to update", feedId: feed.id });
       return 0;
