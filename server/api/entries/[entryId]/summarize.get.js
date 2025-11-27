@@ -34,6 +34,7 @@ const schema = z.object({ entryId: z.coerce.number() });
  */
 
 export default defineEventHandler(async (event) => {
+  const config = useRuntimeConfig();
   const { container } = useNitroApp();
 
   const session = await validateUserNonce(event);
@@ -67,7 +68,9 @@ export default defineEventHandler(async (event) => {
   const headers = new Headers();
   headers.set("Authorization", token);
 
-  const res = await retry(() => downloadService.queue.add(() => fetch(url, { headers })));
+  const res = await retry(() =>
+    downloadService.queue.add(() => fetch(url, { headers, signal: AbortSignal.timeout(config.httpTimeoutMs) })),
+  );
   if (!res.ok) {
     logger.error({ status: res.status, statusText: res.statusText, body: await res.text() });
     throw createError({ statusCode: 500, statusMessage: "Failed to fetch summarization from Kagi." });

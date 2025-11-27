@@ -5,12 +5,14 @@ import retry from "p-retry";
 export class LinkdingService {
   /**
    * @param {object} opts
+   * @param {import('nuxt/schema').RuntimeConfig} opts.config
    * @param {DownloadService} opts.downloadService
    * @param {FeatureService} opts.featureService
    * @param {import('pino').Logger} opts.logger
    * @param {Repository} opts.repository
    */
-  constructor({ downloadService, featureService, logger, repository }) {
+  constructor({ config, downloadService, featureService, logger, repository }) {
+    this.config = config;
     this.downloadService = downloadService;
     this.featureService = featureService;
     this.logger = logger.child({ service: "linkding-service" });
@@ -54,6 +56,7 @@ export class LinkdingService {
           method: "POST",
           headers,
           body: JSON.stringify(json),
+          signal: AbortSignal.timeout(this.config.httpTimeoutMs),
         }),
       ),
     );
