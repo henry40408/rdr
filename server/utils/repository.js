@@ -200,6 +200,7 @@ export class Repository {
         htmlUrl: created.html_url,
         disableHttp2: created.disable_http2 === 0 ? false : true,
         userAgent: created.user_agent,
+        feedUpdatedAt: created.feed_updated_at,
       });
     });
   }
@@ -376,6 +377,7 @@ export class Repository {
         this.knex.ref("feeds.error_count").as("feed_error_count"),
         this.knex.ref("feeds.disable_http2").as("feed_disable_http2"),
         this.knex.ref("feeds.user_agent").as("feed_user_agent"),
+        this.knex.ref("feeds.feed_updated_at").as("feed_feed_updated_at"),
       )
       .where("categories.user_id", userId);
 
@@ -399,6 +401,7 @@ export class Repository {
             errorCount: row.feed_error_count,
             disableHttp2: row.feed_disable_http2 === 0 ? false : true,
             userAgent: row.feed_user_agent,
+            feedUpdatedAt: row.feed_feed_updated_at,
           }),
         );
       } else {
@@ -420,6 +423,7 @@ export class Repository {
             lastError: row.feed_last_error,
             disableHttp2: row.feed_disable_http2 === 0 ? false : true,
             userAgent: row.feed_user_agent,
+            feedUpdatedAt: row.feed_feed_updated_at,
           }),
         );
         categories.push(newCategory);
@@ -606,6 +610,7 @@ export class Repository {
       errorCount: row.error_count,
       disableHttp2: row.disable_http2 === 0 ? false : true,
       userAgent: row.user_agent,
+      feedUpdatedAt: row.feed_updated_at,
     });
   }
 
@@ -628,6 +633,7 @@ export class Repository {
           lastError: row.last_error,
           disableHttp2: row.disable_http2 === 0 ? false : true,
           userAgent: row.user_agent,
+          feedUpdatedAt: row.feed_updated_at,
         }),
     );
   }
@@ -658,6 +664,7 @@ export class Repository {
           lastError: row.last_error,
           disableHttp2: row.disable_http2 === 0 ? false : true,
           userAgent: row.user_agent,
+          feedUpdatedAt: row.feed_updated_at,
         }),
     );
   }
@@ -1028,8 +1035,9 @@ export class Repository {
     const logger = this.logger.child({ feedId: feed.id, userId });
 
     const update = {};
-    if ("etag" in feed && feed.etag) update.etag = feed.etag;
-    if ("lastModified" in feed && feed.lastModified) update.last_modified = feed.lastModified;
+    if (feed.etag) update.etag = feed.etag;
+    if (feed.lastModified) update.last_modified = feed.lastModified;
+    if (feed.feedUpdatedAt) update.feed_updated_at = feed.feedUpdatedAt;
     if (typeof error !== "undefined") update.last_error = error;
     if (Object.keys(update).length === 0) {
       logger.debug("No metadata to update");
@@ -1148,6 +1156,7 @@ export class Repository {
             lastError: createdFeed.last_error,
             disableHttp2: createdFeed.disable_http2 === 0 ? false : true,
             userAgent: createdFeed.user_agent,
+            feedUpdatedAt: createdFeed.feed_updated_at,
           });
           categoryEntity.feeds.push(feedEntity);
 

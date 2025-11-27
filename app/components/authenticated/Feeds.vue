@@ -197,7 +197,7 @@
                     </q-item-section>
                     <q-item-section top side>
                       <q-item-label caption>
-                        <ClientAgo :datetime="getFeedFetchedAt(feed.id)" />
+                        <ClientAgo :datetime="feed.feedUpdatedAt" />
                       </q-item-label>
                       <div class="q-mt-xs">
                         <q-badge color="primary" :outline="!getFeedUnreadCount(feed.id)">
@@ -208,6 +208,14 @@
                   </template>
 
                   <q-list padding>
+                    <q-item>
+                      <q-item-section>
+                        <q-item-label caption>Fetched at</q-item-label>
+                        <q-item-label>
+                          <ClientAgo :datetime="feed.fetchedAt" />
+                        </q-item-label>
+                      </q-item-section>
+                    </q-item>
                     <q-item>
                       <q-item-section>
                         <q-item-label caption>Error count</q-item-label>
@@ -261,7 +269,7 @@
         </q-list>
 
         <q-page-sticky :offset="[18, 18]" position="bottom-right">
-          <q-btn fab padding="sm" icon="refresh" color="primary" @click="refreshAll()" />
+          <q-btn fab padding="sm" icon="refresh" color="primary" :loading="refreshingAll" @click="refreshAll()" />
         </q-page-sticky>
       </q-page>
     </q-page-container>
@@ -303,6 +311,7 @@ const xmlUrl = ref("");
 
 const categoryFeedQuery = ref("");
 const leftDrawerOpen = ref(false);
+const refreshingAll = ref(false);
 const refreshingCategoryIds: Ref<Set<number>> = ref(new Set());
 const refreshingFeedIds: Ref<Set<number>> = ref(new Set());
 const showErrorOnly: Ref<boolean> = ref(false);
@@ -425,12 +434,6 @@ function filterCategories(
   });
 }
 
-function getFeedFetchedAt(feedId: number): string | undefined {
-  const feed = categories.value?.flatMap((c) => c.feeds).find((f) => f.id === feedId);
-  if (!feed) return undefined;
-  return feed.fetchedAt;
-}
-
 function getCategoryUnreadCount(categoryId: number): number {
   const category = categories.value?.find((c) => c.id === categoryId);
   if (!category) return 0;
@@ -478,9 +481,16 @@ async function refreshAll() {
   if (refreshingCategoryIds.value.size > 0) return;
   if (!categories.value) return;
 
-  const tasks = [];
-  for (const category of categories.value) tasks.push(refreshCategory(category));
-  await Promise.allSettled(tasks);
+  $q.notify({ icon: "info", message: "Refreshing all feeds..." });
+
+  refreshingAll.value = true;
+  try {
+    const tasks = [];
+    for (const category of categories.value) tasks.push(refreshCategory(category));
+    await Promise.allSettled(tasks);
+  } finally {
+    refreshingAll.value = false;
+  }
 }
 
 async function refreshCategory(category: CategoryEntity) {
