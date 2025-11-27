@@ -383,8 +383,10 @@
                         @click="toggleStarEntry(item.entry.id)"
                       />
                     </div>
-                    <div v-if="item.entry.author" class="q-my-sm">by {{ item.entry.author }}</div>
                     <div class="q-my-sm">
+                      <q-chip v-if="item.entry.author" icon="person" :outline="!isDark">
+                        Author{{ " | " }}{{ item.entry.author }}
+                      </q-chip>
                       <q-chip
                         clickable
                         icon="category"
@@ -392,7 +394,7 @@
                         :outline="!isDark"
                         @click="selectedCategoryId = String(item.category.id)"
                       >
-                        Category: {{ item.category.name }}
+                        Category{{ " | " }}{{ item.category.name }}
                       </q-chip>
                       <q-chip
                         clickable
@@ -404,16 +406,16 @@
                           selectedFeedId = String(item.feed.id);
                         "
                       >
-                        Feed: {{ item.feed.title }}
+                        Feed{{ " | " }}{{ item.feed.title }}
                       </q-chip>
                       <q-chip color="accent" :outline="!isDark" icon="calendar_today">
-                        Date: <ClientDateTime :datetime="item.entry.date" />
+                        Date{{ " | " }}<ClientDateTime :datetime="item.entry.date" />
                       </q-chip>
                     </div>
                   </q-card-section>
                   <q-card-section>
                     <div class="text-center">
-                      <q-btn-group :spread="$q.screen.lt.sm" :class="{ column: $q.screen.lt.sm }">
+                      <q-btn-group push :spread="$q.screen.lt.sm" :class="{ column: $q.screen.lt.sm }">
                         <q-btn
                           v-if="!fullContents[item.entry.id]"
                           :padding="$q.screen.lt.sm ? 'md sm' : 'sm'"

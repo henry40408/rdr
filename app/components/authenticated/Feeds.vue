@@ -121,8 +121,10 @@
           <q-item>
             <q-item-section>
               <ClientOnly>
-                <q-toggle v-model="hideEmpty" label="Hide empty" />
-                <q-toggle v-model="showErrorOnly" label="Show error only" />
+                <div class="row q-gutter-sm">
+                  <q-toggle v-model="hideEmpty" label="Hide empty" />
+                  <q-toggle v-model="showErrorOnly" label="Show error only" />
+                </div>
               </ClientOnly>
             </q-item-section>
           </q-item>
@@ -148,7 +150,7 @@
 
               <q-card>
                 <q-card-section>
-                  <q-btn-group>
+                  <q-btn-group push>
                     <q-btn icon="edit" @click="updateCategoryDialog(category.id)" />
                     <q-btn
                       icon="refresh"
