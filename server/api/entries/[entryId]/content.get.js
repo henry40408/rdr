@@ -18,10 +18,10 @@ export default defineEventHandler(async (event) => {
   const repository = container.resolve("repository");
 
   const entry = await repository.findEntryById(userId, entryId);
-  if (!entry) throw createError({ statusCode: 404, message: "Entry not found" });
+  if (!entry) throw createError({ statusCode: 404, statusMessage: "Entry not found" });
 
   const feed = await repository.findFeedById(userId, entry.feedId);
-  if (!feed) throw createError({ statusCode: 404, message: "Feed not found" });
+  if (!feed) throw createError({ statusCode: 404, statusMessage: "Feed not found" });
 
   const content = await repository.findEntryContentById(userId, entryId);
   if (!content) return { content: "" };

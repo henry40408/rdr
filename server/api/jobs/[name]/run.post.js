@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
   const repository = container.resolve("repository");
 
   const user = await repository.findUserById(userId);
-  if (!user?.isAdmin) throw createError({ status: 403, message: "Forbidden" });
+  if (!user?.isAdmin) throw createError({ status: 403, statusMessage: "Forbidden" });
 
   jobService.runByName(name).catch((err) => {
     logger.error(`Failed to run job ${name}: ${err}`);

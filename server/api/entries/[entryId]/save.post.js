@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
   const linkdingService = container.resolve("linkdingService");
 
   const entry = await repository.findEntryById(userId, entryId);
-  if (!entry) throw createError({ statusCode: 404, message: "Entry not found" });
+  if (!entry) throw createError({ statusCode: 404, statusMessage: "Entry not found" });
 
   let content = await repository.findEntryContentById(userId, entryId);
   if (!content) content = "";

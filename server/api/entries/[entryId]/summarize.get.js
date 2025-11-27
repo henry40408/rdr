@@ -49,15 +49,15 @@ export default defineEventHandler(async (event) => {
   const repository = container.resolve("repository");
 
   const entry = await repository.findEntryById(userId, entryId);
-  if (!entry) throw createError({ statusCode: 404, message: "Entry not found." });
+  if (!entry) throw createError({ statusCode: 404, statusMessage: "Entry not found." });
 
   const settings = await repository.findUserSettings(userId);
   const kagiSessionLink = settings.kagiSessionLink;
-  if (!kagiSessionLink) throw createError({ statusCode: 503, message: "Kagi session link is not configured." });
+  if (!kagiSessionLink) throw createError({ statusCode: 503, statusMessage: "Kagi session link is not configured." });
 
   const parsed = new URL(kagiSessionLink);
   const token = parsed.searchParams.get("token");
-  if (!token) throw createError({ statusCode: 503, message: "Kagi session link is invalid." });
+  if (!token) throw createError({ statusCode: 503, statusMessage: "Kagi session link is invalid." });
 
   const url = new URL("https://kagi.com/mother/summary_labs");
   url.searchParams.set("summary_type", "summary");
@@ -70,13 +70,13 @@ export default defineEventHandler(async (event) => {
   const res = await retry(() => downloadService.queue.add(() => fetch(url, { headers })));
   if (!res.ok) {
     logger.error({ status: res.status, statusText: res.statusText, body: await res.text() });
-    throw createError({ statusCode: 500, message: "Failed to fetch summarization from Kagi." });
+    throw createError({ statusCode: 500, statusMessage: "Failed to fetch summarization from Kagi." });
   }
 
   /** @type {KagiSummarizationResponse} */
   const data = await res.json();
   if (!data || data.output_data.status !== "completed")
-    throw createError({ statusCode: 500, message: "Failed to get summarization from Kagi." });
+    throw createError({ statusCode: 500, statusMessage: "Failed to get summarization from Kagi." });
 
   return data.output_data.markdown;
 });
