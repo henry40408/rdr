@@ -38,7 +38,10 @@ export class DownloadService {
     this.logger.debug({ url, etag, lastModified, disableHttp2, userAgent, priority });
 
     const dispatcher = new Agent({ allowH2: !disableHttp2, bodyTimeout: this.config.httpTimeoutMs });
-    return await retry(() => this.queue.add(() => fetch(url, { headers, dispatcher }), { priority }));
+    const res = await retry(() => this.queue.add(() => fetch(url, { headers, dispatcher }), { priority }));
+
+    this.logger.debug({ url, status: res.status, statusText: res.statusText });
+    return res;
   }
 
   /**
@@ -61,7 +64,10 @@ export class DownloadService {
     this.logger.debug({ url, etag, lastModified, disableHttp2, userAgent, priority });
 
     const dispatcher = new Agent({ allowH2: !disableHttp2, bodyTimeout: this.config.httpTimeoutMs });
-    return await retry(() => this.queue.add(() => fetch(url, { headers, dispatcher }), { priority }));
+    const res = await retry(() => this.queue.add(() => fetch(url, { headers, dispatcher }), { priority }));
+
+    this.logger.debug({ url, status: res.status, statusText: res.statusText });
+    return res;
   }
 
   /**
@@ -87,6 +93,37 @@ export class DownloadService {
     } catch (err) {
       this.logger.error(err);
       this.logger.error({ msg: "Failed to find favicon", htmlUrl });
+      return undefined;
+    }
+  }
+
+  /**
+   * @param {string} url
+   * @returns {Promise<string|undefined>}
+   */
+  async findFeed(url) {
+    try {
+      const res = await this.downloadText({ url, disableHttp2: false, priority: 1 });
+      if (!res.ok) {
+        this.logger.error({ status: res.status, statusText: res.statusText, url });
+        return undefined;
+      }
+
+      const content = await res.text();
+      const $ = cheerio.load(content);
+      const feedLink =
+        $('link[type="application/rss+xml"]').attr("href") ?? $('link[type="application/atom+xml"]').attr("href");
+      if (!feedLink) {
+        this.logger.warn({ message: "No feed link found in HTML", url });
+        return undefined;
+      }
+
+      const absoluteFeedUrl = String(new URL(feedLink, url));
+      this.logger.info({ message: "Found feed URL", feedUrl: absoluteFeedUrl });
+      return absoluteFeedUrl;
+    } catch (err) {
+      this.logger.error(err);
+      this.logger.error({ msg: "Failed to find feed", url });
       return undefined;
     }
   }
