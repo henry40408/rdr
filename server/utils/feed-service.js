@@ -61,6 +61,7 @@ export class FeedService {
       const cloned = structuredClone(feed);
       cloned.etag = res.headers.get("etag") ?? undefined;
       cloned.lastModified = res.headers.get("last-modified") ?? undefined;
+      cloned.feedUpdatedAt = meta?.date?.toISOString() ?? undefined;
 
       return { type: "ok", items, meta, feed: cloned };
     } catch (err) {

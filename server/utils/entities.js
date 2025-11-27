@@ -110,6 +110,7 @@ export class FeedEntity {
    * @param {string} [opts.etag]
    * @param {string} [opts.lastModified]
    * @param {string} [opts.lastError]
+   * @param {string} [opts.feedUpdatedAt]
    * @param {number} [opts.errorCount]
    * @param {string} [opts.date]
    */
@@ -125,6 +126,7 @@ export class FeedEntity {
     etag,
     lastModified,
     lastError,
+    feedUpdatedAt,
     date,
     errorCount = 0,
   }) {
@@ -140,6 +142,7 @@ export class FeedEntity {
     this.errorCount = errorCount;
     this.disableHttp2 = disableHttp2;
     this.userAgent = userAgent;
+    this.feedUpdatedAt = feedUpdatedAt;
 
     // virtual field, should not be stored in the database
     this.date = date;
