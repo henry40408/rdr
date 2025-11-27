@@ -148,7 +148,7 @@
 
               <q-card>
                 <q-card-section>
-                  <q-btn-group>
+                  <q-btn-group push>
                     <q-btn icon="edit" @click="updateCategoryDialog(category.id)" />
                     <q-btn
                       icon="refresh"
