@@ -121,8 +121,10 @@
           <q-item>
             <q-item-section>
               <ClientOnly>
-                <q-toggle v-model="hideEmpty" label="Hide empty" />
-                <q-toggle v-model="showErrorOnly" label="Show error only" />
+                <div class="row q-gutter-sm">
+                  <q-toggle v-model="hideEmpty" label="Hide empty" />
+                  <q-toggle v-model="showErrorOnly" label="Show error only" />
+                </div>
               </ClientOnly>
             </q-item-section>
           </q-item>
