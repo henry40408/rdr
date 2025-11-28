@@ -482,8 +482,10 @@
                         No content available for this entry.
                       </q-banner>
                     </div>
-                    <div v-else class="text-center">
-                      <q-spinner size="lg" />
+                    <div v-else>
+                      <q-skeleton type="text" width="80%" />
+                      <q-skeleton type="text" width="60%" />
+                      <q-skeleton type="text" width="40%" />
                     </div>
                   </q-card-section>
                 </q-card>
