@@ -899,6 +899,9 @@ describe("Repository", () => {
 
       const entriesAfterDelete = await repository.findEntries({ userId: user.id, feedIds: [feedId] });
       assert.strictEqual(entriesAfterDelete.length, 0);
+
+      const categoryAfterDelete = await repository.findCategoriesWithFeed(user.id);
+      assert.strictEqual(categoryAfterDelete.length, 0);
     });
 
     it("should delete category and its feeds and entries", async () => {
@@ -998,7 +1001,11 @@ describe("Repository", () => {
 
     it("should set or unset disableHttp2 of feed", async () => {
       const user = await createUser("http2user", "http2password");
-      const { feedId } = await createEntries(repository, user);
+      const { categoryId, feedId } = await createEntries(repository, user);
+
+      const category = await repository.knex("categories").where({ id: categoryId }).first();
+      assert.ok(category);
+      const categoryName = category.name;
 
       let feed = await repository.findFeedById(user.id, feedId);
       assert.ok(feed);
@@ -1006,7 +1013,7 @@ describe("Repository", () => {
 
       // enable then disable
       feed.disableHttp2 = true;
-      let updatedCount = await repository.updateFeed(user.id, feed);
+      let updatedCount = await repository.updateFeed(user.id, categoryName, feed);
       assert.strictEqual(updatedCount, 1);
       {
         const updatedFeed = await repository.findFeedById(user.id, feedId);
@@ -1015,7 +1022,7 @@ describe("Repository", () => {
       }
 
       feed.disableHttp2 = false;
-      updatedCount = await repository.updateFeed(user.id, feed);
+      updatedCount = await repository.updateFeed(user.id, categoryName, feed);
       assert.strictEqual(updatedCount, 1);
       {
         const updatedFeed = await repository.findFeedById(user.id, feedId);
@@ -1025,7 +1032,7 @@ describe("Repository", () => {
 
       // try to set undefined
       feed.disableHttp2 = true;
-      updatedCount = await repository.updateFeed(user.id, feed);
+      updatedCount = await repository.updateFeed(user.id, categoryName, feed);
       assert.strictEqual(updatedCount, 1);
       {
         const updatedFeed = await repository.findFeedById(user.id, feedId);

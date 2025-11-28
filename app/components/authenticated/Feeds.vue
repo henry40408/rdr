@@ -83,16 +83,7 @@
           </q-item>
           <q-item>
             <q-item-section>
-              <q-select
-                v-model="categoryName"
-                outlined
-                use-chips
-                use-input
-                label="Category Name *"
-                :options="filteredCategoryOptions"
-                @new-value="addCategory"
-                @filter="filterCategories"
-              />
+              <CategoryInput v-model="categoryName" :category-list="categoryOptions" />
               <div class="text-caption q-px-sm">
                 Create a new category by typing a name and pressing Enter. Clear to select existing.
               </div>
@@ -325,7 +316,6 @@ const { hideEmpty } = useLocalSettings();
 // New feed form fields
 const adding = ref(false);
 const categoryName: Ref<string | null> = ref(null);
-const filteredCategoryOptions: Ref<string[]> = ref([]);
 const htmlUrl = ref("");
 const xmlUrl = ref("");
 
@@ -342,21 +332,11 @@ const headers = useRequestHeaders(["cookie"]);
 const { data: categories, refresh } = await useFetch("/api/categories", { headers });
 
 const categoryOptions = computed(() => (categories.value ?? []).map((category) => category.name));
-watchEffect(() => {
-  filteredCategoryOptions.value = categoryOptions.value;
-});
 
 const shouldShowNoCategories = computed(() => {
   for (const category of categories.value ?? []) if (shouldShowCategory(category.id)) return false;
   return true;
 });
-
-function addCategory(inputValue: string, doneFn: (val: string, mode: "add" | "add-unique" | "toggle") => void) {
-  if (inputValue && !categoryOptions.value.includes(inputValue)) {
-    categoryName.value = inputValue;
-  }
-  doneFn(inputValue, "toggle");
-}
 
 async function addFeed() {
   adding.value = true;
@@ -435,21 +415,6 @@ function deleteFeedDialog(feedId: number) {
         message: `Error deleting feed: ${err}`,
         actions: [{ icon: "close", color: "white" }],
       });
-    }
-  });
-}
-
-function filterCategories(
-  inputValue: string,
-  doneFn: (callbackFn: () => void, afterFn?: (component: import("quasar").QSelect) => void) => void,
-  _abortFn: () => void,
-) {
-  doneFn(() => {
-    if (!inputValue) {
-      filteredCategoryOptions.value = categoryOptions.value;
-    } else {
-      const filter = inputValue.toLowerCase();
-      filteredCategoryOptions.value = categoryOptions.value.filter((option) => option.toLowerCase().includes(filter));
     }
   });
 }
@@ -623,13 +588,18 @@ async function updateCategoryDialog(categoryId: number) {
 }
 
 async function updateFeedDialog(feedId: number) {
-  const feed = categories.value?.flatMap((category) => category.feeds).find((f) => f.id === feedId);
+  const category = categories.value?.find((c) => c.feeds.some((f) => f.id === feedId));
+  if (!category) return;
+
+  const feed = category.feeds.find((f) => f.id === feedId);
   if (!feed) return;
 
   $q.dialog({
     component: FeedDialog,
     componentProps: {
       id: feedId,
+      categoryList: categoryOptions.value,
+      categoryName: category.name,
       title: feed.title,
       xmlUrl: feed.xmlUrl,
       htmlUrl: feed.htmlUrl,
@@ -637,11 +607,19 @@ async function updateFeedDialog(feedId: number) {
       userAgent: feed.userAgent || "",
     },
   }).onOk(
-    async (data: { title: string; xmlUrl: string; htmlUrl?: string; disableHttp2?: boolean; userAgent?: string }) => {
+    async (data: {
+      categoryName: string;
+      title: string;
+      xmlUrl: string;
+      htmlUrl?: string;
+      disableHttp2?: boolean;
+      userAgent?: string;
+    }) => {
       try {
         await $fetch(`/api/feeds/${feedId}`, {
           method: "PATCH",
           body: {
+            categoryName: data.categoryName,
             title: data.title,
             xmlUrl: data.xmlUrl,
             htmlUrl: data.htmlUrl,

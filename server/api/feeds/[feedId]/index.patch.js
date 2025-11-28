@@ -7,6 +7,7 @@ const schema = z.object({
 });
 
 const bodySchema = z.object({
+  categoryName: z.string(),
   title: z.string(),
   xmlUrl: z.url(),
   htmlUrl: z.url().or(z.literal("")),
@@ -24,8 +25,9 @@ export default defineEventHandler(async (event) => {
   const repository = container.resolve("repository");
 
   const { feedId } = await getValidatedRouterParams(event, (params) => schema.parse(params));
-  const body = await readBody(event);
-  const { title, xmlUrl, htmlUrl } = bodySchema.parse(body);
+  const { categoryName, title, xmlUrl, htmlUrl, disableHttp2, userAgent } = await readValidatedBody(event, (body) =>
+    bodySchema.parse(body),
+  );
 
   const feed = await repository.findFeedById(userId, feedId);
   if (!feed) throw createError({ statusCode: 404, statusMessage: "Feed not found" });
@@ -36,10 +38,10 @@ export default defineEventHandler(async (event) => {
     title,
     xmlUrl,
     htmlUrl,
-    disableHttp2: body.disableHttp2 ?? feed.disableHttp2,
-    userAgent: body.userAgent ?? feed.userAgent,
+    disableHttp2: disableHttp2 ?? feed.disableHttp2,
+    userAgent: userAgent ?? feed.userAgent,
   });
-  await repository.updateFeed(userId, entity);
+  await repository.updateFeed(userId, categoryName, entity);
 
   return entity;
 });
