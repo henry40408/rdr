@@ -6,6 +6,7 @@
       </q-card-section>
 
       <q-card-section>
+        <CategoryInput v-model="categoryName" :category-list="categoryList" />
         <q-input v-model="xmlUrl" label="Feed XML URL *" :rules="[(val) => !!val || 'Feed XML URL is required']" />
         <q-input v-model="title" label="Feed Title *" :rules="[(val) => !!val || 'Feed Title is required']" />
         <q-input v-model="htmlUrl" label="Feed HTML URL" />
@@ -24,20 +25,22 @@
 <script setup lang="ts">
 import { useDialogPluginComponent } from "quasar";
 
-const props = defineProps({
-  id: { type: Number, required: true },
-  categoryName: { type: String, required: true },
-  xmlUrl: { type: String, required: true },
-  htmlUrl: { type: String, default: undefined },
-  title: { type: String, required: true },
-  disableHttp2: { type: Boolean, default: false },
-  userAgent: { type: String, default: "" },
-});
+const props = defineProps<{
+  id: number;
+  categoryList: string[];
+  categoryName: string;
+  xmlUrl: string;
+  htmlUrl?: string;
+  title: string;
+  disableHttp2?: boolean;
+  userAgent?: string;
+}>();
 
 defineEmits({
   ...useDialogPluginComponent.emitsObject,
 });
 
+const categoryName = ref(props.categoryName);
 const title = ref(props.title);
 const xmlUrl = ref(props.xmlUrl);
 const htmlUrl = ref(props.htmlUrl);
@@ -49,6 +52,7 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginC
 
 function onOKClick() {
   onDialogOK({
+    categoryName: categoryName.value,
     title: title.value,
     xmlUrl: xmlUrl.value,
     htmlUrl: htmlUrl.value,

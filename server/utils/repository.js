@@ -1021,30 +1021,51 @@ export class Repository {
 
   /**
    * @param {number} userId
+   * @param {string} categoryName
    * @param {FeedEntity} feed
    * @returns {Promise<number>}
    */
-  async updateFeed(userId, feed) {
-    const update = {};
-    if ("title" in feed) update.title = feed.title;
-    if ("xmlUrl" in feed) update.xml_url = feed.xmlUrl;
-    if ("htmlUrl" in feed) update.html_url = feed.htmlUrl;
-    if ("disableHttp2" in feed) update.disable_http2 = feed.disableHttp2 ?? false;
-    if ("userAgent" in feed) update.user_agent = feed.userAgent || null;
-    if (Object.keys(update).length === 0) {
-      this.logger.debug({ msg: "No feed fields to update", feedId: feed.id });
-      return 0;
-    }
-    update.updated_at = this.knex.fn.now();
+  async updateFeed(userId, categoryName, feed) {
+    return await this.knex.transaction(async (tx) => {
+      const existing = await tx("feeds")
+        .whereIn("category_id", (builder) => {
+          builder.select("id").from("categories").where("user_id", userId);
+        })
+        .where({ id: feed.id })
+        .first();
+      if (!existing) {
+        this.logger.warn({ msg: "Feed not found for update", feedId: feed.id });
+        return 0;
+      }
+      const existingCategoryId = existing.category_id;
 
-    const updated = await this.knex("feeds")
-      .whereIn("category_id", (builder) => {
-        builder.select("id").from("categories").where("user_id", userId);
-      })
-      .where({ id: feed.id })
-      .update(update);
-    this.logger.info({ msg: "Updated feed", feedId: feed.id, updated });
-    return updated;
+      const category = await this.findOrCreateCategory(tx, userId, categoryName);
+
+      const update = {};
+      if (category.id !== existing.category_id) update.category_id = category.id; // change category if needed
+      if ("title" in feed) update.title = feed.title;
+      if ("xmlUrl" in feed) update.xml_url = feed.xmlUrl;
+      if ("htmlUrl" in feed) update.html_url = feed.htmlUrl;
+      if ("disableHttp2" in feed) update.disable_http2 = feed.disableHttp2 ?? false;
+      if ("userAgent" in feed) update.user_agent = feed.userAgent || null;
+      if (Object.keys(update).length === 0) {
+        this.logger.debug({ msg: "No feed fields to update", feedId: feed.id });
+        return 0;
+      }
+      update.updated_at = tx.fn.now();
+
+      const updated = await tx("feeds")
+        .whereIn("category_id", (builder) => {
+          builder.select("id").from("categories").where("user_id", userId);
+        })
+        .where({ id: feed.id })
+        .update(update);
+      this.logger.info({ msg: "Updated feed", feedId: feed.id, updated });
+
+      await this.deleteCategoryIfEmpty(tx, userId, existingCategoryId); // delete old category if empty
+
+      return updated;
+    });
   }
 
   /**

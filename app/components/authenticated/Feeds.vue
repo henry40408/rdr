@@ -598,6 +598,7 @@ async function updateFeedDialog(feedId: number) {
     component: FeedDialog,
     componentProps: {
       id: feedId,
+      categoryList: categoryOptions.value,
       categoryName: category.name,
       title: feed.title,
       xmlUrl: feed.xmlUrl,
