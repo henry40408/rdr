@@ -1,6 +1,8 @@
 // @ts-check
 
 import { BaseJob } from "./base-job.js";
+import PQueue from "p-queue";
+import os from "node:os";
 
 export class FetchEntriesJob extends BaseJob {
   /**
@@ -16,12 +18,13 @@ export class FetchEntriesJob extends BaseJob {
       cronTime: "0 0 * * * *", // every hour
       jobService,
     });
+
     this.config = config;
     this.feedService = feedService;
     this.logger = logger;
     this.repository = repository;
 
-    this.BATCH_SIZE = 3;
+    this.queue = new PQueue({ concurrency: os.cpus().length });
   }
 
   /** @override */
@@ -46,16 +49,14 @@ export class FetchEntriesJob extends BaseJob {
     for (const user of users) {
       const categories = await this.repository.findCategoriesWithFeed(user.id);
       const feeds = categories.flatMap((category) => category.feeds);
-      for (let i = 0; i < feeds.length; i += this.BATCH_SIZE) {
-        const feedBatch = feeds
-          .slice(i, i + this.BATCH_SIZE)
-          // only fetch feeds whose error count is below error threshold
-          .filter((f) => f.errorCount < errorThreshold);
-
-        await Promise.allSettled(
-          feedBatch.map(async (feed) => {
+      const tasks = [];
+      for (const feed of feeds) {
+        if (feed.errorCount > errorThreshold) continue;
+        tasks.push(
+          this.queue.add(async () => {
+            this.logger.debug({ msg: "Fetching entries for feed", feedId: feed.id });
             try {
-              return await this.feedService.fetchAndSaveEntries(user.id, feed);
+              await this.feedService.fetchAndSaveEntries(user.id, feed);
             } finally {
               this.logger.debug({
                 msg: "Fetched entries for feed",
@@ -66,9 +67,8 @@ export class FetchEntriesJob extends BaseJob {
             }
           }),
         );
-
-        await new Promise((resolve) => setImmediate(resolve));
       }
+      await Promise.allSettled(tasks);
     }
 
     logger.info("Completed feed refresh job");

@@ -1,6 +1,8 @@
 // @ts-check
 
 import { BaseJob } from "./base-job.js";
+import PQueue from "p-queue";
+import os from "node:os";
 
 /** @implements {BaseJob} */
 export class FetchImagesJob extends BaseJob {
@@ -22,7 +24,7 @@ export class FetchImagesJob extends BaseJob {
     this.logger = logger;
     this.repository = repository;
 
-    this.BATCH_SIZE = 5;
+    this.queue = new PQueue({ concurrency: os.cpus().length });
   }
 
   /** @override */
@@ -46,13 +48,13 @@ export class FetchImagesJob extends BaseJob {
     for (const user of users) {
       const categories = await this.repository.findCategoriesWithFeed(user.id);
       const feeds = categories.flatMap((category) => category.feeds);
-      for (let i = 0; i < feeds.length; i += this.BATCH_SIZE) {
-        const feedBatch = feeds.slice(i, i + this.BATCH_SIZE);
-
-        await Promise.allSettled(
-          feedBatch.map(async (feed) => {
+      const tasks = [];
+      for (const feed of feeds) {
+        tasks.push(
+          this.queue.add(async () => {
+            this.logger.debug({ msg: "Fetching image for feed", feedId: feed.id });
             try {
-              return await this.feedService.fetchImage(user.id, feed);
+              await this.feedService.fetchImage(user.id, feed);
             } finally {
               this.logger.debug({
                 msg: "Fetched image for feed",
@@ -63,9 +65,8 @@ export class FetchImagesJob extends BaseJob {
             }
           }),
         );
-
-        await new Promise((resolve) => setImmediate(resolve));
       }
+      await Promise.allSettled(tasks);
     }
 
     logger.info("Completed feed images job");
