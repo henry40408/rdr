@@ -4,15 +4,13 @@
 </template>
 
 <script setup lang="ts">
-import pangu from "pangu";
-
 const props = defineProps({
   keyword: { type: String, default: null },
   text: { type: String, required: true },
 });
 
 const processed = computed(() => {
-  if (!props.keyword) return pangu.spacingText(props.text);
+  if (!props.keyword) return props.text;
   return highlightKeyword(props.text, props.keyword);
 });
 </script>
