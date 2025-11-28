@@ -899,6 +899,9 @@ describe("Repository", () => {
 
       const entriesAfterDelete = await repository.findEntries({ userId: user.id, feedIds: [feedId] });
       assert.strictEqual(entriesAfterDelete.length, 0);
+
+      const categoryAfterDelete = await repository.findCategoriesWithFeed(user.id);
+      assert.strictEqual(categoryAfterDelete.length, 0);
     });
 
     it("should delete category and its feeds and entries", async () => {

@@ -171,15 +171,11 @@ export class Repository {
    */
   async createFeed(userId, categoryName, feed) {
     return await this.knex.transaction(async (tx) => {
-      await tx("categories").insert({ user_id: userId, name: categoryName }).onConflict(["user_id", "name"]).ignore();
-
-      const category = await tx("categories").where({ user_id: userId, name: categoryName }).first();
-      if (!category) throw new Error("Failed to find or create category");
-      const categoryId = category.id;
+      const category = await this.findOrCreateCategory(tx, userId, categoryName);
 
       await tx("feeds")
         .insert({
-          category_id: categoryId,
+          category_id: category.id,
           title: feed.title,
           xml_url: feed.xmlUrl,
           html_url: feed.htmlUrl,
@@ -188,10 +184,10 @@ export class Repository {
         .onConflict(["category_id", "xml_url"])
         .ignore();
 
-      const created = await tx("feeds").where({ category_id: categoryId, xml_url: feed.xmlUrl }).first();
+      const created = await tx("feeds").where({ category_id: category.id, xml_url: feed.xmlUrl }).first();
       if (!created) throw new Error("Failed to find or create feed");
 
-      this.logger.info({ msg: "Created feed", userId, feedId: created.id, categoryId });
+      this.logger.info({ msg: "Created feed", userId, feedId: created.id, categoryId: category.id });
       return new FeedEntity({
         id: created.id,
         categoryId: created.category_id,
@@ -302,6 +298,21 @@ export class Repository {
   }
 
   /**
+   * @param {import('knex').Knex.Transaction} tx
+   * @param {number} userId
+   * @param {number} categoryId
+   * @return {Promise<number|undefined>}
+   */
+  async deleteCategoryIfEmpty(tx, userId, categoryId) {
+    const feedCount = await tx("feeds").where({ category_id: categoryId }).count({ count: "*" }).first();
+    if (feedCount && Number(feedCount.count) > 0) return;
+
+    const deleted = await tx("categories").where({ id: categoryId, user_id: userId }).del();
+    this.logger.info({ msg: "Deleted empty category", userId, categoryId, deleted });
+    return deleted;
+  }
+
+  /**
    * @param {number} userId
    * @param {number} feedId
    * @return {Promise<number|undefined>}
@@ -331,9 +342,8 @@ export class Repository {
       const deletedImage = await tx("images").where({ user_id: userId, external_id: imageExternalId }).del();
       logger.info({ msg: "Deleted feed image", deletedImage });
 
-      const remainingFeeds = await tx("feeds").where({ category_id: feed.category_id }).count({ count: "*" }).first();
-      if (!remainingFeeds) {
-        await tx("categories").where({ id: feed.category_id }).del();
+      const deletedCategory = await this.deleteCategoryIfEmpty(tx, userId, feed.category_id);
+      if (deletedCategory) {
         logger.info({ msg: "Deleted empty category", categoryId: feed.category_id });
       }
 
@@ -729,6 +739,19 @@ export class Repository {
           lastError: job.last_error,
         }),
     );
+  }
+
+  /**
+   * @param {import('knex').Knex.Transaction} tx
+   * @param {number} userId
+   * @param {string} categoryName
+   * @returns {Promise<CategoryEntity>}
+   */
+  async findOrCreateCategory(tx, userId, categoryName) {
+    await tx("categories").insert({ user_id: userId, name: categoryName }).onConflict(["user_id", "name"]).ignore();
+    const category = await tx("categories").where({ user_id: userId, name: categoryName }).first();
+    if (!category) throw new Error("Failed to find or create category");
+    return new CategoryEntity({ id: category.id, userId: category.user_id, name: category.name });
   }
 
   /**
