@@ -1346,9 +1346,24 @@ export class Repository {
 
   async _setPragmas() {
     await this.knex.raw("PRAGMA busy_timeout = 5000");
+    await this.knex.raw("PRAGMA busy_timeout").then(([row]) => {
+      this.logger.debug({ msg: "Set PRAGMA busy_timeout", value: row.timeout });
+    });
+
     await this.knex.raw("PRAGMA journal_mode = WAL");
+    await this.knex.raw("PRAGMA journal_mode").then(([row]) => {
+      this.logger.debug({ msg: "Set PRAGMA journal_mode", value: row.journal_mode });
+    });
+
     await this.knex.raw("PRAGMA foreign_keys = OFF");
+    await this.knex.raw("PRAGMA foreign_keys").then(([row]) => {
+      this.logger.debug({ msg: "Set PRAGMA foreign_keys", value: row.foreign_keys });
+    });
+
     await this.knex.raw("PRAGMA synchronous = NORMAL");
+    await this.knex.raw("PRAGMA synchronous").then(([row]) => {
+      this.logger.debug({ msg: "Set PRAGMA synchronous", value: row.synchronous });
+    });
   }
 
   /**
