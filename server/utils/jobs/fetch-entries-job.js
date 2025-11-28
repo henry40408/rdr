@@ -20,6 +20,8 @@ export class FetchEntriesJob extends BaseJob {
     this.feedService = feedService;
     this.logger = logger;
     this.repository = repository;
+
+    this.BATCH_SIZE = 3;
   }
 
   /** @override */
@@ -41,14 +43,17 @@ export class FetchEntriesJob extends BaseJob {
     logger.info("Starting feed refresh job");
 
     const users = await this.repository.findUsers();
-    const tasks = users.map(async (user) => {
+    for (const user of users) {
       const categories = await this.repository.findCategoriesWithFeed(user.id);
       const feeds = categories.flatMap((category) => category.feeds);
-      return await Promise.allSettled(
-        feeds
+      for (let i = 0; i < feeds.length; i += this.BATCH_SIZE) {
+        const feedBatch = feeds
+          .slice(i, i + this.BATCH_SIZE)
           // only fetch feeds whose error count is below error threshold
-          .filter((f) => f.errorCount < errorThreshold)
-          .map(async (feed) => {
+          .filter((f) => f.errorCount < errorThreshold);
+
+        await Promise.allSettled(
+          feedBatch.map(async (feed) => {
             try {
               return await this.feedService.fetchAndSaveEntries(user.id, feed);
             } finally {
@@ -60,9 +65,11 @@ export class FetchEntriesJob extends BaseJob {
               });
             }
           }),
-      );
-    });
-    await Promise.allSettled(tasks);
+        );
+
+        await new Promise((resolve) => setImmediate(resolve));
+      }
+    }
 
     logger.info("Completed feed refresh job");
   }
