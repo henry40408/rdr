@@ -26,6 +26,7 @@ import { useDialogPluginComponent } from "quasar";
 
 const props = defineProps({
   id: { type: Number, required: true },
+  categoryName: { type: String, required: true },
   xmlUrl: { type: String, required: true },
   htmlUrl: { type: String, default: undefined },
   title: { type: String, required: true },
