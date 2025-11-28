@@ -544,7 +544,6 @@
 <script setup lang="ts">
 import { UseClipboard } from "@vueuse/components";
 import { add } from "date-fns";
-import pangu from "pangu";
 import { useQuasar } from "quasar";
 import { useRouteQuery } from "@vueuse/router";
 
@@ -1159,11 +1158,11 @@ async function summarizeEntry(entryId: number) {
     const [prefixedTitle, content] = text.split("\n\n");
     const title = replaceForTiddlyWiki((prefixedTitle ?? "").replace("Title: ", ""));
 
-    summarizations.value[entryId] = `${pangu.spacingText(title)}
+    summarizations.value[entryId] = `${title}
 
 ${entry.entry.link}
 
-${pangu.spacingText(content ?? "")}`;
+${content ?? ""}`;
   } catch (err) {
     if (summarizingControllers.value[entryId]?.signal.aborted) {
       $q.notify({
