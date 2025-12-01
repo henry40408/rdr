@@ -2,6 +2,7 @@
 
 import { BaseJob } from "./base-job.js";
 import PQueue from "p-queue";
+import { getMinutes } from "date-fns";
 import os from "node:os";
 
 export class FetchEntriesJob extends BaseJob {
@@ -15,7 +16,7 @@ export class FetchEntriesJob extends BaseJob {
    */
   constructor({ config, feedService, jobService, logger, repository }) {
     super({
-      cronTime: "0 0 * * * *", // every hour
+      cronTime: "0 * * * * *", // every minute
       jobService,
     });
 
@@ -39,16 +40,16 @@ export class FetchEntriesJob extends BaseJob {
 
   /** @override */
   async run() {
+    const bucket = getMinutes(new Date());
     const { errorThreshold } = this.config;
     const logger = this.logger.child({ job: this.name });
 
     let counter = 0;
-    logger.info("Starting feed refresh job");
+    logger.info({ msg: "Starting feed refresh job", bucket });
 
     const users = await this.repository.findUsers();
     for (const user of users) {
-      const categories = await this.repository.findCategoriesWithFeed(user.id);
-      const feeds = categories.flatMap((category) => category.feeds);
+      const feeds = await this.repository.findFeedsByBucket(user.id, bucket);
       const tasks = [];
       for (const feed of feeds) {
         if (feed.errorCount > errorThreshold) continue;
@@ -71,6 +72,6 @@ export class FetchEntriesJob extends BaseJob {
       await Promise.allSettled(tasks);
     }
 
-    logger.info("Completed feed refresh job");
+    logger.info({ msg: "Finished feed refresh job", bucket });
   }
 }

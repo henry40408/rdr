@@ -2,6 +2,7 @@
 
 import { BaseJob } from "./base-job.js";
 import PQueue from "p-queue";
+import { getMinutes } from "date-fns";
 import os from "node:os";
 
 /** @implements {BaseJob} */
@@ -15,7 +16,7 @@ export class FetchImagesJob extends BaseJob {
    */
   constructor({ feedService, jobService, logger, repository }) {
     super({
-      cronTime: "0 10 * * * *", // every hour at minute 10
+      cronTime: "10 * * * * *", // every minute at 10 seconds
       jobService,
     });
 
@@ -39,15 +40,15 @@ export class FetchImagesJob extends BaseJob {
 
   /** @override */
   async run() {
+    const bucket = getMinutes(new Date());
     const logger = this.logger.child({ job: this.name });
 
     let counter = 0;
-    logger.info("Starting feed images job");
+    logger.info({ msg: "Starting feed images job", bucket });
 
     const users = await this.repository.findUsers();
     for (const user of users) {
-      const categories = await this.repository.findCategoriesWithFeed(user.id);
-      const feeds = categories.flatMap((category) => category.feeds);
+      const feeds = await this.repository.findFeedsByBucket(user.id, bucket);
       const tasks = [];
       for (const feed of feeds) {
         tasks.push(
@@ -69,6 +70,6 @@ export class FetchImagesJob extends BaseJob {
       await Promise.allSettled(tasks);
     }
 
-    logger.info("Completed feed images job");
+    logger.info({ msg: "Finished feed images job", bucket });
   }
 }
