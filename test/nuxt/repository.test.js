@@ -1040,5 +1040,39 @@ describe("Repository", () => {
         assert.strictEqual(updatedFeed.disableHttp2, true);
       }
     });
+
+    it("should return feeds by bucket", async () => {
+      const user = await createUser("bucketuser", "bucketpassword");
+
+      const category = new NewCategoryEntity({
+        userId: user.id,
+        name: "Bucket Category",
+      });
+      const categories = await repository.upsertCategories(user.id, [category]);
+      assert.strictEqual(categories.length, 1);
+      const createdCategory = categories[0];
+
+      const feed1 = new NewCategoryFeedEntity({
+        title: "Feed 1",
+        xmlUrl: "http://example.com/feed1.xml",
+        htmlUrl: "http://example.com/feed1",
+      });
+      const feed2 = new NewCategoryFeedEntity({
+        title: "Feed 2",
+        xmlUrl: "http://example.com/feed2.xml",
+        htmlUrl: "http://example.com/feed2",
+      });
+      const feed3 = new NewCategoryFeedEntity({
+        title: "Feed 3",
+        xmlUrl: "http://example.com/feed3.xml",
+        htmlUrl: "http://example.com/feed3",
+      });
+      await repository.createFeed(user.id, createdCategory.name, feed1);
+      await repository.createFeed(user.id, createdCategory.name, feed2);
+      await repository.createFeed(user.id, createdCategory.name, feed3);
+
+      const feeds = await repository.findFeedsByBucket(user.id, 27);
+      assert.strictEqual(feeds.length, 3);
+    });
   });
 });
