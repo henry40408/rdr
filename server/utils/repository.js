@@ -650,6 +650,38 @@ export class Repository {
 
   /**
    * @param {number} userId
+   * @param {number} bucket
+   * @returns {Promise<FeedEntity[]>}
+   */
+  async findFeedsByBucket(userId, bucket) {
+    const rows = await this.knex("feeds")
+      .where({ bucket })
+      .whereIn("category_id", (builder) => {
+        builder.select("id").from("categories").where("user_id", userId);
+      })
+      .orderBy("fetched_at", "asc") // Fetch older feeds first
+      .select();
+    return rows.map(
+      (row) =>
+        new FeedEntity({
+          id: row.id,
+          categoryId: row.category_id,
+          title: row.title,
+          xmlUrl: row.xml_url,
+          htmlUrl: row.html_url,
+          fetchedAt: row.fetched_at,
+          etag: row.etag,
+          lastModified: row.last_modified,
+          lastError: row.last_error,
+          disableHttp2: row.disable_http2 === 0 ? false : true,
+          userAgent: row.user_agent,
+          feedUpdatedAt: row.feed_updated_at,
+        }),
+    );
+  }
+
+  /**
+   * @param {number} userId
    * @param {number} categoryId
    * @returns {Promise<FeedEntity[]>}
    */
