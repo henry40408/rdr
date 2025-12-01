@@ -338,12 +338,11 @@
                         </q-item-label>
                       </q-item-section>
                       <q-item-section top side>
+                        <q-icon v-if="entryStar[item.entry.id] === 'starred'" size="xs" name="star" color="accent" />
                         <q-icon v-if="fullContents[item.entry.id]" size="xs" name="article" />
                         <q-spinner v-if="scrapping[item.entry.id]" />
-                        <template v-if="summarizationEnabled">
-                          <q-icon v-if="summarizations[item.entry.id]" size="xs" name="psychology" />
-                          <q-spinner v-if="summarizing[item.entry.id]" />
-                        </template>
+                        <q-icon v-if="summarizations[item.entry.id]" size="xs" name="psychology" />
+                        <q-spinner v-if="summarizing[item.entry.id]" />
                       </q-item-section>
                     </q-item>
                   </q-slide-item>
