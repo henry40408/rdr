@@ -43,6 +43,11 @@ describe("Repository", () => {
     await repository.init();
   });
 
+  it("should convert SQLite timestamp to ISO string", () => {
+    const converted = repository.convertSqliteDate("2024-06-30 12:34:56");
+    assert.strictEqual(converted, "2024-06-30T12:34:56.000Z");
+  });
+
   describe("methods", () => {
     beforeEach(async () => {
       await repository.init();
