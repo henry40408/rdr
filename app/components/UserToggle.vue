@@ -7,10 +7,10 @@ import { useQuasar } from "quasar";
 
 const $q = useQuasar();
 
-const props = defineProps({
-  name: { type: String, required: true },
-  value: { type: Boolean, required: true },
-});
+const props = defineProps<{
+  id: number;
+  value: boolean;
+}>();
 
 const emit = defineEmits<{
   (e: "toggled", newValue: boolean): void;
@@ -22,12 +22,13 @@ const value = ref(props.value);
 watch(value, async (newVal) => {
   disabled.value = true;
   try {
-    await $fetch(`/api/jobs/${props.name}/toggle`, { method: "PUT" });
+    await $fetch(`/api/users/${props.id}/toggle`, { method: "PUT" });
     emit("toggled", newVal);
   } catch (err) {
     $q.notify({
       type: "negative",
-      message: `Failed to toggle job status: ${err}`,
+      message: `Failed to toggle user status: ${err}`,
+      actions: [{ icon: "close", color: "white" }],
     });
   } finally {
     disabled.value = false;

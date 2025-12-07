@@ -57,7 +57,16 @@ export class Repository {
     const match = await compare(password, row.password_hash);
     if (!match) return undefined;
 
-    return new UserEntity({ id: row.id, username: row.username, nonce: row.nonce, isAdmin: !!row.is_admin });
+    // Disabled users cannot authenticate
+    if (row.disabled_at) return undefined;
+
+    return new UserEntity({
+      id: row.id,
+      username: row.username,
+      nonce: row.nonce,
+      isAdmin: !!row.is_admin,
+      disabledAt: row.disabled_at,
+    });
   }
 
   /**
@@ -278,6 +287,7 @@ export class Repository {
         username: created.username,
         nonce: created.nonce,
         isAdmin: !!created.is_admin,
+        disabledAt: created.disabled_at,
       });
     });
   }
@@ -855,7 +865,13 @@ export class Repository {
   async findUserById(id) {
     const row = await this.knex("users").where({ id }).first();
     if (!row) return undefined;
-    return new UserEntity({ id: row.id, username: row.username, nonce: row.nonce, isAdmin: !!row.is_admin });
+    return new UserEntity({
+      id: row.id,
+      username: row.username,
+      nonce: row.nonce,
+      isAdmin: !!row.is_admin,
+      disabledAt: row.disabled_at,
+    });
   }
 
   /**
@@ -865,7 +881,13 @@ export class Repository {
   async findUserByUsername(username) {
     const row = await this.knex("users").where({ username }).first();
     if (!row) return undefined;
-    return new UserEntity({ id: row.id, username: row.username, nonce: row.nonce, isAdmin: !!row.is_admin });
+    return new UserEntity({
+      id: row.id,
+      username: row.username,
+      nonce: row.nonce,
+      isAdmin: !!row.is_admin,
+      disabledAt: row.disabled_at,
+    });
   }
 
   /**
@@ -888,7 +910,14 @@ export class Repository {
   async findUsers() {
     const rows = await this.knex("users").select();
     return rows.map(
-      (row) => new UserEntity({ id: row.id, username: row.username, nonce: row.nonce, isAdmin: !!row.is_admin }),
+      (row) =>
+        new UserEntity({
+          id: row.id,
+          username: row.username,
+          nonce: row.nonce,
+          isAdmin: !!row.is_admin,
+          disabledAt: row.disabled_at,
+        }),
     );
   }
 
@@ -1049,6 +1078,24 @@ export class Repository {
         return updated;
       }
     });
+  }
+
+  /**
+   * @param {number} userId
+   */
+  async toggleUser(userId) {
+    const user = await this.findUserById(userId);
+    if (!user) throw new Error(`User with id ${userId} not found`);
+
+    if (user?.disabledAt) {
+      await this.knex("users").where({ id: userId }).update({ disabled_at: null, updated_at: this.knex.fn.now() });
+      this.logger.info({ msg: "Enabled user", userId });
+    } else {
+      await this.knex("users")
+        .where({ id: userId })
+        .update({ disabled_at: this.knex.fn.now(), updated_at: this.knex.fn.now() });
+      this.logger.info({ msg: "Disabled user", userId });
+    }
   }
 
   /**
