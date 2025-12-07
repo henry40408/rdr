@@ -107,11 +107,12 @@ export class Repository {
     }
     if (feedIds.length > 0) q.whereIn("feed_id", feedIds);
     if (search) {
-      const uppered = search.toUpperCase();
+      const escapedSearch = search.replace(/[%_\\]/g, "\\$&");
+      const searchPattern = `%${escapedSearch}%`;
       q.where((builder) =>
         builder
-          .where(this.knex.raw(`upper(title)`), "like", `%${uppered}%`)
-          .orWhere(this.knex.raw(`upper(description)`), "like", `%${uppered}%`),
+          .where(this.knex.raw("upper(title) like upper(?)", [searchPattern]))
+          .orWhere(this.knex.raw("upper(description) like upper(?)", [searchPattern])),
       );
     }
     const result = await q.count({ count: "*" }).first();
@@ -507,11 +508,12 @@ export class Repository {
     }
     if (feedIds.length > 0) q.whereIn("feed_id", feedIds);
     if (search) {
-      const uppered = search.toUpperCase();
+      const escapedSearch = search.replace(/[%_\\]/g, "\\$&");
+      const searchPattern = `%${escapedSearch}%`;
       q.where((builder) =>
         builder
-          .where(this.knex.raw(`upper(title)`), "like", `%${uppered}%`)
-          .orWhere(this.knex.raw(`upper(description)`), "like", `%${uppered}%`),
+          .where(this.knex.raw("upper(title) like upper(?)", [searchPattern]))
+          .orWhere(this.knex.raw("upper(description) like upper(?)", [searchPattern])),
       );
     }
 
@@ -942,11 +944,12 @@ export class Repository {
       }
     }
     if (search) {
-      const uppered = search.toUpperCase();
+      const escapedSearch = search.replace(/[%_\\]/g, "\\$&");
+      const searchPattern = `%${escapedSearch}%`;
       q.where((builder) =>
         builder
-          .where(this.knex.raw(`upper(title)`), "like", `%${uppered}%`)
-          .orWhere(this.knex.raw(`upper(description)`), "like", `%${uppered}%`),
+          .where(this.knex.raw("upper(title) like upper(?)", [searchPattern]))
+          .orWhere(this.knex.raw("upper(description) like upper(?)", [searchPattern])),
       );
     }
 
