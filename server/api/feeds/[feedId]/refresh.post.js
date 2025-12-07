@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
   const feed = await repository.findFeedById(userId, feedId);
   if (!feed) throw createError({ statusCode: 404, statusMessage: "Feed not found" });
 
-  await Promise.allSettled([feedService.fetchAndSaveEntries(userId, feed), feedService.fetchImage(userId, feed)]);
+  await feedService.fetchAndSaveEntries(userId, feed);
 
   {
     const feed = await repository.findFeedById(userId, feedId);
