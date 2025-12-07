@@ -14,7 +14,7 @@ const schema = z.object({
   direction: z.enum(["asc", "desc"]).default("desc"),
   id: z.coerce.number().optional(),
   limit: z.coerce.number().min(1).max(1000).default(100),
-  search: z.string().optional(),
+  search: z.string().max(500).optional(),
   order: z.enum(["date"]).default("date"),
   selectedId: z.coerce.number().optional(),
   selectedType: z.enum(["category", "feed"]).optional(),

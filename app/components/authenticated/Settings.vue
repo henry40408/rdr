@@ -30,6 +30,9 @@
         <q-item clickable @click="$router.push({ hash: '#background-jobs' })">
           <q-item-section>Background Jobs</q-item-section>
         </q-item>
+        <q-item clickable @click="$router.push({ hash: '#users' })">
+          <q-item-section>Users</q-item-section>
+        </q-item>
         <q-separator spaced />
         <q-item>
           <q-item-section>
@@ -128,6 +131,31 @@
               <q-item-label>No background jobs available.</q-item-label>
             </q-item-section>
           </q-item>
+          <q-separator spaced />
+          <q-item id="users">
+            <q-item-section>Users</q-item-section>
+          </q-item>
+          <q-item v-for="user in usersData" :key="user.id">
+            <q-item-section>
+              <q-item-label>{{ user.username }}</q-item-label>
+              <q-item-label caption>
+                Role: {{ user.isAdmin ? "Admin" : "User" }}, Disabled at: {{ user.disabledAt || "-" }}
+              </q-item-label>
+            </q-item-section>
+            <q-item-section side>
+              <UserToggle
+                v-if="user.id !== session?.user?.id"
+                :id="user.id"
+                :value="!!user.disabledAt"
+                @toggled="refreshUsers()"
+              />
+            </q-item-section>
+          </q-item>
+          <q-item v-if="usersData?.length === 0">
+            <q-item-section>
+              <q-item-label>No users found.</q-item-label>
+            </q-item-section>
+          </q-item>
         </q-list>
       </q-page>
     </q-page-container>
@@ -164,9 +192,12 @@ const triggeringJobs = ref(new Set());
 const headers = useRequestHeaders(["cookie"]);
 const { data: passkeys, error: passkeysError, refresh: refreshPasskeys } = await useFetch("/api/passkeys", { headers });
 const { data: jobsData, error: jobsError, refresh: refreshJobs } = await useFetch("/api/jobs", { headers });
+const { data: usersData, error: usersError, refresh: refreshUsers } = await useFetch("/api/users", { headers });
 
 watchEffect(() => {
-  const isUnauthorized = [passkeysError.value, jobsError.value].some((err) => err?.statusCode === 401);
+  const isUnauthorized = [passkeysError.value, jobsError.value, usersError.value].some(
+    (err) => err?.statusCode === 401,
+  );
   if (isUnauthorized) logout();
 });
 

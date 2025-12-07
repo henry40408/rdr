@@ -35,7 +35,7 @@ export class FetchEntriesJob extends BaseJob {
 
   /** @override */
   get description() {
-    return "Fetches new entries from all feeds";
+    return "Fetches new entries from all feeds and feed images.";
   }
 
   /** @override */

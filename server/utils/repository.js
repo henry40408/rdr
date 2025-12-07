@@ -57,7 +57,16 @@ export class Repository {
     const match = await compare(password, row.password_hash);
     if (!match) return undefined;
 
-    return new UserEntity({ id: row.id, username: row.username, nonce: row.nonce, isAdmin: !!row.is_admin });
+    // Disabled users cannot authenticate
+    if (row.disabled_at) return undefined;
+
+    return new UserEntity({
+      id: row.id,
+      username: row.username,
+      nonce: row.nonce,
+      isAdmin: !!row.is_admin,
+      disabledAt: row.disabled_at,
+    });
   }
 
   /**
@@ -107,11 +116,12 @@ export class Repository {
     }
     if (feedIds.length > 0) q.whereIn("feed_id", feedIds);
     if (search) {
-      const uppered = search.toUpperCase();
+      const escapedSearch = search.replace(/[%_\\]/g, "\\$&");
+      const searchPattern = `%${escapedSearch}%`;
       q.where((builder) =>
         builder
-          .where(this.knex.raw(`upper(title)`), "like", `%${uppered}%`)
-          .orWhere(this.knex.raw(`upper(description)`), "like", `%${uppered}%`),
+          .where(this.knex.raw("upper(title) like upper(?)", [searchPattern]))
+          .orWhere(this.knex.raw("upper(description) like upper(?)", [searchPattern])),
       );
     }
     const result = await q.count({ count: "*" }).first();
@@ -277,6 +287,7 @@ export class Repository {
         username: created.username,
         nonce: created.nonce,
         isAdmin: !!created.is_admin,
+        disabledAt: created.disabled_at,
       });
     });
   }
@@ -507,11 +518,12 @@ export class Repository {
     }
     if (feedIds.length > 0) q.whereIn("feed_id", feedIds);
     if (search) {
-      const uppered = search.toUpperCase();
+      const escapedSearch = search.replace(/[%_\\]/g, "\\$&");
+      const searchPattern = `%${escapedSearch}%`;
       q.where((builder) =>
         builder
-          .where(this.knex.raw(`upper(title)`), "like", `%${uppered}%`)
-          .orWhere(this.knex.raw(`upper(description)`), "like", `%${uppered}%`),
+          .where(this.knex.raw("upper(title) like upper(?)", [searchPattern]))
+          .orWhere(this.knex.raw("upper(description) like upper(?)", [searchPattern])),
       );
     }
 
@@ -853,7 +865,13 @@ export class Repository {
   async findUserById(id) {
     const row = await this.knex("users").where({ id }).first();
     if (!row) return undefined;
-    return new UserEntity({ id: row.id, username: row.username, nonce: row.nonce, isAdmin: !!row.is_admin });
+    return new UserEntity({
+      id: row.id,
+      username: row.username,
+      nonce: row.nonce,
+      isAdmin: !!row.is_admin,
+      disabledAt: row.disabled_at,
+    });
   }
 
   /**
@@ -863,7 +881,13 @@ export class Repository {
   async findUserByUsername(username) {
     const row = await this.knex("users").where({ username }).first();
     if (!row) return undefined;
-    return new UserEntity({ id: row.id, username: row.username, nonce: row.nonce, isAdmin: !!row.is_admin });
+    return new UserEntity({
+      id: row.id,
+      username: row.username,
+      nonce: row.nonce,
+      isAdmin: !!row.is_admin,
+      disabledAt: row.disabled_at,
+    });
   }
 
   /**
@@ -886,7 +910,14 @@ export class Repository {
   async findUsers() {
     const rows = await this.knex("users").select();
     return rows.map(
-      (row) => new UserEntity({ id: row.id, username: row.username, nonce: row.nonce, isAdmin: !!row.is_admin }),
+      (row) =>
+        new UserEntity({
+          id: row.id,
+          username: row.username,
+          nonce: row.nonce,
+          isAdmin: !!row.is_admin,
+          disabledAt: row.disabled_at,
+        }),
     );
   }
 
@@ -942,11 +973,12 @@ export class Repository {
       }
     }
     if (search) {
-      const uppered = search.toUpperCase();
+      const escapedSearch = search.replace(/[%_\\]/g, "\\$&");
+      const searchPattern = `%${escapedSearch}%`;
       q.where((builder) =>
         builder
-          .where(this.knex.raw(`upper(title)`), "like", `%${uppered}%`)
-          .orWhere(this.knex.raw(`upper(description)`), "like", `%${uppered}%`),
+          .where(this.knex.raw("upper(title) like upper(?)", [searchPattern]))
+          .orWhere(this.knex.raw("upper(description) like upper(?)", [searchPattern])),
       );
     }
 
@@ -1046,6 +1078,24 @@ export class Repository {
         return updated;
       }
     });
+  }
+
+  /**
+   * @param {number} userId
+   */
+  async toggleUser(userId) {
+    const user = await this.findUserById(userId);
+    if (!user) throw new Error(`User with id ${userId} not found`);
+
+    if (user?.disabledAt) {
+      await this.knex("users").where({ id: userId }).update({ disabled_at: null, updated_at: this.knex.fn.now() });
+      this.logger.info({ msg: "Enabled user", userId });
+    } else {
+      await this.knex("users")
+        .where({ id: userId })
+        .update({ disabled_at: this.knex.fn.now(), updated_at: this.knex.fn.now() });
+      this.logger.info({ msg: "Disabled user", userId });
+    }
   }
 
   /**

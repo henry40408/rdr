@@ -43,7 +43,6 @@ export default defineNitroPlugin(
       linkdingService: asClass(LinkdingService).singleton(),
       // jobs
       fetchEntriesJob: asClass(FetchEntriesJob, { asyncInit: "init", asyncDispose: "dispose" }).singleton(),
-      fetchImagesJob: asClass(FetchImagesJob, { asyncInit: "init", asyncDispose: "dispose" }).singleton(),
     });
 
     const manager = new AwilixManager({

@@ -13,6 +13,7 @@ import migration0010 from "../migrations/m0010-add-disable-http2-to-feeds.js";
 import migration0011 from "../migrations/m0011-add-user-agent-to-feeds.js";
 import migration0012 from "../migrations/m0012-add-feed-updated-at-to-feeds.js";
 import migration0013 from "../migrations/m0013-add-bucket-to-feeds.js";
+import migration0014 from "../migrations/m0014-add-disabled-at-to-users.js";
 
 export const migrations = {
   [migration0001.name]: migration0001,
@@ -28,6 +29,7 @@ export const migrations = {
   [migration0011.name]: migration0011,
   [migration0012.name]: migration0012,
   [migration0013.name]: migration0013,
+  [migration0014.name]: migration0014,
 };
 
 export const migrationNames = Object.keys(migrations);
