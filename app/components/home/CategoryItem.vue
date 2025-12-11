@@ -1,7 +1,7 @@
 <template>
   <q-item clickable @click="setCategoryId(category.id)">
     <q-item-section>
-      <q-item-label>{{ category.name }}</q-item-label>
+      <q-item-label lines="1">{{ category.name }}</q-item-label>
     </q-item-section>
     <q-item-section side>
       <UnreadCount :count="count" />

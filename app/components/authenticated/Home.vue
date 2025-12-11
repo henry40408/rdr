@@ -23,12 +23,8 @@
 
     <q-page-container>
       <q-page>
-        <q-list>
-          <q-item>
-            <HomeSelectedCategory />
-            <HomeSelectedFeed />
-          </q-item>
-        </q-list>
+        <HomeEntryListHeader />
+        <HomeEntryList />
       </q-page>
     </q-page-container>
   </q-layout>

@@ -65,5 +65,5 @@ export default defineEventHandler(async (event) => {
       return { category, entry, feed };
     })
     .filter((e) => !!e);
-  return { entries: items };
+  return { items };
 });
