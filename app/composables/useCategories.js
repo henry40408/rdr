@@ -1,10 +1,11 @@
 // @ts-check
 
 export default function () {
-  const { data: categories } = useFetch("/api/categories", {
+  const { data } = useFetch("/api/categories", {
     key: "categories",
     dedupe: "defer",
-    default: () => [],
+    default: () => ({ categories: [] }),
   });
+  const categories = computed(() => data.value?.categories ?? []);
   return { categories };
 }

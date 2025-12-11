@@ -1,5 +1,5 @@
 <template>
-  <HomeFeedItem v-for="feed in feeds" :key="feed.id" :feed="feed" />
+  <HomeFeedItem v-for="feed in feeds" :key="feed.id" :feed="feed" :category="category" />
 </template>
 
 <script setup lang="ts">
@@ -8,5 +8,8 @@ defineProps<{
     id: number;
     title: string;
   }[];
+  category: {
+    id: number;
+  };
 }>();
 </script>

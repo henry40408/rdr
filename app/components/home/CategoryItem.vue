@@ -1,10 +1,10 @@
 <template>
-  <q-item>
+  <q-item clickable @click="setCategoryId(category.id)">
     <q-item-section>
       <q-item-label>{{ category.name }}</q-item-label>
     </q-item-section>
   </q-item>
-  <HomeFeedList :feeds="category.feeds" />
+  <HomeFeedList :category="category" :feeds="category.feeds" />
   <q-separator spaced />
 </template>
 
@@ -19,4 +19,6 @@ defineProps<{
     }[];
   };
 }>();
+
+const { setCategoryId } = useEntries();
 </script>
