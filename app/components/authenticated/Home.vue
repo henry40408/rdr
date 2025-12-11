@@ -22,7 +22,14 @@
     <q-drawer v-model="rightDrawerOpen" bordered persistent side="right" show-if-above></q-drawer>
 
     <q-page-container>
-      <q-page> </q-page>
+      <q-page>
+        <q-list>
+          <q-item>
+            <HomeSelectedCategory />
+            <HomeSelectedFeed />
+          </q-item>
+        </q-list>
+      </q-page>
     </q-page-container>
   </q-layout>
 </template>
