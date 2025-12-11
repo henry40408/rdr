@@ -39,11 +39,8 @@ export default function () {
     }
     return q;
   });
-  const key = computed(() =>
-    ["entries", limit.value, entryStatus.value, selectedType.value, selectedId.value].join("\n"),
-  );
   const { data } = useFetch("/api/entries", {
-    key,
+    key: "entries",
     query,
     dedupe: "defer",
     default: () => ({ items: [] }),
