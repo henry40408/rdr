@@ -7,6 +7,8 @@ defineProps<{
   feeds: {
     id: number;
     title: string;
+    imageExists: boolean;
+    unreadCount: number;
   }[];
   category: {
     id: number;
