@@ -13,12 +13,16 @@
       </q-toolbar>
     </q-header>
 
-    <q-drawer v-model="leftDrawerOpen" bordered persistent side="left" show-if-above></q-drawer>
+    <q-drawer v-model="leftDrawerOpen" bordered persistent side="left" show-if-above>
+      <q-list padding>
+        <HomeCategoryList />
+      </q-list>
+    </q-drawer>
 
     <q-drawer v-model="rightDrawerOpen" bordered persistent side="right" show-if-above></q-drawer>
 
     <q-page-container>
-      <q-page></q-page>
+      <q-page> </q-page>
     </q-page-container>
   </q-layout>
 </template>
