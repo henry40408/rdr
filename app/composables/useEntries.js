@@ -9,9 +9,14 @@ export const STATUS = [
 ];
 
 export default function () {
+  const headers = useRequestHeaders(["cookie"]);
   const route = useRoute();
   const router = useRouter();
 
+  /** @type {Ref<{ date: string, id: number }|undefined>} */
+  const cursor = useState("cursor", () => shallowRef(undefined));
+  /** @type {Ref<{ entry: EntryEntity, feed: FeedEntity, category: CategoryEntity }[]>} */
+  const items = useState("items", () => []);
   const limit = useState("limit", () => 30);
 
   const entryStatus = computed(() => route.query.status?.toString() || "unread");
@@ -29,23 +34,44 @@ export default function () {
     return undefined;
   });
 
-  const query = computed(() => {
-    const q = {};
-    q.limit = limit.value;
-    q.status = entryStatus.value;
-    if (selectedType.value && selectedId.value) {
-      q.selectedType = selectedType.value;
-      q.selectedId = selectedId.value;
+  const cursorKey = computed(() => {
+    if (!cursor.value) return "\n";
+    return `${cursor.value.id}\n${cursor.value.date}`;
+  });
+  const key = computed(() => `entries\n${cursorKey.value}`);
+  const { data } = useAsyncData(
+    key,
+    async () => {
+      const query = {};
+      query.limit = limit.value;
+      query.status = entryStatus.value;
+      if (cursor.value) {
+        query.id = cursor.value.id;
+        query.cursor = cursor.value.date;
+      }
+      if (selectedType.value && selectedId.value) {
+        query.selectedType = selectedType.value;
+        query.selectedId = selectedId.value;
+      }
+      const body = await $fetch("/api/entries", { query, headers });
+      return body.items;
+    },
+    { dedupe: "defer" },
+  );
+  items.value = data.value ?? []; // first load
+  // subsequent loads
+  watch(data, (newData) => {
+    if (newData) {
+      for (const item of newData) items.value.push(item);
     }
-    return q;
   });
-  const { data } = useFetch("/api/entries", {
-    key: "entries",
-    query,
-    dedupe: "defer",
-    default: () => ({ items: [] }),
-  });
-  const items = computed(() => data.value?.items ?? []);
+
+  function loadMore() {
+    const lastItem = items.value[items.value.length - 1];
+    if (!lastItem) return;
+    const { id, date } = lastItem.entry;
+    cursor.value = { id, date };
+  }
 
   /**
    * @param {number|string} [categoryId]
@@ -63,14 +89,16 @@ export default function () {
   }
 
   return {
-    // getters
-    entryStatus,
+    // refs
     items,
+    // computed
+    entryStatus,
     selectedCategoryId,
     selectedFeedId,
     selectedId,
     selectedType,
     // setters
+    loadMore,
     setCategoryId,
     setFeedId,
   };

@@ -8,8 +8,9 @@
       :category="item.category"
     />
   </q-list>
+  <a @click.prevent="loadMore">Load More</a>
 </template>
 
 <script setup lang="ts">
-const { items } = useEntries();
+const { items, loadMore } = useEntries();
 </script>
