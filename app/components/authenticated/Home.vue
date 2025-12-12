@@ -19,7 +19,9 @@
       </q-list>
     </q-drawer>
 
-    <q-drawer v-model="rightDrawerOpen" bordered persistent side="right" show-if-above></q-drawer>
+    <q-drawer v-model="rightDrawerOpen" bordered persistent side="right" show-if-above>
+      <HomeEntryStatusToggle />
+    </q-drawer>
 
     <q-page-container>
       <q-page>

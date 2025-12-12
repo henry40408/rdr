@@ -1,11 +1,9 @@
 export default function () {
   const { entryStatus, selectedCategoryId, selectedFeedId } = useEntryState();
 
-  const key = computed(() => {
-    if (selectedFeedId.value) return `entry-count\nfeed\n${selectedFeedId.value}`;
-    if (selectedCategoryId.value) return `entry-count\ncategory\n${selectedCategoryId.value}`;
-    return `entry-count`;
-  });
+  const key = computed(() =>
+    ["entry-count", entryStatus.value, selectedCategoryId.value ?? "\n", selectedFeedId.value ?? "\n"].join("\n"),
+  );
   const query = computed(() => {
     const q = {};
     q.status = entryStatus.value;

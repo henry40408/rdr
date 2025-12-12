@@ -1,3 +1,11 @@
+const DEFAULT_STATUS = { value: "unread", label: "Unread" };
+const STATUS = [
+  DEFAULT_STATUS,
+  { value: "all", label: "All" },
+  { value: "read", label: "Read" },
+  { value: "starred", label: "Starred" },
+];
+
 export default function () {
   const route = useRoute();
   const router = useRouter();
@@ -9,7 +17,7 @@ export default function () {
   const items = useState("items", () => shallowRef([]));
   const limit = useState("limit", () => 30);
 
-  const entryStatus = computed(() => route.query.status?.toString() || "unread");
+  const entryStatus = computed(() => route.query.status?.toString() || DEFAULT_STATUS.value);
   const selectedCategoryId = computed(() => route.query.categoryId?.toString());
   const selectedFeedId = computed(() => route.query.feedId?.toString());
 
@@ -28,7 +36,17 @@ export default function () {
     router.replace({ query: { ...route.query, categoryId, feedId } });
   }
 
+  /**
+   * @param {'all'|'unread'|'read'|'starred'} status
+   */
+  function setStatus(status) {
+    router.replace({ query: { ...route.query, status } });
+  }
+
   return {
+    // constants
+    DEFAULT_STATUS,
+    STATUS,
     // computed
     entryStatus,
     selectedCategoryId,
@@ -41,5 +59,6 @@ export default function () {
     // setters
     setCategoryId,
     setFeedId,
+    setStatus,
   };
 }

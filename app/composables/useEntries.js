@@ -1,13 +1,5 @@
 // @ts-check
 
-export const DEFAULT_STATUS = { value: "unread", label: "Unread" };
-export const STATUS = [
-  DEFAULT_STATUS,
-  { value: "all", label: "All" },
-  { value: "read", label: "Read" },
-  { value: "starred", label: "Starred" },
-];
-
 export default function () {
   const headers = useRequestHeaders(["cookie"]);
   const { cursor, entryStatus, hasMore, items, limit, selectedCategoryId, selectedFeedId } = useEntryState();

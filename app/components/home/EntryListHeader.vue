@@ -17,6 +17,6 @@
 
 <script setup lang="ts">
 const { count } = useEntryCount();
-const { entryStatus } = useEntryState();
+const { DEFAULT_STATUS, STATUS, entryStatus } = useEntryState();
 const statusLabel = computed(() => STATUS.find((s) => s.value === entryStatus.value)?.label ?? DEFAULT_STATUS.label);
 </script>
