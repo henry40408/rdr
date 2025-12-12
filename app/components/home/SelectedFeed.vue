@@ -9,7 +9,7 @@
 
 <script setup lang="ts">
 const { categories } = useCategories();
-const { selectedCategoryId, selectedFeedId, setFeedId } = useEntries();
+const { selectedCategoryId, selectedFeedId, setFeedId } = useEntryFilters();
 const feeds = computed(() => categories.value.flatMap((cat) => cat.feeds));
 const feed = computed(() => feeds.value.find((f) => String(f.id) === selectedFeedId.value));
 </script>

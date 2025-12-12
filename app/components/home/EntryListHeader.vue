@@ -17,6 +17,6 @@
 
 <script setup lang="ts">
 const { count } = useEntryCount();
-const { entryStatus } = useEntries();
+const { entryStatus } = useEntryFilters();
 const statusLabel = computed(() => STATUS.find((s) => s.value === entryStatus.value)?.label ?? DEFAULT_STATUS.label);
 </script>

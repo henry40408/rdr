@@ -1,5 +1,5 @@
 <template>
-  <q-item clickable @click="setFeedId(category.id, feed.id)">
+  <q-item clickable @click="setFeedId(categoryId, feedId)">
     <q-item-section side>
       <q-avatar v-if="feed.imageExists" square size="xs">
         <img
@@ -21,7 +21,7 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{
+const props = defineProps<{
   feed: {
     id: number;
     title: string;
@@ -33,5 +33,7 @@ defineProps<{
   };
 }>();
 
-const { setFeedId } = useEntries();
+const categoryId = computed(() => String(props.category.id));
+const feedId = computed(() => String(props.feed.id));
+const { setFeedId } = useEntryFilters();
 </script>

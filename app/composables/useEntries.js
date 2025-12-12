@@ -10,36 +10,19 @@ export const STATUS = [
 
 export default function () {
   const headers = useRequestHeaders(["cookie"]);
-  const route = useRoute();
-  const router = useRouter();
+  const { cursor, entryStatus, items, limit, selectedCategoryId, selectedFeedId } = useEntryFilters();
 
-  /** @type {Ref<{ date: string, id: number }|undefined>} */
-  const cursor = useState("cursor", () => shallowRef(undefined));
-  /** @type {Ref<{ entry: EntryEntity, feed: FeedEntity, category: CategoryEntity }[]>} */
-  const items = useState("items", () => []);
-  const limit = useState("limit", () => 30);
-
-  const entryStatus = computed(() => route.query.status?.toString() || "unread");
-  const selectedCategoryId = computed(() => route.query.categoryId?.toString());
-  const selectedFeedId = computed(() => route.query.feedId?.toString());
-
-  const selectedType = computed(() => {
-    if (selectedFeedId.value) return "feed";
-    if (selectedCategoryId.value) return "category";
-    return undefined;
-  });
-  const selectedId = computed(() => {
-    if (selectedFeedId.value) return selectedFeedId.value;
-    if (selectedCategoryId.value) return selectedCategoryId.value;
-    return undefined;
-  });
-
-  const cursorKey = computed(() => {
-    if (!cursor.value) return "\n";
-    return `${cursor.value.id}\n${cursor.value.date}`;
-  });
-  const key = computed(() => `entries\n${cursorKey.value}`);
-  const { data } = useAsyncData(
+  const key = computed(() =>
+    [
+      "entries",
+      entryStatus.value ?? "\n",
+      selectedCategoryId.value ?? "\n",
+      selectedFeedId.value ?? "\n",
+      cursor.value ? `${cursor.value.id}-${cursor.value.date}` : "\n",
+      limit.value,
+    ].join("\n"),
+  );
+  const { data, pending, error } = useAsyncData(
     key,
     async () => {
       const query = {};
@@ -49,9 +32,12 @@ export default function () {
         query.id = cursor.value.id;
         query.cursor = cursor.value.date;
       }
-      if (selectedType.value && selectedId.value) {
-        query.selectedType = selectedType.value;
-        query.selectedId = selectedId.value;
+      if (selectedFeedId.value) {
+        query.selectedType = "feed";
+        query.selectedId = selectedFeedId.value;
+      } else if (selectedCategoryId.value) {
+        query.selectedType = "category";
+        query.selectedId = selectedCategoryId.value;
       }
       const body = await $fetch("/api/entries", { query, headers });
       return body.items;
@@ -63,6 +49,7 @@ export default function () {
   watch(data, (newData) => {
     if (newData) {
       for (const item of newData) items.value.push(item);
+      triggerRef(items);
     }
   });
 
@@ -73,33 +60,13 @@ export default function () {
     cursor.value = { id, date };
   }
 
-  /**
-   * @param {number|string} [categoryId]
-   */
-  function setCategoryId(categoryId) {
-    router.replace({ query: { ...route.query, categoryId, feedId: undefined } });
-  }
-
-  /**
-   * @param {number|string} [categoryId]
-   * @param {number|string} [feedId]
-   */
-  function setFeedId(categoryId, feedId) {
-    router.replace({ query: { ...route.query, categoryId, feedId } });
-  }
-
   return {
     // refs
     items,
     // computed
-    entryStatus,
-    selectedCategoryId,
-    selectedFeedId,
-    selectedId,
-    selectedType,
+    error,
+    pending,
     // setters
     loadMore,
-    setCategoryId,
-    setFeedId,
   };
 }

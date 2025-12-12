@@ -1,5 +1,5 @@
 <template>
-  <q-item clickable @click="setCategoryId(category.id)">
+  <q-item clickable @click="setCategoryId(categoryId)">
     <q-item-section>
       <q-item-label lines="1">{{ category.name }}</q-item-label>
     </q-item-section>
@@ -25,6 +25,7 @@ const props = defineProps<{
   };
 }>();
 
-const { setCategoryId } = useEntries();
+const { setCategoryId } = useEntryFilters();
+const categoryId = computed(() => String(props.category.id));
 const count = computed(() => props.category.feeds.reduce((sum, feed) => sum + feed.unreadCount, 0));
 </script>
