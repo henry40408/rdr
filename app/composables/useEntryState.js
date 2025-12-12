@@ -45,7 +45,8 @@ export default function () {
     const newVal = oldVal === "read" ? "unread" : "read";
     entryReads.value[entryId] = "reading";
     try {
-      await $fetch(`/api/entries/${entryId}/read`, { method: "PUT", timeout: 30_000 });
+      const body = { entryIds: [entryId], status: newVal };
+      await $fetch("/api/entries/status", { method: "PUT", timeout: 30_000, body });
       entryReads.value[entryId] = newVal;
     } catch (error) {
       console.error("Failed to toggle entry read status", error);

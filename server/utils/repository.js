@@ -1012,76 +1012,6 @@ export class Repository {
 
   /**
    * @param {number} userId
-   * @param {number} id
-   * @returns {Promise<number>}
-   */
-  async toggleReadEntry(userId, id) {
-    const logger = this.logger.child({ entryId: id });
-    return await this.knex.transaction(async (tx) => {
-      const row = await tx("entries")
-        .whereIn("feed_id", (builder) => {
-          builder
-            .select("id")
-            .from("feeds")
-            .whereIn("category_id", (builder) => {
-              builder.select("id").from("categories").where("user_id", userId);
-            });
-        })
-        .where({ id })
-        .first();
-      if (!row) throw new Error(`Entry with id ${id} not found`);
-
-      const now = new Date();
-      const isoNow = now.toISOString();
-      if (row.read_at) {
-        const updated = await tx("entries").where({ id }).update({ read_at: null, updated_at: isoNow });
-        logger.info({ msg: "Marked entry as unread", updated });
-        return updated;
-      } else {
-        const updated = await tx("entries").where({ id }).update({ read_at: isoNow, updated_at: isoNow });
-        logger.info({ msg: "Marked entry as read", updated });
-        return updated;
-      }
-    });
-  }
-
-  /**
-   * @param {number} userId
-   * @param {number} id
-   * @returns {Promise<number>}
-   */
-  async toggleStarEntry(userId, id) {
-    const logger = this.logger.child({ entryId: id });
-    return await this.knex.transaction(async (tx) => {
-      const row = await tx("entries")
-        .whereIn("feed_id", (builder) => {
-          builder
-            .select("id")
-            .from("feeds")
-            .whereIn("category_id", (builder) => {
-              builder.select("id").from("categories").where("user_id", userId);
-            });
-        })
-        .where({ id })
-        .first();
-      if (!row) throw new Error(`Entry with id ${id} not found`);
-
-      const now = new Date();
-      const isoNow = now.toISOString();
-      if (row.starred_at) {
-        const updated = await tx("entries").where({ id }).update({ starred_at: null, updated_at: isoNow });
-        logger.info({ msg: "Unstarred entry", updated });
-        return updated;
-      } else {
-        const updated = await tx("entries").where({ id }).update({ starred_at: isoNow, updated_at: isoNow });
-        logger.info({ msg: "Starred entry", updated });
-        return updated;
-      }
-    });
-  }
-
-  /**
-   * @param {number} userId
    */
   async toggleUser(userId) {
     const user = await this.findUserById(userId);
@@ -1114,6 +1044,50 @@ export class Repository {
 
     const updated = await this.knex("categories").where({ user_id: userId, id: category.id }).update(update);
     this.logger.info({ msg: "Updated category", categoryId: category.id, updated });
+    return updated;
+  }
+
+  /**
+   * @param {number} userId
+   * @param {number[]} entryIds
+   * @param {"read"|"unread"|"starred"|"unstarred"} status
+   * @returns {Promise<number>}
+   */
+  async updateEntriesStatus(userId, entryIds, status) {
+    const update = {};
+    const now = new Date();
+    const isoNow = now.toISOString();
+    switch (status) {
+      case "read":
+        update.read_at = isoNow;
+        break;
+      case "unread":
+        update.read_at = null;
+        break;
+      case "starred":
+        update.starred_at = isoNow;
+        break;
+      case "unstarred":
+        update.starred_at = null;
+        break;
+    }
+    if (Object.keys(update).length === 0) {
+      this.logger.debug({ msg: "No entry status to update" });
+      return 0;
+    }
+
+    const updated = await this.knex("entries")
+      .whereIn("feed_id", (builder) => {
+        builder
+          .select("id")
+          .from("feeds")
+          .whereIn("category_id", (builder) => {
+            builder.select("id").from("categories").where("user_id", userId);
+          });
+      })
+      .whereIn("id", entryIds)
+      .update({ ...update, updated_at: this.knex.fn.now() });
+    this.logger.info({ msg: "Updated entries status", entryIds: entryIds.length, status, updated });
     return updated;
   }
 
