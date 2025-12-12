@@ -2,7 +2,8 @@
 
 export default function () {
   const headers = useRequestHeaders(["cookie"]);
-  const { cursor, entryStatus, hasMore, items, limit, selectedCategoryId, selectedFeedId } = useEntryState();
+  const { cursor, entryReads, entryStatus, hasMore, items, limit, resetState, selectedCategoryId, selectedFeedId } =
+    useEntryState();
 
   const key = computed(() =>
     [
@@ -36,19 +37,22 @@ export default function () {
     },
     { dedupe: "defer" },
   );
-  items.value = data.value ?? []; // first load
-  // subsequent loads
-  watch(data, (newData) => {
-    if (newData) {
-      for (const item of newData) items.value.push(item);
-      hasMore.value = newData.length === limit.value;
-      triggerRef(items);
-    }
-  });
+  watch(
+    data,
+    (newData) => {
+      if (newData) {
+        for (const item of newData) {
+          items.value.push(item);
+          entryReads.value[item.entry.id] = item.entry.readAt ? "read" : "unread";
+        }
+        hasMore.value = newData.length === limit.value;
+        triggerRef(items);
+      }
+    },
+    { immediate: true },
+  );
   watch([entryStatus, selectedCategoryId, selectedFeedId], () => {
-    cursor.value = undefined;
-    hasMore.value = true;
-    items.value = [];
+    resetState();
   });
 
   function loadMore() {

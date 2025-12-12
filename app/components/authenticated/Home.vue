@@ -20,7 +20,7 @@
     </q-drawer>
 
     <q-drawer v-model="rightDrawerOpen" bordered persistent side="right" show-if-above>
-      <HomeEntryStatusToggle />
+      <HomeEntryStatusFilter />
     </q-drawer>
 
     <q-page-container>

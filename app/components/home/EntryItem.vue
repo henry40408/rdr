@@ -1,5 +1,8 @@
 <template>
   <q-item>
+    <q-item-section side>
+      <HomeEntryStatusToggle :entry-id="entry.id" />
+    </q-item-section>
     <q-item-section>
       <q-item-label caption>
         {{ feed.title }}
