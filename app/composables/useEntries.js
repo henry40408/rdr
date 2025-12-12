@@ -10,7 +10,7 @@ export const STATUS = [
 
 export default function () {
   const headers = useRequestHeaders(["cookie"]);
-  const { cursor, entryStatus, items, limit, selectedCategoryId, selectedFeedId } = useEntryFilters();
+  const { cursor, entryStatus, hasMore, items, limit, selectedCategoryId, selectedFeedId } = useEntryState();
 
   const key = computed(() =>
     [
@@ -49,8 +49,14 @@ export default function () {
   watch(data, (newData) => {
     if (newData) {
       for (const item of newData) items.value.push(item);
+      hasMore.value = newData.length === limit.value;
       triggerRef(items);
     }
+  });
+  watch([entryStatus, selectedCategoryId, selectedFeedId], () => {
+    cursor.value = undefined;
+    hasMore.value = true;
+    items.value = [];
   });
 
   function loadMore() {

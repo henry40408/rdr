@@ -35,5 +35,5 @@ const props = defineProps<{
 
 const categoryId = computed(() => String(props.category.id));
 const feedId = computed(() => String(props.feed.id));
-const { setFeedId } = useEntryFilters();
+const { setFeedId } = useEntryState();
 </script>

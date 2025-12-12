@@ -9,6 +9,6 @@
 
 <script setup lang="ts">
 const { categories } = useCategories();
-const { selectedCategoryId, setCategoryId } = useEntryFilters();
+const { selectedCategoryId, setCategoryId } = useEntryState();
 const category = computed(() => categories.value.find((cat) => String(cat.id) === selectedCategoryId.value));
 </script>

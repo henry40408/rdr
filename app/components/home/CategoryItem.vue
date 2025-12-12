@@ -25,7 +25,7 @@ const props = defineProps<{
   };
 }>();
 
-const { setCategoryId } = useEntryFilters();
+const { setCategoryId } = useEntryState();
 const categoryId = computed(() => String(props.category.id));
 const count = computed(() => props.category.feeds.reduce((sum, feed) => sum + feed.unreadCount, 0));
 </script>

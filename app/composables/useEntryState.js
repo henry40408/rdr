@@ -4,6 +4,7 @@ export default function () {
 
   /** @type {Ref<{ date: string, id: number }|undefined>} */
   const cursor = useState("cursor", () => shallowRef(undefined));
+  const hasMore = useState("has-more", () => true);
   /** @type {Ref<{ entry: EntryEntity, feed: FeedEntity, category: CategoryEntity }[]>} */
   const items = useState("items", () => shallowRef([]));
   const limit = useState("limit", () => 30);
@@ -16,8 +17,6 @@ export default function () {
    * @param {string} [categoryId]
    */
   function setCategoryId(categoryId) {
-    if (selectedCategoryId.value === categoryId) return;
-    items.value = [];
     router.replace({ query: { ...route.query, categoryId, feedId: undefined } });
   }
 
@@ -26,19 +25,19 @@ export default function () {
    * @param {string} [feedId]
    */
   function setFeedId(categoryId, feedId) {
-    if (categoryId === selectedCategoryId.value && feedId === selectedFeedId.value) return;
-    items.value = [];
     router.replace({ query: { ...route.query, categoryId, feedId } });
   }
 
   return {
     // computed
-    cursor,
-    items,
-    limit,
     entryStatus,
     selectedCategoryId,
     selectedFeedId,
+    // refs
+    cursor,
+    hasMore,
+    items,
+    limit,
     // setters
     setCategoryId,
     setFeedId,

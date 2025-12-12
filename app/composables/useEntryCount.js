@@ -1,5 +1,5 @@
 export default function () {
-  const { entryStatus, selectedCategoryId, selectedFeedId } = useEntryFilters();
+  const { entryStatus, selectedCategoryId, selectedFeedId } = useEntryState();
 
   const key = computed(() => {
     if (selectedFeedId.value) return `entry-count\nfeed\n${selectedFeedId.value}`;
