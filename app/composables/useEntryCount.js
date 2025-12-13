@@ -16,7 +16,7 @@ export default function () {
     }
     return q;
   });
-  const { data } = useFetch("/api/entries/count", {
+  const { data, refresh } = useFetch("/api/entries/count", {
     key,
     query,
     dedupe: "defer",
@@ -24,5 +24,5 @@ export default function () {
   });
   const count = computed(() => data.value?.count ?? 0);
 
-  return { count };
+  return { count, refresh };
 }
