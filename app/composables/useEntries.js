@@ -2,8 +2,18 @@
 
 export default function () {
   const headers = useRequestHeaders(["cookie"]);
-  const { cursor, entryReads, entryStatus, hasMore, items, limit, resetState, selectedCategoryId, selectedFeedId } =
-    useEntryState();
+  const {
+    cursor,
+    entryReads,
+    entryStars,
+    entryStatus,
+    hasMore,
+    items,
+    limit,
+    resetState,
+    selectedCategoryId,
+    selectedFeedId,
+  } = useEntryState();
 
   const key = computed(() =>
     [
@@ -44,6 +54,7 @@ export default function () {
         for (const item of newData) {
           items.value.push(item);
           entryReads.value[item.entry.id] = item.entry.readAt ? "read" : "unread";
+          entryStars.value[item.entry.id] = item.entry.starredAt ? "starred" : "unstarred";
         }
         hasMore.value = newData.length === limit.value;
         triggerRef(items);

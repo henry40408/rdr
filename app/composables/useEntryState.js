@@ -14,6 +14,8 @@ export default function () {
   const cursor = useState("cursor", () => shallowRef(undefined));
   /** @type {Ref<Record<number,'unread'|'reading'|'read'>>} */
   const entryReads = useState("entry-reads", () => ({}));
+  /** @type {Ref<Record<number,'unstarred'|'starring'|'starred'>>} */
+  const entryStars = useState("entry-stars", () => ({}));
   /** @type {Ref<Record<number,boolean>>} */
   const expands = useState("expanded", () => ({}));
   const hasMore = useState("has-more", () => true);
@@ -58,6 +60,23 @@ export default function () {
   }
 
   /**
+   * @param {number} entryId
+   */
+  async function toggleEntryStar(entryId) {
+    const oldVal = entryStars.value[entryId];
+    const newVal = oldVal === "starred" ? "unstarred" : "starred";
+    entryStars.value[entryId] = "starring";
+    try {
+      const body = { entryIds: [entryId], status: newVal };
+      await $fetch("/api/entries/status", { method: "PUT", timeout: 30_000, body });
+      entryStars.value[entryId] = newVal;
+    } catch (error) {
+      console.error("Failed to toggle entry star status", error);
+      entryStars.value[entryId] = oldVal;
+    }
+  }
+
+  /**
    * @param {string} [categoryId]
    * @param {string} [feedId]
    */
@@ -78,6 +97,7 @@ export default function () {
     STATUS,
     // computed
     entryReads,
+    entryStars,
     entryStatus,
     selectedCategoryId,
     selectedFeedId,
@@ -93,5 +113,6 @@ export default function () {
     setFeedId,
     setStatus,
     toggleEntryRead,
+    toggleEntryStar,
   };
 }

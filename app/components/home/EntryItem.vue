@@ -2,7 +2,7 @@
   <q-expansion-item v-model="expands[entry.id]" group="entries">
     <template #header>
       <q-item-section side>
-        <HomeEntryStatusToggle :entry-id="entry.id" />
+        <HomeEntryReadToggle :entry-id="entry.id" />
       </q-item-section>
       <q-item-section>
         <q-item-label caption>
@@ -28,7 +28,8 @@
     </template>
 
     <q-card>
-      <q-card-section>
+      <q-card-section class="row items-center">
+        <HomeEntryStarToggle :entry-id="entry.id" />
         <ExternalAnchor :href="entry.link">
           <span class="text-h6">{{ entry.title }}</span>
         </ExternalAnchor>

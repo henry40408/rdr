@@ -1,12 +1,12 @@
 <template>
   <q-checkbox
-    dense
     true-value="read"
     :disable="reading"
     false-value="unread"
     checked-icon="drafts"
     unchecked-icon="mail"
     :model-value="entryRead"
+    indeterminate-icon="refresh"
     @update:model-value="onModelUpdate()"
   />
 </template>
