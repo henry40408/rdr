@@ -12,7 +12,9 @@
       <q-icon v-else size="xs" name="rss_feed" />
     </q-item-section>
     <q-item-section>
-      <q-item-label lines="1">{{ feed.title }}</q-item-label>
+      <q-item-label lines="1">
+        <MarkedText :text="feed.title" :keyword="categoryKeyword" />
+      </q-item-label>
     </q-item-section>
     <q-item-section side>
       <UnreadCount :count="feed.unreadCount" />
@@ -32,6 +34,8 @@ const props = defineProps<{
     id: number;
   };
 }>();
+
+const { categoryKeyword } = useCategoryState();
 
 const categoryId = computed(() => String(props.category.id));
 const feedId = computed(() => String(props.feed.id));

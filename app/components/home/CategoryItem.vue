@@ -1,7 +1,9 @@
 <template>
   <q-item clickable @click="setCategoryId(categoryId)">
     <q-item-section>
-      <q-item-label lines="1">{{ category.name }}</q-item-label>
+      <q-item-label lines="1">
+        <MarkedText :text="category.name" :keyword="categoryKeyword" />
+      </q-item-label>
     </q-item-section>
     <q-item-section side>
       <UnreadCount :count="count" />
@@ -25,7 +27,9 @@ const props = defineProps<{
   };
 }>();
 
+const { categoryKeyword } = useCategoryState();
 const { setCategoryId } = useEntryState();
+
 const categoryId = computed(() => String(props.category.id));
 const count = computed(() => props.category.feeds.reduce((sum, feed) => sum + feed.unreadCount, 0));
 </script>
