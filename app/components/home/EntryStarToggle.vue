@@ -5,7 +5,6 @@
     true-value="starred"
     false-value="unstarred"
     :model-value="entryStar"
-    indeterminate-icon="refresh"
     unchecked-icon="star_border"
     @update:model-value="onModelUpdate()"
   />

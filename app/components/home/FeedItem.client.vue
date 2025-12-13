@@ -1,5 +1,5 @@
 <template>
-  <q-item clickable @click="setFeedId(categoryId, feedId)">
+  <q-item v-show="show" clickable @click="setFeedId(categoryId, feedId)">
     <q-item-section side>
       <q-avatar v-if="feed.imageExists" square size="xs">
         <img
@@ -36,8 +36,14 @@ const props = defineProps<{
 }>();
 
 const { categoryKeyword } = useCategoryState();
+const { setFeedId } = useEntryState();
+const { hideEmpty } = useLocalSettings();
 
 const categoryId = computed(() => String(props.category.id));
 const feedId = computed(() => String(props.feed.id));
-const { setFeedId } = useEntryState();
+
+const show = computed(() => {
+  if (!hideEmpty.value) return true;
+  return props.feed.unreadCount > 0;
+});
 </script>

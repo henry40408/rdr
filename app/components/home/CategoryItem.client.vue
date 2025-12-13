@@ -1,5 +1,5 @@
 <template>
-  <q-item clickable @click="setCategoryId(categoryId)">
+  <q-item v-show="show" clickable @click="setCategoryId(categoryId)">
     <q-item-section>
       <q-item-label lines="1">
         <MarkedText :text="category.name" :keyword="categoryKeyword" />
@@ -29,7 +29,13 @@ const props = defineProps<{
 
 const { categoryKeyword } = useCategoryState();
 const { setCategoryId } = useEntryState();
+const { hideEmpty } = useLocalSettings();
 
 const categoryId = computed(() => String(props.category.id));
 const count = computed(() => props.category.feeds.reduce((sum, feed) => sum + feed.unreadCount, 0));
+const show = computed(() => {
+  if (!hideEmpty.value) return true;
+  const feedsCount = props.category.feeds.reduce((sum, feed) => sum + feed.unreadCount, 0);
+  return feedsCount > 0;
+});
 </script>
