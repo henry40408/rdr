@@ -32,16 +32,23 @@
 <script setup lang="ts">
 import type { QInfiniteScroll } from "quasar";
 
-const { entryStatus, hasMore, selectedCategoryId, selectedFeedId } = useEntryState();
+const { hasMore } = useEntryState();
+
+const { entryStatus, selectedCategoryId, selectedFeedId } = useEntryState();
 const { items, loadMore, pending } = useEntries();
 
 const listRef = useTemplateRef<QInfiniteScroll>("list");
-watch([selectedCategoryId, selectedFeedId, entryStatus], () => {
+watch([entryStatus, selectedCategoryId, selectedFeedId], () => {
   listRef.value?.reset();
   listRef.value?.resume();
 });
 
 async function load(_index: number, done: (stop: boolean) => void) {
+  if (pending.value) {
+    done(false);
+    return;
+  }
+
   if (!hasMore.value) {
     done(true);
     return;
