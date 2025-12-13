@@ -14,6 +14,8 @@ export default function () {
   const cursor = useState("cursor", () => shallowRef(undefined));
   /** @type {Ref<Record<number,'unread'|'reading'|'read'>>} */
   const entryReads = useState("entry-reads", () => ({}));
+  /** @type {Ref<Record<number,boolean>>} */
+  const expands = useState("expanded", () => ({}));
   const hasMore = useState("has-more", () => true);
   /** @type {Ref<{ entry: EntryEntity, feed: FeedEntity, category: CategoryEntity }[]>} */
   const items = useState("items", () => shallowRef([]));
@@ -26,6 +28,7 @@ export default function () {
   function resetState() {
     cursor.value = undefined;
     entryReads.value = {};
+    expands.value = {};
     hasMore.value = true;
     items.value = [];
   }
@@ -80,6 +83,7 @@ export default function () {
     selectedFeedId,
     // refs
     cursor,
+    expands,
     hasMore,
     items,
     limit,

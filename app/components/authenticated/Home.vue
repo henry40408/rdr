@@ -36,3 +36,8 @@
 const leftDrawerOpen = ref(false);
 const rightDrawerOpen = ref(false);
 </script>
+
+<style>
+@import "~/assets/css/entry-content.css";
+@import "~/assets/css/entry-summary.css";
+</style>
