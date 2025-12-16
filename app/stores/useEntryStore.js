@@ -15,6 +15,10 @@ export const useEntryStore = defineStore("entry", {
       count: 0,
       /** @type { {date:string,id:number} | undefined } */
       cursor: undefined,
+      /** @type {Record<number,boolean>} */
+      entryReads: {},
+      /** @type {Record<number,boolean>} */
+      entryStars: {},
       hasMore: true,
       limit: 30,
       /** @type {Awaited<ReturnType<typeof import('../../server/api/entries.get').default>>['items']} */
@@ -65,9 +69,15 @@ export const useEntryStore = defineStore("entry", {
         $fetch("/api/entries", { headers, query }),
         $fetch("/api/entries/count", { headers, query }),
       ]);
-      this.count = count;
-      this.items = items;
-      this.hasMore = items.length === this.limit;
+      this.$patch((s) => {
+        s.count = count;
+        s.items = items;
+        for (const item of items) {
+          s.entryReads[item.entry.id] = !!item.entry.readAt;
+          s.entryStars[item.entry.id] = !!item.entry.starredAt;
+        }
+        s.hasMore = items.length === s.limit;
+      });
     },
     async loadMore() {
       const lastItem = this.items[this.items.length - 1];
@@ -78,8 +88,14 @@ export const useEntryStore = defineStore("entry", {
       const query = this.query;
       const { items } = await $fetch("/api/entries", { headers, query });
 
-      for (const item of items) this.items.push(item);
-      this.hasMore = items.length === this.limit;
+      this.$patch((s) => {
+        for (const item of items) {
+          s.items.push(item);
+          s.entryReads[item.entry.id] = !!item.entry.readAt;
+          s.entryStars[item.entry.id] = !!item.entry.starredAt;
+        }
+        s.hasMore = items.length === s.limit;
+      });
     },
     /**
      * @param {string|number} [categoryId]
@@ -89,9 +105,13 @@ export const useEntryStore = defineStore("entry", {
       const router = useRouter();
       router.replace({ query: { ...route.query, categoryId, feedId: undefined } });
 
-      this.selectedCategoryId = categoryId?.toString();
-      this.selectedFeedId = undefined;
-      this.cursor = undefined;
+      this.$patch((s) => {
+        s.cursor = undefined;
+        s.entryReads = {};
+        s.entryStars = {};
+        s.selectedCategoryId = categoryId?.toString();
+        s.selectedFeedId = undefined;
+      });
       await this.loadEntries();
     },
     /**
@@ -103,17 +123,25 @@ export const useEntryStore = defineStore("entry", {
       const router = useRouter();
       router.replace({ query: { ...route.query, categoryId, feedId } });
 
-      this.selectedCategoryId = categoryId?.toString();
-      this.selectedFeedId = feedId?.toString();
-      this.cursor = undefined;
+      this.$patch((s) => {
+        s.cursor = undefined;
+        s.entryReads = {};
+        s.entryStars = {};
+        s.selectedCategoryId = categoryId?.toString();
+        s.selectedFeedId = feedId?.toString();
+      });
       await this.loadEntries();
     },
     /**
      * @param {string} status
      */
     async selectStatus(status) {
-      this.status = status;
-      this.cursor = undefined;
+      this.$patch((s) => {
+        s.status = status;
+        s.cursor = undefined;
+        s.entryReads = {};
+        s.entryStars = {};
+      });
       await this.loadEntries();
     },
   },
