@@ -9,6 +9,9 @@
     <q-item-section>
       <q-item-label>{{ feed.title }}</q-item-label>
     </q-item-section>
+    <q-item-section side>
+      <UnreadCount :count="feed.unreadCount" />
+    </q-item-section>
   </q-item>
 </template>
 

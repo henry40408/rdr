@@ -27,6 +27,7 @@
             <HomeSelectedFeed />
           </q-item>
         </q-list>
+        <HomeEntryList />
       </q-page>
     </q-page-container>
   </q-layout>
@@ -37,5 +38,7 @@ const leftDrawerOpen = ref(false);
 const rightDrawerOpen = ref(false);
 
 const storeC = useCategoryStore();
+const storeE = useEntryStore();
 await storeC.loadCategories();
+await storeE.loadEntries();
 </script>
