@@ -54,4 +54,7 @@ const storeC = useCategoryStore();
 const storeE = useEntryStore();
 await storeC.loadCategories();
 await storeE.loadEntries();
+
+const title = computed(() => `(${storeE.count}) rdr`);
+useHead({ title });
 </script>

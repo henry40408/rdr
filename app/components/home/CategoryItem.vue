@@ -1,14 +1,16 @@
 <template>
   <q-item v-show="show" clickable @click="storeE.selectCategory(category.id)">
     <q-item-section>
-      <q-item-label>{{ category.name }}</q-item-label>
+      <q-item-label>
+        <MarkedText :text="category.name" :keyword="storeC.keyword" />
+      </q-item-label>
     </q-item-section>
     <q-item-section side>
       <UnreadCount :count="unreadCount" />
     </q-item-section>
   </q-item>
   <HomeFeedList :category="category" />
-  <q-separator spaced />
+  <q-separator v-show="show" spaced />
 </template>
 
 <script setup lang="ts">
@@ -22,6 +24,13 @@ const props = defineProps<{
 const storeC = useCategoryStore();
 const storeE = useEntryStore();
 const show = computed(() => {
+  if (storeC.keyword) {
+    const categoryMatched = props.category.name.toLowerCase().includes(storeC.keyword.toLowerCase());
+    const feedsMatched = storeC.categories
+      .find((c) => c.id === props.category.id)
+      ?.feeds.some((f) => f.title.toLowerCase().includes(storeC.keyword.toLowerCase()));
+    return categoryMatched || feedsMatched;
+  }
   if (!storeC.hideEmpty) return true;
   const category = storeC.categories.find((c) => c.id === props.category.id);
   if (!category) return false;

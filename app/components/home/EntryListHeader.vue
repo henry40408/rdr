@@ -1,5 +1,5 @@
 <template>
-  <div>{{ statusLabel }}</div>
+  <div class="q-py-sm">{{ statusLabel }}</div>
 </template>
 
 <script setup lang="ts">
