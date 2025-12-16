@@ -1,10 +1,17 @@
 // @ts-check
 
+export const HIDE_EMPTY = "settings:hide-empty";
+
 export const useCategoryStore = defineStore("category", {
   state: () => ({
+    hideEmpty: useLocalStorage(HIDE_EMPTY, false),
     /** @type {Awaited<ReturnType<typeof import('../../server/api/categories/index.get').default>>['categories']} */
     categories: [],
   }),
+  hydrate(state) {
+    // @ts-expect-error mismatched types
+    state.hideEmpty = useLocalStorage(HIDE_EMPTY, false);
+  },
   actions: {
     async loadCategories() {
       const headers = useRequestHeaders(["cookie"]);

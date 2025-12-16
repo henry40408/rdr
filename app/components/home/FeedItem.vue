@@ -1,5 +1,5 @@
 <template>
-  <q-item clickable @click="store.selectFeed(category.id, feed.id)">
+  <q-item v-show="show" clickable @click="storeE.selectFeed(category.id, feed.id)">
     <q-item-section side>
       <q-avatar v-if="feed.imageExists" square size="xs">
         <img :alt="`Feed image of ${feed.title}`" :src="`/api/images/external/${buildFeedImageKey(feed.id)}`" />
@@ -16,7 +16,7 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{
+const props = defineProps<{
   category: {
     id: number;
   };
@@ -28,5 +28,12 @@ defineProps<{
   };
 }>();
 
-const store = useEntryStore();
+const storeC = useCategoryStore();
+const storeE = useEntryStore();
+const show = computed(() => {
+  if (!storeC.hideEmpty) return true;
+  const feed = storeC.categories.find((c) => c.id === props.category.id)?.feeds.find((f) => f.id === props.feed.id);
+  if (!feed) return false;
+  return feed.unreadCount > 0;
+});
 </script>

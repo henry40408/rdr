@@ -14,6 +14,7 @@
     </q-header>
 
     <q-drawer v-model="leftDrawerOpen" bordered persistent side="left" show-if-above>
+      <HomeCategoryListFilters />
       <HomeCategoryList />
     </q-drawer>
 
