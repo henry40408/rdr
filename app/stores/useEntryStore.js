@@ -7,11 +7,11 @@ export const useEntryStore = defineStore("entry", {
   getters: {
     selectedCategoryId() {
       const route = useRoute();
-      return route.query.categoryId ?? "";
+      return route.query.categoryId?.toString() ?? "";
     },
     selectedFeedId() {
       const route = useRoute();
-      return route.query.feedId ?? "";
+      return route.query.feedId?.toString() ?? "";
     },
   },
   actions: {
