@@ -20,6 +20,7 @@ export default defineNuxtConfig({
   modules: [
     "@nuxt/eslint",
     "@nuxt/test-utils/module",
+    "@pinia/nuxt",
     "@vueuse/nuxt",
     "nuxt-auth-utils",
     "nuxt-quasar-ui",
