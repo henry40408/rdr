@@ -18,14 +18,26 @@
       <HomeCategoryList />
     </q-drawer>
 
-    <q-drawer v-model="rightDrawerOpen" bordered persistent side="right" show-if-above></q-drawer>
+    <q-drawer v-model="rightDrawerOpen" bordered persistent side="right" show-if-above>
+      <HomeEntryListFilters />
+    </q-drawer>
 
     <q-page-container>
       <q-page>
         <q-list padding>
           <q-item>
-            <HomeSelectedCategory />
-            <HomeSelectedFeed />
+            <q-item-section>
+              <div class="row items-center q-gutter-xs">
+                <HomeEntryListHeader />
+                <div>
+                  <HomeSelectedCategory />
+                  <HomeSelectedFeed />
+                </div>
+              </div>
+            </q-item-section>
+            <q-item-section side>
+              <UnreadCount :count="storeE.count" />
+            </q-item-section>
           </q-item>
         </q-list>
         <HomeEntryList />

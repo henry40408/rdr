@@ -1,9 +1,18 @@
 // @ts-check
 
+export const DEFAULT_STATUS = { label: "Unread", value: "unread" };
+export const STATUS = [
+  DEFAULT_STATUS,
+  { label: "Read", value: "read" },
+  { label: "All", value: "all" },
+  { label: "Starred", value: "starred" },
+];
+
 export const useEntryStore = defineStore("entry", {
   state: () => {
     const route = useRoute();
     return {
+      count: 0,
       /** @type { {date:string,id:number} | undefined } */
       cursor: undefined,
       hasMore: true,
@@ -12,7 +21,7 @@ export const useEntryStore = defineStore("entry", {
       items: [],
       selectedFeedId: route.query.feedId?.toString(),
       selectedCategoryId: route.query.categoryId?.toString(),
-      status: "unread",
+      status: DEFAULT_STATUS.value,
     };
   },
   getters: {
@@ -52,7 +61,11 @@ export const useEntryStore = defineStore("entry", {
     async loadEntries() {
       const headers = useRequestHeaders(["cookie"]);
       const query = this.query;
-      const { items } = await $fetch("/api/entries", { headers, query });
+      const [{ items }, { count }] = await Promise.all([
+        $fetch("/api/entries", { headers, query }),
+        $fetch("/api/entries/count", { headers, query }),
+      ]);
+      this.count = count;
       this.items = items;
       this.hasMore = items.length === this.limit;
     },
@@ -92,6 +105,14 @@ export const useEntryStore = defineStore("entry", {
 
       this.selectedCategoryId = categoryId?.toString();
       this.selectedFeedId = feedId?.toString();
+      this.cursor = undefined;
+      await this.loadEntries();
+    },
+    /**
+     * @param {string} status
+     */
+    async selectStatus(status) {
+      this.status = status;
       this.cursor = undefined;
       await this.loadEntries();
     },

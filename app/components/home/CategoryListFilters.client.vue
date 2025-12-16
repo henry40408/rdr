@@ -1,5 +1,6 @@
 <template>
   <q-list>
+    <q-item-label header>Categories</q-item-label>
     <q-item>
       <q-item-section>
         <q-toggle v-model="storeC.hideEmpty" label="Hide empty" />
