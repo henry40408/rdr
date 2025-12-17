@@ -13,8 +13,8 @@ export const useEntryStore = defineStore("entry", () => {
 
   const count = ref(0);
   const cursor = ref(/** @type { {date:string,id:number} | undefined } */ (undefined));
-  const entryReads = ref(/** @type {Record<number,boolean>} */ ({}));
-  const entryStars = ref(/** @type {Record<number,boolean>} */ ({}));
+  const entryReads = ref(/** @type {Record<number,'unread'|'reading'|'read'>} */ ({}));
+  const entryStars = ref(/** @type {Record<number,'starred'|'starring'|'unstarred'>} */ ({}));
   const hasMore = ref(true);
   const limit = ref(30);
   const items = ref(
@@ -49,7 +49,11 @@ export const useEntryStore = defineStore("entry", () => {
   });
 
   const headers = useRequestHeaders(["cookie"]);
-  const { data: countData, execute: executeCount } = useFetch("/api/entries/count", {
+  const {
+    data: countData,
+    pending: countPending,
+    execute: executeCount,
+  } = useFetch("/api/entries/count", {
     key: "entries-count",
     headers,
     query,
@@ -57,7 +61,11 @@ export const useEntryStore = defineStore("entry", () => {
     immediate: false,
     watch: false,
   });
-  const { data: entriesData, execute: executeEntries } = useFetch("/api/entries", {
+  const {
+    data: entriesData,
+    pending: entriesPending,
+    execute: executeEntries,
+  } = useFetch("/api/entries", {
     key: "entries",
     headers,
     query,
@@ -73,8 +81,8 @@ export const useEntryStore = defineStore("entry", () => {
     count.value = countData.value?.count ?? 0;
     items.value = entriesData.value?.items ?? [];
     for (const item of items.value) {
-      entryReads.value[item.entry.id] = !!item.entry.readAt;
-      entryStars.value[item.entry.id] = !!item.entry.starredAt;
+      entryReads.value[item.entry.id] = item.entry.readAt ? "read" : "unread";
+      entryStars.value[item.entry.id] = item.entry.starredAt ? "starred" : "unstarred";
     }
     hasMore.value = items.value.length === limit.value;
   }
@@ -89,10 +97,19 @@ export const useEntryStore = defineStore("entry", () => {
     const fetchedItems = entriesData.value?.items ?? [];
     for (const item of fetchedItems) {
       items.value.push(item);
-      entryReads.value[item.entry.id] = !!item.entry.readAt;
-      entryStars.value[item.entry.id] = !!item.entry.starredAt;
+      entryReads.value[item.entry.id] = item.entry.readAt ? "read" : "unread";
+      entryStars.value[item.entry.id] = item.entry.starredAt ? "starred" : "unstarred";
     }
     hasMore.value = fetchedItems.length === limit.value;
+  }
+
+  function resetState() {
+    // count.value = 0; // keep count for better UX
+    cursor.value = undefined;
+    entryReads.value = {};
+    entryStars.value = {};
+    hasMore.value = true;
+    items.value = [];
   }
 
   /**
@@ -103,9 +120,7 @@ export const useEntryStore = defineStore("entry", () => {
     const router = useRouter();
     router.replace({ query: { ...route.query, categoryId, feedId: undefined } });
 
-    cursor.value = undefined;
-    entryReads.value = {};
-    entryStars.value = {};
+    resetState();
     selectedCategoryId.value = categoryId?.toString();
     selectedFeedId.value = undefined;
 
@@ -121,9 +136,7 @@ export const useEntryStore = defineStore("entry", () => {
     const router = useRouter();
     router.replace({ query: { ...route.query, categoryId, feedId } });
 
-    cursor.value = undefined;
-    entryReads.value = {};
-    entryStars.value = {};
+    resetState();
     selectedCategoryId.value = categoryId?.toString();
     selectedFeedId.value = feedId?.toString();
 
@@ -134,17 +147,62 @@ export const useEntryStore = defineStore("entry", () => {
    * @param {string} newStatus
    */
   async function selectStatus(newStatus) {
+    resetState();
     status.value = newStatus;
-    cursor.value = undefined;
-    entryReads.value = {};
-    entryStars.value = {};
 
     await loadEntries();
   }
 
+  /**
+   * @param {number} entryId
+   */
+  async function toggleEntryRead(entryId) {
+    const oldVal = entryReads.value[entryId];
+    if (!oldVal || oldVal === "reading") return;
+
+    const newVal = oldVal === "unread" ? "read" : "unread";
+    entryReads.value[entryId] = "reading";
+    try {
+      const { updated } = await $fetch("/api/entries/status", {
+        method: "PUT",
+        body: { entryIds: [entryId], status: newVal },
+      });
+      entryReads.value[entryId] = updated > 0 ? newVal : oldVal;
+    } catch (error) {
+      entryReads.value[entryId] = oldVal;
+      console.error("Failed to update entry read status", error);
+    }
+  }
+
+  /**
+   * @param {number} entryId
+   */
+  async function toggleEntryStar(entryId) {
+    const oldVal = entryStars.value[entryId];
+    if (!oldVal || oldVal === "starring") return;
+
+    const newVal = oldVal === "unstarred" ? "starred" : "unstarred";
+    entryStars.value[entryId] = "starring";
+    try {
+      const { updated } = await $fetch("/api/entries/status", {
+        method: "PUT",
+        body: {
+          entryIds: [entryId],
+          status: newVal,
+        },
+      });
+      entryStars.value[entryId] = updated > 0 ? newVal : oldVal;
+    } catch (error) {
+      entryStars.value[entryId] = oldVal;
+      console.error("Failed to update entry star status", error);
+    }
+  }
+
   return {
     count,
+    countPending,
     cursor,
+    entriesPending,
     entryReads,
     entryStars,
     hasMore,
@@ -158,5 +216,7 @@ export const useEntryStore = defineStore("entry", () => {
     selectCategory,
     selectFeed,
     selectStatus,
+    toggleEntryRead,
+    toggleEntryStar,
   };
 });

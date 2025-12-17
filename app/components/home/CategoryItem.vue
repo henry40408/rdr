@@ -1,7 +1,7 @@
 <template>
   <q-item v-show="show" clickable @click="storeE.selectCategory(category.id)">
     <q-item-section>
-      <q-item-label>
+      <q-item-label lines="1">
         <MarkedText :text="category.name" :keyword="storeC.keyword" />
       </q-item-label>
     </q-item-section>

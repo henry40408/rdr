@@ -1032,6 +1032,7 @@ export class Repository {
    * @param {number} userId
    * @param {number[]} entryIds
    * @param {"read"|"unread"|"starred"|"unstarred"} status
+   * @returns {Promise<number>}
    */
   async updateEntriesStatus(userId, entryIds, status) {
     const update = {};
@@ -1051,7 +1052,7 @@ export class Repository {
     }
     if (Object.keys(update).length === 0) {
       this.logger.debug({ msg: "No entry status to update", entryIds, status });
-      return;
+      return 0;
     }
     update.updated_at = this.knex.fn.now();
 

@@ -1,5 +1,6 @@
 <template>
   <q-infinite-scroll ref="infinite-scroll" @load="load">
+    <HomeEntryListSpinner v-if="entriesPending" />
     <q-list separator>
       <HomeEntryItem
         v-for="item in store.items"
@@ -10,9 +11,7 @@
       />
     </q-list>
     <template #loading>
-      <div class="text-center">
-        <q-spinner size="md" />
-      </div>
+      <HomeEntryListSpinner />
     </template>
     <q-banner v-if="!hasMore" class="text-center">
       <q-icon name="info" class="q-mr-sm" />
@@ -29,6 +28,7 @@ const infiniteScroll = useTemplateRef<QInfiniteScroll>("infinite-scroll");
 const store = useEntryStore();
 
 const hasMore = computed(() => store.hasMore);
+const entriesPending = computed(() => store.entriesPending);
 
 watch(
   () => [store.selectedCategoryId, store.selectedFeedId, store.status],

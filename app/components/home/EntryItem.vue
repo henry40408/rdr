@@ -1,5 +1,8 @@
 <template>
   <q-item>
+    <q-item-section side>
+      <HomeEntryItemReadToggle :entry="entry" />
+    </q-item-section>
     <q-item-section>
       <q-item-label caption>
         {{ feed.title }}
@@ -17,6 +20,9 @@
         </span>
         {{ entry.title }}
       </q-item-label>
+    </q-item-section>
+    <q-item-section top side>
+      <q-icon v-if="starred" size="xs" name="star" color="accent" />
     </q-item-section>
   </q-item>
 </template>
@@ -38,8 +44,10 @@ const props = defineProps<{
   };
 }>();
 
-const store = useCategoryStore();
+const storeC = useCategoryStore();
+const storeE = useEntryStore();
+const starred = computed(() => storeE.entryStars[props.entry.id] === "starred");
 const imageExists = computed(
-  () => store.categories.flatMap((c) => c.feeds).find((f) => f.id === props.feed.id)?.imageExists,
+  () => storeC.categories.flatMap((c) => c.feeds).find((f) => f.id === props.feed.id)?.imageExists,
 );
 </script>
