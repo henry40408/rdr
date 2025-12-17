@@ -1,5 +1,7 @@
 // @ts-check
 
+import { skipHydrate } from "pinia";
+
 export const HIDE_EMPTY = "settings:hide-empty";
 
 export const useCategoryStore = defineStore("category", () => {
@@ -24,7 +26,7 @@ export const useCategoryStore = defineStore("category", () => {
 
   return {
     categories,
-    hideEmpty,
+    hideEmpty: skipHydrate(hideEmpty),
     keyword,
     loadCategories,
   };
