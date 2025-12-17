@@ -65,6 +65,7 @@ const storeE = useEntryStore();
 await storeC.loadCategories();
 await storeE.loadEntries();
 
-const title = computed(() => `(${storeE.count}) rdr`);
+const countLabel = computed(() => (storeE.count > 999 ? "999+" : String(storeE.count)));
+const title = computed(() => `(${countLabel.value}) rdr`);
 useHead({ title });
 </script>

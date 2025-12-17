@@ -34,6 +34,7 @@ const props = defineProps<{
 
 const storeC = useCategoryStore();
 const storeE = useEntryStore();
+
 const show = computed(() => {
   if (storeC.keyword) return props.feed.title.toLowerCase().includes(storeC.keyword.toLowerCase());
   if (!storeC.hideEmpty) return true;

@@ -9,6 +9,7 @@ export const STATUS = [
 ];
 
 export const useEntryStore = defineStore("entry", () => {
+  const storeC = useCategoryStore();
   const route = useRoute();
 
   const count = ref(0);
@@ -168,6 +169,9 @@ export const useEntryStore = defineStore("entry", () => {
         body: { entryIds: [entryId], status: newVal },
       });
       entryReads.value[entryId] = updated > 0 ? newVal : oldVal;
+      storeC.loadCategories().catch((err) => {
+        console.error("Failed to refresh categories after updating entry read status", err);
+      });
     } catch (error) {
       entryReads.value[entryId] = oldVal;
       console.error("Failed to update entry read status", error);

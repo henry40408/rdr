@@ -9,7 +9,7 @@
       <UnreadCount :count="unreadCount" />
     </q-item-section>
   </q-item>
-  <HomeFeedList :category="category" />
+  <HomeFeedList :category="category" :feeds="category.feeds" />
   <q-separator v-show="show" spaced />
 </template>
 
@@ -18,26 +18,27 @@ const props = defineProps<{
   category: {
     id: number;
     name: string;
+    feeds: {
+      id: number;
+      title: string;
+      imageExists: boolean;
+      unreadCount: number;
+    }[];
   };
 }>();
 
 const storeC = useCategoryStore();
 const storeE = useEntryStore();
+
 const show = computed(() => {
   if (storeC.keyword) {
     const categoryMatched = props.category.name.toLowerCase().includes(storeC.keyword.toLowerCase());
-    const feedsMatched = storeC.categories
-      .find((c) => c.id === props.category.id)
-      ?.feeds.some((f) => f.title.toLowerCase().includes(storeC.keyword.toLowerCase()));
+    const feedsMatched = props.category.feeds.some((f) => f.title.toLowerCase().includes(storeC.keyword.toLowerCase()));
     return categoryMatched || feedsMatched;
   }
+
   if (!storeC.hideEmpty) return true;
-  const category = storeC.categories.find((c) => c.id === props.category.id);
-  if (!category) return false;
-  return category.feeds.reduce((acc, f) => acc + f.unreadCount, 0) > 0;
+  return props.category.feeds.reduce((acc, f) => acc + f.unreadCount, 0) > 0;
 });
-const unreadCount = computed(
-  () =>
-    storeC.categories.find((c) => c.id === props.category.id)?.feeds.reduce((acc, f) => acc + f.unreadCount, 0) ?? 0,
-);
+const unreadCount = computed(() => props.category.feeds.reduce((acc, f) => acc + f.unreadCount, 0));
 </script>

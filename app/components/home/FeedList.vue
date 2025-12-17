@@ -3,12 +3,15 @@
 </template>
 
 <script setup lang="ts">
-const props = defineProps<{
+defineProps<{
   category: {
     id: number;
   };
+  feeds: {
+    id: number;
+    title: string;
+    imageExists: boolean;
+    unreadCount: number;
+  }[];
 }>();
-
-const store = useCategoryStore();
-const feeds = computed(() => store.categories.find((c) => c.id === props.category.id)?.feeds || []);
 </script>
