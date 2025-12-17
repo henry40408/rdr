@@ -58,7 +58,6 @@ export const useEntryStore = defineStore("entry", () => {
     key: "entries-count",
     headers,
     query,
-    dedupe: "defer",
     immediate: false,
     watch: false,
   });
@@ -70,7 +69,6 @@ export const useEntryStore = defineStore("entry", () => {
     key: "entries",
     headers,
     query,
-    dedupe: "defer",
     immediate: false,
     watch: false,
   });

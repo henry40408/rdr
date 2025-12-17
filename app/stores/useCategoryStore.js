@@ -13,7 +13,6 @@ export const useCategoryStore = defineStore("category", () => {
   const { data, refresh } = useFetch("/api/categories", {
     key: "categories",
     headers,
-    dedupe: "defer",
     immediate: false,
     watch: false,
   });
