@@ -1,5 +1,11 @@
 <template>
-  <q-expansion-item group="entry" hide-expand-icon>
+  <q-expansion-item
+    group="entry"
+    hide-expand-icon
+    :model-value="expanded"
+    @before-show="loadContent()"
+    @update:model-value="storeE.toggleExpand(entry.id)"
+  >
     <template #header>
       <q-item-section side>
         <HomeEntryItemReadToggle :entry="entry" />
@@ -56,6 +62,16 @@
             Date:&nbsp;<DateTime :date="entry.date" />
           </q-chip>
         </q-card-section>
+
+        <q-card-section>
+          <div v-if="contentStatus === 'pending'" class="q-gutter-sm">
+            <q-skeleton animated width="80%" />
+            <q-skeleton animated width="90%" />
+            <q-skeleton animated width="70%" />
+          </div>
+          <!-- eslint-disable-next-line vue/no-v-html -->
+          <div class="entry-content" v-html="content" />
+        </q-card-section>
       </q-card>
     </template>
   </q-expansion-item>
@@ -81,8 +97,24 @@ const props = defineProps<{
 
 const storeC = useCategoryStore();
 const storeE = useEntryStore();
+
+const content = ref("");
+const {
+  data: contentData,
+  status: contentStatus,
+  execute: fetchContent,
+} = useFetch(`/api/entries/${props.entry.id}/content`, { immediate: false });
+const expanded = computed(() => !!storeE.expands[props.entry.id]);
+
 const starred = computed(() => storeE.entryStars[props.entry.id] === "starred");
 const imageExists = computed(
   () => storeC.categories.flatMap((c) => c.feeds).find((f) => f.id === props.feed.id)?.imageExists,
 );
+
+async function loadContent() {
+  if (expanded.value && contentStatus.value === "idle") {
+    await fetchContent();
+    content.value = contentData.value?.content ?? "";
+  }
+}
 </script>

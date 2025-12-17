@@ -69,3 +69,9 @@ const countLabel = computed(() => (storeE.count > 999 ? "999+" : String(storeE.c
 const title = computed(() => `(${countLabel.value}) rdr`);
 useHead({ title });
 </script>
+
+<style>
+@import "~/assets/css/anchor.css";
+@import "~/assets/css/entry-content.css";
+@import "~/assets/css/entry-summary.css";
+</style>

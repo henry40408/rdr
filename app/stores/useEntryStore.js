@@ -16,6 +16,7 @@ export const useEntryStore = defineStore("entry", () => {
   const cursor = ref(/** @type { {date:string,id:number} | undefined } */ (undefined));
   const entryReads = ref(/** @type {Record<number,'unread'|'reading'|'read'>} */ ({}));
   const entryStars = ref(/** @type {Record<number,'starred'|'starring'|'unstarred'>} */ ({}));
+  const expands = ref(/** @type {Record<number,boolean>} */ ({}));
   const hasMore = ref(true);
   const limit = ref(30);
   const items = ref(
@@ -107,6 +108,7 @@ export const useEntryStore = defineStore("entry", () => {
     cursor.value = undefined;
     entryReads.value = {};
     entryStars.value = {};
+    expands.value = {};
     hasMore.value = true;
     items.value = [];
   }
@@ -200,6 +202,13 @@ export const useEntryStore = defineStore("entry", () => {
     }
   }
 
+  /**
+   * @param {number} entryId
+   */
+  function toggleExpand(entryId) {
+    expands.value[entryId] = !expands.value[entryId];
+  }
+
   return {
     count,
     countPending,
@@ -207,9 +216,10 @@ export const useEntryStore = defineStore("entry", () => {
     entriesPending,
     entryReads,
     entryStars,
+    expands,
     hasMore,
-    limit,
     items,
+    limit,
     selectedFeedId,
     selectedCategoryId,
     status,
@@ -220,5 +230,6 @@ export const useEntryStore = defineStore("entry", () => {
     selectStatus,
     toggleEntryRead,
     toggleEntryStar,
+    toggleExpand,
   };
 });
