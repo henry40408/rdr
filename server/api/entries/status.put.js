@@ -1,9 +1,8 @@
-// @ts-check
-
 import { z } from "zod";
 
 const schema = z.object({
-  entryId: z.coerce.number(),
+  entryIds: z.coerce.number().array().min(1),
+  status: z.enum(["read", "unread", "starred", "unstarred"]),
 });
 
 export default defineEventHandler(async (event) => {
@@ -12,11 +11,11 @@ export default defineEventHandler(async (event) => {
   const session = await validateUserNonce(event);
   const userId = session.user.id;
 
-  const { entryId } = await getValidatedRouterParams(event, (params) => schema.parse(params));
+  const { entryIds, status } = await readValidatedBody(event, (body) => schema.parse(body));
 
   /** @type {Repository} */
   const repository = container.resolve("repository");
 
-  const updated = await repository.toggleReadEntry(userId, entryId);
+  const updated = await repository.updateEntriesStatus(userId, entryIds, status);
   return { updated };
 });

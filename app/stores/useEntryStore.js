@@ -96,7 +96,7 @@ export const useEntryStore = defineStore("entry", () => {
   }
 
   /**
-   * @param {number} [categoryId]
+   * @param {number|string} [categoryId]
    */
   async function selectCategory(categoryId) {
     const route = useRoute();
@@ -113,8 +113,8 @@ export const useEntryStore = defineStore("entry", () => {
   }
 
   /**
-   * @param {number} [categoryId]
-   * @param {number} [feedId]
+   * @param {number|string} [categoryId]
+   * @param {number|string} [feedId]
    */
   async function selectFeed(categoryId, feedId) {
     const route = useRoute();
