@@ -35,14 +35,26 @@
 
     <template #default>
       <q-card>
-        <q-card-section>
-          <span class="text-h6">
+        <q-card-section class="row items-center q-gutter-xs">
+          <q-checkbox
+            v-model="starred"
+            checked-icon="star"
+            unchecked-icon="star_outline"
+            @update:model-value="storeE.toggleEntryStar(entry.id)"
+          />
+          <div class="text-h6">
             <ExternalLink :href="entry.link">
               {{ entry.title }}
             </ExternalLink>
-          </span>
+          </div>
         </q-card-section>
         <q-card-section>
+          <q-chip outline>
+            <q-avatar color="accent" text-color="white">
+              <q-icon name="person" />
+            </q-avatar>
+            Author: {{ entry.author }}
+          </q-chip>
           <q-chip outline clickable @click="storeE.selectCategory(category.id)">
             <q-avatar color="primary" text-color="white">
               <q-icon name="category" />
@@ -84,6 +96,7 @@ const props = defineProps<{
     title: string;
     date: string;
     link: string;
+    author: string;
   };
   feed: {
     id: number;
