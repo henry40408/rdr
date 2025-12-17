@@ -47,6 +47,16 @@
 </template>
 
 <script setup lang="ts">
+const $q = useQuasar();
+
+const isDark = useDark();
+onMounted(() => {
+  $q.dark.set(isDark.value);
+  watchEffect(() => {
+    $q.dark.set(isDark.value);
+  });
+});
+
 const leftDrawerOpen = ref(false);
 const rightDrawerOpen = ref(false);
 
