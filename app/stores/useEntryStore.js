@@ -8,141 +8,155 @@ export const STATUS = [
   { label: "Starred", value: "starred" },
 ];
 
-export const useEntryStore = defineStore("entry", {
-  state: () => {
-    const route = useRoute();
-    return {
-      count: 0,
-      /** @type { {date:string,id:number} | undefined } */
-      cursor: undefined,
-      /** @type {Record<number,boolean>} */
-      entryReads: {},
-      /** @type {Record<number,boolean>} */
-      entryStars: {},
-      hasMore: true,
-      limit: 30,
-      /** @type {Awaited<ReturnType<typeof import('../../server/api/entries.get').default>>['items']} */
-      items: [],
-      selectedFeedId: route.query.feedId?.toString(),
-      selectedCategoryId: route.query.categoryId?.toString(),
-      status: DEFAULT_STATUS.value,
+export const useEntryStore = defineStore("entry", () => {
+  const route = useRoute();
+
+  const count = ref(0);
+  const cursor = ref(/** @type { {date:string,id:number} | undefined } */ (undefined));
+  const entryReads = ref(/** @type {Record<number,boolean>} */ ({}));
+  const entryStars = ref(/** @type {Record<number,boolean>} */ ({}));
+  const hasMore = ref(true);
+  const limit = ref(30);
+  const items = ref(
+    /** @type {Awaited<ReturnType<typeof import('../../server/api/entries.get').default>>['items']} */ ([]),
+  );
+  const selectedFeedId = ref(route.query.feedId?.toString());
+  const selectedCategoryId = ref(route.query.categoryId?.toString());
+  const status = ref(DEFAULT_STATUS.value);
+
+  const query = computed(() => {
+    /** @type {Record<String,unknown>} */
+    const q = {
+      limit: limit.value,
+      selectedType: selectedType.value,
+      selectedId: selectedId.value,
+      status: status.value,
     };
-  },
-  getters: {
-    /**
-     * @returns {Record<string, unknown>}
-     */
-    query(state) {
-      /** @type {Record<String,unknown>} */
-      const q = {
-        limit: state.limit,
-        selectedType: this.selectedType,
-        selectedId: this.selectedId,
-        status: state.status,
-      };
-      if (state.cursor) {
-        q.cursor = state.cursor.date;
-        q.id = state.cursor.id;
-      }
-      return q;
-    },
-    /**
-     * @returns {string|undefined}
-     */
-    selectedId(state) {
-      return state.selectedFeedId ?? state.selectedCategoryId;
-    },
-    /**
-     * @returns {"category"|"feed"|undefined}
-     */
-    selectedType() {
-      if (this.selectedFeedId) return "feed";
-      if (this.selectedCategoryId) return "category";
-      return undefined;
-    },
-  },
-  actions: {
-    async loadEntries() {
-      const headers = useRequestHeaders(["cookie"]);
-      const query = this.query;
-      const [{ items }, { count }] = await Promise.all([
-        $fetch("/api/entries", { headers, query }),
-        $fetch("/api/entries/count", { headers, query }),
-      ]);
-      this.$patch((s) => {
-        s.count = count;
-        s.items = items;
-        for (const item of items) {
-          s.entryReads[item.entry.id] = !!item.entry.readAt;
-          s.entryStars[item.entry.id] = !!item.entry.starredAt;
-        }
-        s.hasMore = items.length === s.limit;
-      });
-    },
-    async loadMore() {
-      const lastItem = this.items[this.items.length - 1];
-      if (!lastItem) return;
+    if (cursor.value) {
+      q.cursor = cursor.value.date;
+      q.id = cursor.value.id;
+    }
+    return q;
+  });
 
-      this.cursor = { date: lastItem.entry.date, id: lastItem.entry.id };
-      const headers = useRequestHeaders(["cookie"]);
-      const query = this.query;
-      const { items } = await $fetch("/api/entries", { headers, query });
+  const selectedId = computed(() => {
+    return selectedFeedId.value ?? selectedCategoryId.value;
+  });
+  const selectedType = computed(() => {
+    if (selectedFeedId.value) return "feed";
+    if (selectedCategoryId.value) return "category";
+    return undefined;
+  });
 
-      this.$patch((s) => {
-        for (const item of items) {
-          s.items.push(item);
-          s.entryReads[item.entry.id] = !!item.entry.readAt;
-          s.entryStars[item.entry.id] = !!item.entry.starredAt;
-        }
-        s.hasMore = items.length === s.limit;
-      });
-    },
-    /**
-     * @param {string|number} [categoryId]
-     */
-    async selectCategory(categoryId) {
-      const route = useRoute();
-      const router = useRouter();
-      router.replace({ query: { ...route.query, categoryId, feedId: undefined } });
+  const headers = useRequestHeaders(["cookie"]);
+  const { data: countData, execute: executeCount } = useFetch("/api/entries/count", {
+    key: "entries-count",
+    headers,
+    query,
+    dedupe: "defer",
+    immediate: false,
+    watch: false,
+  });
+  const { data: entriesData, execute: executeEntries } = useFetch("/api/entries", {
+    key: "entries",
+    headers,
+    query,
+    dedupe: "defer",
+    immediate: false,
+    watch: false,
+  });
 
-      this.$patch((s) => {
-        s.cursor = undefined;
-        s.entryReads = {};
-        s.entryStars = {};
-        s.selectedCategoryId = categoryId?.toString();
-        s.selectedFeedId = undefined;
-      });
-      await this.loadEntries();
-    },
-    /**
-     * @param {string|number} [categoryId]
-     * @param {string|number} [feedId]
-     */
-    async selectFeed(categoryId, feedId) {
-      const route = useRoute();
-      const router = useRouter();
-      router.replace({ query: { ...route.query, categoryId, feedId } });
+  async function loadEntries() {
+    await executeCount();
+    await executeEntries();
 
-      this.$patch((s) => {
-        s.cursor = undefined;
-        s.entryReads = {};
-        s.entryStars = {};
-        s.selectedCategoryId = categoryId?.toString();
-        s.selectedFeedId = feedId?.toString();
-      });
-      await this.loadEntries();
-    },
-    /**
-     * @param {string} status
-     */
-    async selectStatus(status) {
-      this.$patch((s) => {
-        s.status = status;
-        s.cursor = undefined;
-        s.entryReads = {};
-        s.entryStars = {};
-      });
-      await this.loadEntries();
-    },
-  },
+    count.value = countData.value?.count ?? 0;
+    items.value = entriesData.value?.items ?? [];
+    for (const item of items.value) {
+      entryReads.value[item.entry.id] = !!item.entry.readAt;
+      entryStars.value[item.entry.id] = !!item.entry.starredAt;
+    }
+    hasMore.value = items.value.length === limit.value;
+  }
+
+  async function loadMore() {
+    const lastItem = items.value[items.value.length - 1];
+    if (!lastItem) return;
+
+    cursor.value = { date: lastItem.entry.date, id: lastItem.entry.id };
+    await executeEntries();
+
+    const fetchedItems = entriesData.value?.items ?? [];
+    for (const item of fetchedItems) {
+      items.value.push(item);
+      entryReads.value[item.entry.id] = !!item.entry.readAt;
+      entryStars.value[item.entry.id] = !!item.entry.starredAt;
+    }
+    hasMore.value = fetchedItems.length === limit.value;
+  }
+
+  /**
+   * @param {number} [categoryId]
+   */
+  async function selectCategory(categoryId) {
+    const route = useRoute();
+    const router = useRouter();
+    router.replace({ query: { ...route.query, categoryId, feedId: undefined } });
+
+    cursor.value = undefined;
+    entryReads.value = {};
+    entryStars.value = {};
+    selectedCategoryId.value = categoryId?.toString();
+    selectedFeedId.value = undefined;
+
+    await loadEntries();
+  }
+
+  /**
+   * @param {number} [categoryId]
+   * @param {number} [feedId]
+   */
+  async function selectFeed(categoryId, feedId) {
+    const route = useRoute();
+    const router = useRouter();
+    router.replace({ query: { ...route.query, categoryId, feedId } });
+
+    cursor.value = undefined;
+    entryReads.value = {};
+    entryStars.value = {};
+    selectedCategoryId.value = categoryId?.toString();
+    selectedFeedId.value = feedId?.toString();
+
+    await loadEntries();
+  }
+
+  /**
+   * @param {string} newStatus
+   */
+  async function selectStatus(newStatus) {
+    status.value = newStatus;
+    cursor.value = undefined;
+    entryReads.value = {};
+    entryStars.value = {};
+
+    await loadEntries();
+  }
+
+  return {
+    count,
+    cursor,
+    entryReads,
+    entryStars,
+    hasMore,
+    limit,
+    items,
+    selectedFeedId,
+    selectedCategoryId,
+    status,
+    loadEntries,
+    loadMore,
+    selectCategory,
+    selectFeed,
+    selectStatus,
+  };
 });
