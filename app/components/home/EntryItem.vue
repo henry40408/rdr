@@ -35,7 +35,16 @@
 
     <template #default>
       <q-card>
-        <q-card-section class="row items-center q-gutter-xs">
+        <q-card-section class="q-pb-xs">
+          <q-chip clickable color="primary" text-color="white" @click="entryStore.setCategoryId(category.id)">
+            {{ category.name }}
+          </q-chip>
+          <q-chip clickable color="secondary" text-color="white" @click="entryStore.setFeedId(category.id, feed.id)">
+            <q-avatar><q-icon name="rss_feed" /></q-avatar>
+            {{ feed.title }}
+          </q-chip>
+        </q-card-section>
+        <q-card-section class="row items-center q-gutter-xs q-py-xs">
           <q-checkbox
             v-model="starred"
             checked-icon="star"
@@ -48,30 +57,14 @@
             </ExternalLink>
           </div>
         </q-card-section>
-        <q-card-section>
-          <q-chip outline>
-            <q-avatar color="accent" text-color="white">
-              <q-icon name="person" />
-            </q-avatar>
-            Author: {{ entry.author }}
+        <q-card-section class="q-pt-xs">
+          <q-chip v-if="entry.author">
+            <q-avatar><q-icon name="person" /></q-avatar>
+            {{ entry.author }}
           </q-chip>
-          <q-chip outline clickable @click="entryStore.setCategoryId(category.id)">
-            <q-avatar color="primary" text-color="white">
-              <q-icon name="category" />
-            </q-avatar>
-            Category: {{ category.name }}
-          </q-chip>
-          <q-chip outline clickable @click="entryStore.setFeedId(category.id, feed.id)">
-            <q-avatar color="secondary" text-color="white">
-              <q-icon name="rss_feed" />
-            </q-avatar>
-            Feed: {{ feed.title }}
-          </q-chip>
-          <q-chip outline>
-            <q-avatar color="accent" text-color="white">
-              <q-icon name="calendar_today" />
-            </q-avatar>
-            Date:&nbsp;<DateTime :date="entry.date" />
+          <q-chip>
+            <q-avatar><q-icon name="event" /></q-avatar>
+            <DateTime :date="entry.date" />
           </q-chip>
         </q-card-section>
 
