@@ -74,7 +74,7 @@ export const useEntryStore = defineStore("entry", () => {
     watch: false,
   });
 
-  async function loadEntries() {
+  async function load() {
     await executeCount();
     await executeEntries();
 
@@ -103,7 +103,7 @@ export const useEntryStore = defineStore("entry", () => {
     hasMore.value = fetchedItems.length === limit.value;
   }
 
-  function resetState() {
+  function reset() {
     // count.value = 0; // keep count for better UX
     cursor.value = undefined;
     entryReads.value = {};
@@ -116,42 +116,42 @@ export const useEntryStore = defineStore("entry", () => {
   /**
    * @param {number|string} [categoryId]
    */
-  async function selectCategory(categoryId) {
+  async function setCategoryId(categoryId) {
     const route = useRoute();
     const router = useRouter();
     router.replace({ query: { ...route.query, categoryId, feedId: undefined } });
 
-    resetState();
+    reset();
     selectedCategoryId.value = categoryId?.toString();
     selectedFeedId.value = undefined;
 
-    await loadEntries();
+    await load();
   }
 
   /**
    * @param {number|string} [categoryId]
    * @param {number|string} [feedId]
    */
-  async function selectFeed(categoryId, feedId) {
+  async function setFeedId(categoryId, feedId) {
     const route = useRoute();
     const router = useRouter();
     router.replace({ query: { ...route.query, categoryId, feedId } });
 
-    resetState();
+    reset();
     selectedCategoryId.value = categoryId?.toString();
     selectedFeedId.value = feedId?.toString();
 
-    await loadEntries();
+    await load();
   }
 
   /**
    * @param {string} newStatus
    */
-  async function selectStatus(newStatus) {
-    resetState();
+  async function setStatus(newStatus) {
+    reset();
     status.value = newStatus;
 
-    await loadEntries();
+    await load();
   }
 
   /**
@@ -169,7 +169,7 @@ export const useEntryStore = defineStore("entry", () => {
         body: { entryIds: [entryId], status: newVal },
       });
       entryReads.value[entryId] = updated > 0 ? newVal : oldVal;
-      storeC.loadCategories().catch((err) => {
+      storeC.load().catch((err) => {
         console.error("Failed to refresh categories after updating entry read status", err);
       });
     } catch (error) {
@@ -223,11 +223,11 @@ export const useEntryStore = defineStore("entry", () => {
     selectedFeedId,
     selectedCategoryId,
     status,
-    loadEntries,
+    load,
     loadMore,
-    selectCategory,
-    selectFeed,
-    selectStatus,
+    setCategoryId,
+    setFeedId,
+    setStatus,
     toggleEntryRead,
     toggleEntryStar,
     toggleExpand,

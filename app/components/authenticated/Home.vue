@@ -36,7 +36,7 @@
               </div>
             </q-item-section>
             <q-item-section side>
-              <UnreadCount :count="storeE.count" />
+              <UnreadCount :count="entryStore.count" />
             </q-item-section>
           </q-item>
         </q-list>
@@ -60,12 +60,11 @@ onMounted(() => {
 const leftDrawerOpen = ref(false);
 const rightDrawerOpen = ref(false);
 
-const storeC = useCategoryStore();
-const storeE = useEntryStore();
-await storeC.loadCategories();
-await storeE.loadEntries();
+const categoryStore = useCategoryStore();
+const entryStore = useEntryStore();
+await Promise.all([categoryStore.load(), entryStore.load()]);
 
-const countLabel = computed(() => (storeE.count > 999 ? "999+" : String(storeE.count)));
+const countLabel = computed(() => (entryStore.count > 999 ? "999+" : String(entryStore.count)));
 const title = computed(() => `(${countLabel.value}) rdr`);
 useHead({ title });
 </script>

@@ -26,10 +26,6 @@ import type { QInfiniteScroll } from "quasar";
 const infiniteScroll = useTemplateRef<QInfiniteScroll>("infinite-scroll");
 
 const store = useEntryStore();
-
-const hasMore = computed(() => store.hasMore);
-const entriesPending = computed(() => store.entriesPending);
-
 watch(
   () => [store.selectedCategoryId, store.selectedFeedId, store.status],
   () => {
@@ -37,6 +33,9 @@ watch(
     infiniteScroll.value?.resume();
   },
 );
+
+const hasMore = computed(() => store.hasMore);
+const entriesPending = computed(() => store.entriesPending);
 
 async function load(_index: number, done: (stop: boolean) => void) {
   if (!store.hasMore) {

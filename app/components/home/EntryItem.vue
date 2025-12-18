@@ -4,7 +4,7 @@
     hide-expand-icon
     :model-value="expanded"
     @before-show="loadContent()"
-    @update:model-value="storeE.toggleExpand(entry.id)"
+    @update:model-value="entryStore.toggleExpand(entry.id)"
   >
     <template #header>
       <q-item-section side>
@@ -40,7 +40,7 @@
             v-model="starred"
             checked-icon="star"
             unchecked-icon="star_outline"
-            @update:model-value="storeE.toggleEntryStar(entry.id)"
+            @update:model-value="entryStore.toggleEntryStar(entry.id)"
           />
           <div class="text-h6">
             <ExternalLink :href="entry.link">
@@ -55,13 +55,13 @@
             </q-avatar>
             Author: {{ entry.author }}
           </q-chip>
-          <q-chip outline clickable @click="storeE.selectCategory(category.id)">
+          <q-chip outline clickable @click="entryStore.setCategoryId(category.id)">
             <q-avatar color="primary" text-color="white">
               <q-icon name="category" />
             </q-avatar>
             Category: {{ category.name }}
           </q-chip>
-          <q-chip outline clickable @click="storeE.selectFeed(category.id, feed.id)">
+          <q-chip outline clickable @click="entryStore.setFeedId(category.id, feed.id)">
             <q-avatar color="secondary" text-color="white">
               <q-icon name="rss_feed" />
             </q-avatar>
@@ -96,7 +96,7 @@ const props = defineProps<{
     title: string;
     date: string;
     link: string;
-    author: string;
+    author?: string;
   };
   feed: {
     id: number;
@@ -108,8 +108,8 @@ const props = defineProps<{
   };
 }>();
 
-const storeC = useCategoryStore();
-const storeE = useEntryStore();
+const categoryStore = useCategoryStore();
+const entryStore = useEntryStore();
 
 const content = ref("");
 const {
@@ -117,11 +117,11 @@ const {
   status: contentStatus,
   execute: fetchContent,
 } = useFetch(`/api/entries/${props.entry.id}/content`, { immediate: false });
-const expanded = computed(() => !!storeE.expands[props.entry.id]);
+const expanded = computed(() => !!entryStore.expands[props.entry.id]);
 
-const starred = computed(() => storeE.entryStars[props.entry.id] === "starred");
+const starred = computed(() => entryStore.entryStars[props.entry.id] === "starred");
 const imageExists = computed(
-  () => storeC.categories.flatMap((c) => c.feeds).find((f) => f.id === props.feed.id)?.imageExists,
+  () => categoryStore.categories.flatMap((c) => c.feeds).find((f) => f.id === props.feed.id)?.imageExists,
 );
 
 async function loadContent() {

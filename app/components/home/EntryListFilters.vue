@@ -7,7 +7,7 @@
         type="radio"
         :options="STATUS"
         label="Entry status"
-        @update:model-value="store.selectStatus"
+        @update:model-value="store.setStatus"
       />
     </q-item>
   </q-list>

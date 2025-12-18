@@ -1,5 +1,5 @@
 <template>
-  <q-chip v-if="feed" outline removable @remove="storeE.selectFeed(categoryId, undefined)">
+  <q-chip v-if="feed" outline removable @remove="entryStore.setFeedId(categoryId, undefined)">
     <q-avatar color="secondary" text-color="white">
       <q-icon name="rss_feed" />
     </q-avatar>
@@ -8,10 +8,11 @@
 </template>
 
 <script setup lang="ts">
-const storeC = useCategoryStore();
-const storeE = useEntryStore();
-const categoryId = computed(() => storeE.selectedCategoryId);
+const categoryStore = useCategoryStore();
+const entryStore = useEntryStore();
+
+const categoryId = computed(() => entryStore.selectedCategoryId);
 const feed = computed(() =>
-  storeC.categories.flatMap((c) => c.feeds).find((f) => String(f.id) === storeE.selectedFeedId),
+  categoryStore.categories.flatMap((c) => c.feeds).find((f) => String(f.id) === entryStore.selectedFeedId),
 );
 </script>

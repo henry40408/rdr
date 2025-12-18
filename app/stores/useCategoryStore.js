@@ -19,7 +19,7 @@ export const useCategoryStore = defineStore("category", () => {
     watch: false,
   });
 
-  async function loadCategories() {
+  async function load() {
     await refresh();
     categories.value = data.value?.categories ?? [];
   }
@@ -28,6 +28,6 @@ export const useCategoryStore = defineStore("category", () => {
     categories,
     hideEmpty: skipHydrate(hideEmpty),
     keyword,
-    loadCategories,
+    load,
   };
 });

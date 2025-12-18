@@ -1,8 +1,8 @@
 <template>
-  <q-item v-show="show" clickable @click="storeE.selectCategory(category.id)">
+  <q-item v-show="show" clickable @click="entryStore.setCategoryId(category.id)">
     <q-item-section>
       <q-item-label lines="1">
-        <MarkedText :text="category.name" :keyword="storeC.keyword" />
+        <MarkedText :text="category.name" :keyword="categoryStore.keyword" />
       </q-item-label>
     </q-item-section>
     <q-item-section side>
@@ -27,17 +27,19 @@ const props = defineProps<{
   };
 }>();
 
-const storeC = useCategoryStore();
-const storeE = useEntryStore();
+const categoryStore = useCategoryStore();
+const entryStore = useEntryStore();
 
 const show = computed(() => {
-  if (storeC.keyword) {
-    const categoryMatched = props.category.name.toLowerCase().includes(storeC.keyword.toLowerCase());
-    const feedsMatched = props.category.feeds.some((f) => f.title.toLowerCase().includes(storeC.keyword.toLowerCase()));
+  if (categoryStore.keyword) {
+    const categoryMatched = props.category.name.toLowerCase().includes(categoryStore.keyword.toLowerCase());
+    const feedsMatched = props.category.feeds.some((f) =>
+      f.title.toLowerCase().includes(categoryStore.keyword.toLowerCase()),
+    );
     return categoryMatched || feedsMatched;
   }
 
-  if (!storeC.hideEmpty) return true;
+  if (!categoryStore.hideEmpty) return true;
   return props.category.feeds.reduce((acc, f) => acc + f.unreadCount, 0) > 0;
 });
 const unreadCount = computed(() => props.category.feeds.reduce((acc, f) => acc + f.unreadCount, 0));
