@@ -49,24 +49,25 @@
 <script setup lang="ts">
 const $q = useQuasar();
 
-const isDark = useDark();
+const colorMode = useColorMode();
 onMounted(() => {
-  $q.dark.set(isDark.value);
+  $q.dark.set(colorMode.value === "dark");
   watchEffect(() => {
-    $q.dark.set(isDark.value);
+    $q.dark.set(colorMode.value === "dark");
   });
 });
+
+const categoryStore = useCategoryStore();
+const entryStore = useEntryStore();
 
 const leftDrawerOpen = ref(false);
 const rightDrawerOpen = ref(false);
 
-const categoryStore = useCategoryStore();
-const entryStore = useEntryStore();
-await Promise.all([categoryStore.load(), entryStore.load()]);
-
 const countLabel = computed(() => (entryStore.count > 999 ? "999+" : String(entryStore.count)));
 const title = computed(() => `(${countLabel.value}) rdr`);
 useHead({ title });
+
+await Promise.all([categoryStore.load(), entryStore.load()]);
 </script>
 
 <style>

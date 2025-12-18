@@ -20,6 +20,7 @@ export default defineNuxtConfig({
   modules: [
     "@nuxt/eslint",
     "@nuxt/test-utils/module",
+    "@nuxtjs/color-mode",
     "@pinia/nuxt",
     "@vueuse/nuxt",
     "nuxt-auth-utils",
@@ -62,7 +63,7 @@ export default defineNuxtConfig({
   },
   auth: { webAuthn: true },
   quasar: {
-    plugins: ["Dialog", "LoadingBar", "Notify"],
+    plugins: ["Dark", "Dialog", "LoadingBar", "Notify"],
     config: {
       brand: {
         primary: "#4682B4",
@@ -74,6 +75,7 @@ export default defineNuxtConfig({
         warning: "#FFA500",
         // dark: "#2F4F4F", // use default dark color
       },
+      dark: true,
     },
   },
   security: {
