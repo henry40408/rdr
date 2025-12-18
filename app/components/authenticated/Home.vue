@@ -41,6 +41,7 @@
           </q-item>
         </q-list>
         <HomeEntryList />
+        <HomeFloatingButton />
       </q-page>
     </q-page-container>
   </q-layout>

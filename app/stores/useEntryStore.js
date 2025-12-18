@@ -43,6 +43,20 @@ export const useEntryStore = defineStore("entry", () => {
     return q;
   });
 
+  const expandedEntryId = computed(() => {
+    for (const [entryId, isExpanded] of Object.entries(expands.value)) if (isExpanded) return Number(entryId);
+    return undefined;
+  });
+  const expandedStarred = computed(() => {
+    const entryId = expandedEntryId.value;
+    if (entryId === undefined) return "unstarred";
+    return entryStars.value[entryId];
+  });
+  const expandedRead = computed(() => {
+    const entryId = expandedEntryId.value;
+    if (entryId === undefined) return "unread";
+    return entryReads.value[entryId];
+  });
   const selectedId = computed(() => {
     return selectedFeedId.value ?? selectedCategoryId.value;
   });
@@ -77,6 +91,10 @@ export const useEntryStore = defineStore("entry", () => {
     timeout: secondsToMilliseconds(30),
     watch: false,
   });
+
+  function closeExpanded() {
+    expands.value = {};
+  }
 
   async function load() {
     await executeCount();
@@ -213,6 +231,16 @@ export const useEntryStore = defineStore("entry", () => {
     expands.value[entryId] = !expands.value[entryId];
   }
 
+  function toggleExpandedRead() {
+    const entryId = expandedEntryId.value;
+    if (entryId) toggleEntryRead(entryId);
+  }
+
+  function toggleExpandedStar() {
+    const entryId = expandedEntryId.value;
+    if (entryId) toggleEntryStar(entryId);
+  }
+
   return {
     count,
     countPending,
@@ -221,12 +249,15 @@ export const useEntryStore = defineStore("entry", () => {
     entryReads,
     entryStars,
     expands,
+    expandedRead,
+    expandedStarred,
     hasMore,
     items,
     limit,
     selectedFeedId,
     selectedCategoryId,
     status,
+    closeExpanded,
     load,
     loadMore,
     setCategoryId,
@@ -235,5 +266,7 @@ export const useEntryStore = defineStore("entry", () => {
     toggleEntryRead,
     toggleEntryStar,
     toggleExpand,
+    toggleExpandedRead,
+    toggleExpandedStar,
   };
 });
