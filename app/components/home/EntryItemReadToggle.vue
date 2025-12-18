@@ -7,6 +7,7 @@
     false-value="unread"
     checked-icon="drafts"
     unchecked-icon="mail"
+    indeterminate-icon="mark_email_unread"
     @update:model-value="store.toggleEntryRead(entry.id)"
   />
 </template>

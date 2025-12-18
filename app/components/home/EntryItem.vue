@@ -45,12 +45,7 @@
           </q-chip>
         </q-card-section>
         <q-card-section class="row items-center q-gutter-xs q-py-xs">
-          <q-checkbox
-            v-model="starred"
-            checked-icon="star"
-            unchecked-icon="star_outline"
-            @update:model-value="entryStore.toggleEntryStar(entry.id)"
-          />
+          <HomeEntryItemStarToggle :entry="entry" />
           <div class="text-h6">
             <ExternalLink :href="entry.link">
               {{ entry.title }}
