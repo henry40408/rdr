@@ -1,7 +1,6 @@
 <template>
   <q-checkbox
-    dense
-    color="primary"
+    color="grey"
     true-value="read"
     :model-value="read"
     false-value="unread"
@@ -18,5 +17,6 @@ const props = defineProps<{
 }>();
 
 const store = useEntryStore();
+
 const read = computed(() => store.entryReads[props.entry.id]);
 </script>

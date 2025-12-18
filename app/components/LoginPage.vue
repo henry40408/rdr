@@ -57,21 +57,18 @@
 </template>
 
 <script setup lang="ts">
-import { useQuasar } from "quasar";
-
 const emit = defineEmits<{ authenticated: [] }>();
 
 const $q = useQuasar();
+const { authenticate, isSupported } = useWebAuthn();
+
+const { data: systemSettings } = await useFetch("/api/system-settings");
+const isWebAuthnSupported = computed(() => systemSettings.value?.canLogin && isSupported.value);
 
 const username = ref("");
 const password = ref("");
 const loading = ref(false);
 const error = ref("");
-
-const { authenticate, isSupported } = useWebAuthn();
-
-const { data: systemSettings } = await useFetch("/api/system-settings");
-const isWebAuthnSupported = computed(() => systemSettings.value?.canLogin && isSupported.value);
 
 async function onSubmit(action: "login" | "signup") {
   if (action === "login") login();

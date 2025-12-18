@@ -105,12 +105,12 @@ const {
   status: contentStatus,
   execute: fetchContent,
 } = useFetch(`/api/entries/${props.entry.id}/content`, { immediate: false });
-const expanded = computed(() => !!entryStore.expands[props.entry.id]);
 
-const starred = computed(() => entryStore.entryStars[props.entry.id] === "starred");
+const expanded = computed(() => !!entryStore.expands[props.entry.id]);
 const imageExists = computed(
   () => categoryStore.categories.flatMap((c) => c.feeds).find((f) => f.id === props.feed.id)?.imageExists,
 );
+const starred = computed(() => entryStore.entryStars[props.entry.id] === "starred");
 
 async function loadContent() {
   if (expanded.value && contentStatus.value === "idle") {

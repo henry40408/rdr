@@ -1,6 +1,6 @@
 <template>
   <q-checkbox
-    color="primary"
+    color="accent"
     checked-icon="star"
     true-value="starred"
     :model-value="starred"
@@ -17,5 +17,6 @@ const props = defineProps<{
 }>();
 
 const store = useEntryStore();
+
 const starred = computed(() => store.entryStars[props.entry.id]);
 </script>

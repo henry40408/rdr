@@ -6,5 +6,6 @@
 
 <script setup lang="ts">
 const store = useCategoryStore();
+
 const categories = computed(() => store.categories);
 </script>

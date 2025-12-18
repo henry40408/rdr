@@ -34,8 +34,8 @@ watch(
   },
 );
 
-const hasMore = computed(() => store.hasMore);
 const entriesPending = computed(() => store.entriesPending);
+const hasMore = computed(() => store.hasMore);
 
 async function load(_index: number, done: (stop: boolean) => void) {
   if (!store.hasMore) {
