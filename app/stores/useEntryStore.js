@@ -1,5 +1,7 @@
 // @ts-check
 
+import { secondsToMilliseconds } from "date-fns";
+
 export const DEFAULT_STATUS = { label: "Unread", value: "unread" };
 export const STATUS = [
   DEFAULT_STATUS,
@@ -9,7 +11,7 @@ export const STATUS = [
 ];
 
 export const useEntryStore = defineStore("entry", () => {
-  const storeC = useCategoryStore();
+  const categoryStore = useCategoryStore();
   const route = useRoute();
 
   const count = ref(0);
@@ -60,6 +62,7 @@ export const useEntryStore = defineStore("entry", () => {
     headers,
     query,
     immediate: false,
+    timeout: secondsToMilliseconds(30),
     watch: false,
   });
   const {
@@ -71,6 +74,7 @@ export const useEntryStore = defineStore("entry", () => {
     headers,
     query,
     immediate: false,
+    timeout: secondsToMilliseconds(30),
     watch: false,
   });
 
@@ -169,7 +173,7 @@ export const useEntryStore = defineStore("entry", () => {
         body: { entryIds: [entryId], status: newVal },
       });
       entryReads.value[entryId] = updated > 0 ? newVal : oldVal;
-      storeC.load().catch((err) => {
+      categoryStore.load().catch((err) => {
         console.error("Failed to refresh categories after updating entry read status", err);
       });
     } catch (error) {

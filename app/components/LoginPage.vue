@@ -9,14 +9,16 @@
           </q-card-section>
           <q-separator />
           <q-card-section>
-            <q-btn
-              icon="key"
-              color="primary"
-              :loading="loading"
-              label="Login with WebAuthn"
-              :disable="!isWebAuthnSupported"
-              @click="loginWithWebAuthn"
-            />
+            <ClientOnly>
+              <q-btn
+                icon="key"
+                color="primary"
+                :loading="loading"
+                label="Login with WebAuthn"
+                :disable="!isWebAuthnSupported"
+                @click="loginWithWebAuthn"
+              />
+            </ClientOnly>
           </q-card-section>
           <q-separator />
           <form @submit.prevent="onSubmit('login')">
@@ -37,7 +39,7 @@
                 label="Sign Up"
                 icon="person_add"
                 :loading="loading"
-                :disabled="!systemSettings?.canSignup"
+                :disable="!store.canSignup"
                 @click="onSubmit('signup')"
               />
               <q-btn
@@ -46,7 +48,7 @@
                 type="submit"
                 color="primary"
                 :loading="loading"
-                :disabled="!systemSettings?.canLogin"
+                :disable="!store.canLogin"
               />
             </q-card-actions>
           </form>
@@ -60,15 +62,15 @@
 const emit = defineEmits<{ authenticated: [] }>();
 
 const $q = useQuasar();
+const store = useSystemSettingsStore();
 const { authenticate, isSupported } = useWebAuthn();
-
-const { data: systemSettings } = await useFetch("/api/system-settings");
-const isWebAuthnSupported = computed(() => systemSettings.value?.canLogin && isSupported.value);
 
 const username = ref("");
 const password = ref("");
 const loading = ref(false);
 const error = ref("");
+
+const isWebAuthnSupported = computed(() => store.canLogin && isSupported.value);
 
 async function onSubmit(action: "login" | "signup") {
   if (action === "login") login();

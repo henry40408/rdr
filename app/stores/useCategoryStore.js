@@ -1,5 +1,6 @@
 // @ts-check
 
+import { secondsToMilliseconds } from "date-fns";
 import { skipHydrate } from "pinia";
 
 export const HIDE_EMPTY = "settings:hide-empty";
@@ -16,6 +17,7 @@ export const useCategoryStore = defineStore("category", () => {
     key: "categories",
     headers,
     immediate: false,
+    timeout: secondsToMilliseconds(30),
     watch: false,
   });
 

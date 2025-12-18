@@ -53,16 +53,45 @@
           </div>
         </q-card-section>
         <q-card-section class="q-pt-xs">
-          <q-chip v-if="entry.author">
+          <q-chip v-if="entry.author" outline>
             <q-avatar><q-icon name="person" /></q-avatar>
             {{ entry.author }}
           </q-chip>
-          <q-chip>
+          <q-chip outline>
             <q-avatar><q-icon name="event" /></q-avatar>
             <DateTime :date="entry.date" />
           </q-chip>
         </q-card-section>
-
+        <q-card-section>
+          <q-btn-group push spread :class="$q.screen.lt.sm ? 'column' : ''">
+            <q-btn
+              v-if="fullContentStatus !== 'success'"
+              icon="download"
+              label="Full content"
+              :loading="fullContentStatus === 'pending'"
+              @click="loadFullContent()"
+            />
+            <q-btn v-else icon="clear" label="Clear full content" @click="clearFullContent()" />
+            <template v-if="featureStore.summarizationEnabled">
+              <q-btn
+                v-if="summarizationStatus !== 'success'"
+                icon="psychology"
+                label="Summarize"
+                :loading="summarizationStatus === 'pending'"
+                @click="loadSummarization()"
+              />
+              <q-btn v-else icon="clear" label="Clear summary" @click="clearSummarization()" />
+            </template>
+          </q-btn-group>
+        </q-card-section>
+        <q-card-section v-if="summarizationStatus === 'success'">
+          <UseClipboard v-slot="{ copy, copied }" :source="summarization">
+            <div class="entry-summary q-mb-md q-pa-md" :class="isDark ? 'bg-grey-8 text-white' : 'bg-grey-2'">
+              <pre>{{ summarization }}</pre>
+            </div>
+            <q-btn color="secondary" :label="copied ? 'Copied!' : 'Copy'" @click="copy()" />
+          </UseClipboard>
+        </q-card-section>
         <q-card-section>
           <div v-if="contentStatus === 'pending'" class="q-gutter-sm">
             <q-skeleton animated width="80%" />
@@ -70,7 +99,11 @@
             <q-skeleton animated width="70%" />
           </div>
           <!-- eslint-disable-next-line vue/no-v-html -->
-          <div class="entry-content" v-html="content" />
+          <div v-if="showContent" class="entry-content" v-html="content" />
+          <div v-if="fullContentStatus === 'success' && fullContentData" class="q-mt-md">
+            <!-- eslint-disable-next-line vue/no-v-html -->
+            <div class="entry-content" v-html="fullContentData.content" />
+          </div>
         </q-card-section>
       </q-card>
     </template>
@@ -78,6 +111,9 @@
 </template>
 
 <script setup lang="ts">
+import { UseClipboard } from "@vueuse/components";
+import { secondsToMilliseconds } from "date-fns";
+
 const props = defineProps<{
   entry: {
     id: number;
@@ -96,26 +132,71 @@ const props = defineProps<{
   };
 }>();
 
+const colorMode = useColorMode();
+const isDark = computed(() => colorMode.value === "dark");
+
 const categoryStore = useCategoryStore();
 const entryStore = useEntryStore();
+const featureStore = useFeatureStore();
 
 const content = ref("");
+const fullContent = ref("");
+const summarization = ref("");
+
+const expanded = computed(() => !!entryStore.expands[props.entry.id]);
+const starred = computed(() => entryStore.entryStars[props.entry.id] === "starred");
+const imageExists = computed(
+  () => categoryStore.categories.flatMap((c) => c.feeds).find((f) => f.id === props.feed.id)?.imageExists,
+);
+
 const {
   data: contentData,
   status: contentStatus,
   execute: fetchContent,
-} = useFetch(`/api/entries/${props.entry.id}/content`, { immediate: false });
-
-const expanded = computed(() => !!entryStore.expands[props.entry.id]);
-const imageExists = computed(
-  () => categoryStore.categories.flatMap((c) => c.feeds).find((f) => f.id === props.feed.id)?.imageExists,
-);
-const starred = computed(() => entryStore.entryStars[props.entry.id] === "starred");
+} = useFetch(`/api/entries/${props.entry.id}/content`, { immediate: false, timeout: secondsToMilliseconds(30) });
 
 async function loadContent() {
   if (expanded.value && contentStatus.value === "idle") {
     await fetchContent();
     content.value = contentData.value?.content ?? "";
+  }
+}
+
+const {
+  data: fullContentData,
+  status: fullContentStatus,
+  execute: fetchFullContent,
+  clear: clearFullContent,
+} = useFetch(`/api/entries/${props.entry.id}/full-content`, { immediate: false, timeout: secondsToMilliseconds(30) });
+const showContent = computed(() => {
+  if (fullContentStatus.value === "success") return false;
+  return contentStatus.value === "success";
+});
+
+async function loadFullContent() {
+  if (fullContentStatus.value === "idle") {
+    await fetchFullContent();
+    fullContent.value = fullContentData.value?.content ?? "";
+  }
+}
+
+const {
+  data: summarizationData,
+  status: summarizationStatus,
+  execute: fetchSummarization,
+  clear: clearSummarization,
+} = useFetch(`/api/entries/${props.entry.id}/summarize`, { immediate: false, timeout: secondsToMilliseconds(300) });
+
+async function loadSummarization() {
+  if (summarizationStatus.value === "idle") {
+    await fetchSummarization();
+    const [prefixedTitle, content] = (summarizationData.value ?? "").split("\n\n");
+    const title = replaceForTiddlyWiki((prefixedTitle ?? "").replace("Title: ", ""));
+    summarization.value = `${title}
+
+${props.entry.link}
+
+${content}`;
   }
 }
 </script>
