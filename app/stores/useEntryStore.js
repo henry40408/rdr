@@ -260,6 +260,7 @@ export const useEntryStore = defineStore("entry", () => {
     closeExpanded,
     load,
     loadMore,
+    reset,
     setCategoryId,
     setFeedId,
     setStatus,
