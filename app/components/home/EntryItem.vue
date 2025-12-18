@@ -82,6 +82,16 @@
               />
               <q-btn v-else icon="clear" label="Clear summary" @click="clearSummarization()" />
             </template>
+            <template v-if="featureStore.saveEnabled">
+              <q-btn
+                v-if="saveStatus !== 'success'"
+                icon="save"
+                label="Save"
+                :loading="saveStatus === 'pending'"
+                @click="saveEntry()"
+              />
+              <q-btn v-else disable icon="check" label="Saved" />
+            </template>
           </q-btn-group>
         </q-card-section>
         <q-card-section v-if="summarizationStatus === 'success'">
@@ -199,4 +209,9 @@ ${props.entry.link}
 ${content}`;
   }
 }
+
+const { status: saveStatus, execute: saveEntry } = useFetch(`/api/entries/${props.entry.id}/save`, {
+  method: "POST",
+  immediate: false,
+});
 </script>
