@@ -20,7 +20,7 @@
         </q-item-label>
         <q-item-label>
           <span class="q-mr-xs">
-            <q-avatar v-if="imageExists" square size="xs">
+            <q-avatar v-if="imageExists" square size="xs" color="white">
               <img :alt="`Feed image of ${feed.title}`" :src="`/api/images/external/${buildFeedImageKey(feed.id)}`" />
             </q-avatar>
             <q-icon v-else size="xs" name="rss_feed" />
