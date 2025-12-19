@@ -3,14 +3,7 @@
     <q-item-label header>Categories</q-item-label>
     <q-item>
       <q-item-section>
-        <q-select
-          v-model="categoryStore.categorySort"
-          outlined
-          emit-value
-          map-options
-          label="Sort by"
-          :options="SORT"
-        />
+        <q-select v-model="categoryStore.categorySort" filled emit-value map-options label="Sort by" :options="SORT" />
       </q-item-section>
     </q-item>
     <q-item>
