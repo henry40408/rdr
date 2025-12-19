@@ -342,6 +342,7 @@ export const useEntryStore = defineStore("entry", () => {
     entryReads,
     entryStars,
     expands,
+    expandedEntryId,
     expandedRead,
     expandedStarred,
     filtered,

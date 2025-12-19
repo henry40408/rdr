@@ -33,12 +33,9 @@ function resetInfiniteScroll() {
 }
 
 const store = useEntryStore();
-watch(
-  () => [store.selectedCategoryId, store.selectedFeedId, store.status],
-  () => {
-    resetInfiniteScroll();
-  },
-);
+watch([() => store.selectedCategoryId, () => store.selectedFeedId, () => store.status], () => {
+  resetInfiniteScroll();
+});
 
 const entriesPending = computed(() => store.entriesPending);
 const hasMore = computed(() => store.hasMore);

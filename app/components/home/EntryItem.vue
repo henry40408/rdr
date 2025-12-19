@@ -1,5 +1,6 @@
 <template>
   <q-expansion-item
+    ref="entry-item"
     group="entry"
     hide-expand-icon
     :model-value="expanded"
@@ -8,6 +9,7 @@
       'bg-grey-3': !isDark && read,
     }"
     @before-show="loadContent()"
+    @after-show="scrollToEntry()"
     @update:model-value="entryStore.toggleExpand(entry.id)"
   >
     <template #header>
@@ -129,6 +131,7 @@
 </template>
 
 <script setup lang="ts">
+import type { QExpansionItem } from "quasar";
 import { UseClipboard } from "@vueuse/components";
 import { secondsToMilliseconds } from "date-fns";
 
@@ -149,6 +152,12 @@ const props = defineProps<{
     name: string;
   };
 }>();
+
+const entryItemRef = useTemplateRef<QExpansionItem>("entry-item");
+
+function scrollToEntry() {
+  entryItemRef.value?.$el.scrollIntoView({ behavior: "smooth" });
+}
 
 const colorMode = useColorMode();
 const isDark = computed(() => colorMode.value === "dark");
