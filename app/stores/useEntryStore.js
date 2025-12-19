@@ -25,7 +25,7 @@ export const useEntryStore = defineStore("entry", () => {
   const items = ref(
     /** @type {Awaited<ReturnType<typeof import('../../server/api/entries.get').default>>['items']} */ ([]),
   );
-  const search = ref("");
+  const search = ref(route.query.search?.toString());
   const selectedFeedId = ref(route.query.feedId?.toString());
   const selectedCategoryId = ref(route.query.categoryId?.toString());
   const status = ref(route.query.status?.toString() ?? DEFAULT_STATUS.value);
@@ -220,6 +220,10 @@ export const useEntryStore = defineStore("entry", () => {
   watch(
     () => search.value,
     () => {
+      const route = useRoute();
+      const router = useRouter();
+
+      router.replace({ query: { ...route.query, search: search.value || undefined } });
       resetThenLoad();
     },
   );
