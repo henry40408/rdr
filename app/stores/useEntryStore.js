@@ -11,10 +11,11 @@ export const STATUS = [
 ];
 
 export const useEntryStore = defineStore("entry", () => {
+  const headers = useRequestHeaders(["cookie"]);
+
   const categoryStore = useCategoryStore();
   const route = useRoute();
 
-  const count = ref(0);
   const cursor = ref(/** @type { {date:string,id:number} | undefined } */ (undefined));
   const entryReads = ref(/** @type {Record<number,'unread'|'reading'|'read'>} */ ({}));
   const entryStars = ref(/** @type {Record<number,'starred'|'starring'|'unstarred'>} */ ({}));
@@ -76,7 +77,6 @@ export const useEntryStore = defineStore("entry", () => {
     return undefined;
   });
 
-  const headers = useRequestHeaders(["cookie"]);
   const {
     data: countData,
     pending: countPending,
@@ -89,6 +89,8 @@ export const useEntryStore = defineStore("entry", () => {
     timeout: secondsToMilliseconds(30),
     watch: false,
   });
+  const count = computed(() => countData.value?.count ?? 0);
+
   const {
     data: entriesData,
     pending: entriesPending,
@@ -110,7 +112,6 @@ export const useEntryStore = defineStore("entry", () => {
     await executeCount();
     await executeEntries();
 
-    count.value = countData.value?.count ?? 0;
     items.value = entriesData.value?.items ?? [];
     for (const item of items.value) {
       entryReads.value[item.entry.id] = item.entry.readAt ? "read" : "unread";
@@ -158,6 +159,12 @@ export const useEntryStore = defineStore("entry", () => {
         entryReads.value[item.entry.id] = "read";
       }
     }
+    executeCount().catch((err) => {
+      console.error("Failed to refresh entry count after marking all as read", err);
+    });
+    categoryStore.load().catch((err) => {
+      console.error("Failed to refresh categories after marking entries as read", err);
+    });
   }
 
   /**
@@ -171,7 +178,7 @@ export const useEntryStore = defineStore("entry", () => {
     const itemDate = new Date(item.entry.date);
     if (before) {
       const beforeDate = new Date(before);
-      return itemDate < beforeDate;
+      return itemDate <= beforeDate;
     }
     if (olderThan) {
       let compareDate;
@@ -190,7 +197,7 @@ export const useEntryStore = defineStore("entry", () => {
           break;
       }
       if (!compareDate) return false;
-      return itemDate < compareDate;
+      return itemDate <= compareDate;
     }
     return false;
   }
@@ -267,6 +274,9 @@ export const useEntryStore = defineStore("entry", () => {
       entryReads.value[entryId] = updated > 0 ? newVal : oldVal;
       categoryStore.load().catch((err) => {
         console.error("Failed to refresh categories after updating entry read status", err);
+      });
+      executeCount().catch((err) => {
+        console.error("Failed to refresh entry count after updating entry read status", err);
       });
     } catch (error) {
       entryReads.value[entryId] = oldVal;

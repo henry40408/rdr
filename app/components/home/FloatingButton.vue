@@ -8,7 +8,9 @@
       </div>
     </template>
     <template v-else>
-      <q-btn v-if="hasUnreadItems" fab color="primary" icon="done_all" @click="markAllAsRead()" />
+      <ClientOnly>
+        <q-btn v-if="hasUnreadItems" fab color="primary" icon="done_all" @click="markAllAsRead()" />
+      </ClientOnly>
     </template>
   </q-page-sticky>
 </template>
@@ -19,7 +21,7 @@ const $q = useQuasar();
 const store = useEntryStore();
 
 const expanded = computed(() => Object.values(store.expands).some((v) => v));
-const hasUnreadItems = computed(() => store.items.filter((i) => !i.entry.readAt).length > 0);
+const hasUnreadItems = computed(() => Object.values(store.entryReads).some((s) => s === "unread"));
 const reading = computed(() => store.expandedRead === "reading");
 const readIcon = computed(() => (store.expandedRead === "read" ? "drafts" : "mail"));
 const starring = computed(() => store.expandedStarred === "starring");
