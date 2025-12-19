@@ -144,6 +144,7 @@ export const useEntryStore = defineStore("entry", () => {
    */
   async function markAllAsRead({ before, olderThan }) {
     if (!before && !olderThan) throw new Error("Either before or olderThan must be provided");
+
     const { updated } = await $fetch("/api/entries/mark-as-read", {
       method: "POST",
       body: {
@@ -154,18 +155,16 @@ export const useEntryStore = defineStore("entry", () => {
       },
     });
     if (updated === 0) return;
+
     const now = new Date();
     for (const item of items.value) {
       if (shouldMarkAsRead(now, item, { before, olderThan })) {
         entryReads.value[item.entry.id] = "read";
       }
     }
-    executeCount().catch((err) => {
-      console.error("Failed to refresh entry count after marking all as read", err);
-    });
-    categoryStore.load().catch((err) => {
-      console.error("Failed to refresh categories after marking entries as read", err);
-    });
+
+    executeCount();
+    categoryStore.load();
   }
 
   /**
@@ -204,7 +203,6 @@ export const useEntryStore = defineStore("entry", () => {
   }
 
   function reset() {
-    // count.value = 0; // keep count for better UX
     cursor.value = undefined;
     entryReads.value = {};
     entryStars.value = {};
@@ -288,12 +286,9 @@ export const useEntryStore = defineStore("entry", () => {
         body: { entryIds: [entryId], status: newVal },
       });
       entryReads.value[entryId] = updated > 0 ? newVal : oldVal;
-      categoryStore.load().catch((err) => {
-        console.error("Failed to refresh categories after updating entry read status", err);
-      });
-      executeCount().catch((err) => {
-        console.error("Failed to refresh entry count after updating entry read status", err);
-      });
+
+      categoryStore.load();
+      executeCount();
     } catch (error) {
       entryReads.value[entryId] = oldVal;
       console.error("Failed to update entry read status", error);
