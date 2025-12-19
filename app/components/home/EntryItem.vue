@@ -76,26 +76,24 @@
               @click="loadFullContent()"
             />
             <q-btn v-else icon="clear" label="Clear full content" @click="clearFullContent()" />
-            <template v-if="featureStore.summarizationEnabled">
-              <q-btn
-                v-if="summarizationStatus !== 'success'"
-                icon="psychology"
-                label="Summarize"
-                :loading="summarizationStatus === 'pending'"
-                @click="loadSummarization()"
-              />
-              <q-btn v-else icon="clear" label="Clear summary" @click="clearSummarization()" />
-            </template>
-            <template v-if="featureStore.saveEnabled">
-              <q-btn
-                v-if="saveStatus !== 'success'"
-                icon="save"
-                label="Save"
-                :loading="saveStatus === 'pending'"
-                @click="saveEntry()"
-              />
-              <q-btn v-else disable icon="check" label="Saved" />
-            </template>
+            <q-btn
+              v-if="summarizationStatus !== 'success'"
+              icon="psychology"
+              label="Summarize"
+              :loading="summarizationStatus === 'pending'"
+              :disabled="!featureStore.summarizationEnabled"
+              @click="loadSummarization()"
+            />
+            <q-btn v-else icon="clear" label="Clear summary" @click="clearSummarization()" />
+            <q-btn
+              v-if="saveStatus !== 'success'"
+              icon="save"
+              label="Save"
+              :loading="saveStatus === 'pending'"
+              :disabled="!featureStore.saveEnabled"
+              @click="saveEntry()"
+            />
+            <q-btn v-else disable icon="check" label="Saved" />
           </q-btn-group>
         </q-card-section>
         <q-card-section v-if="summarizationStatus === 'success'">
