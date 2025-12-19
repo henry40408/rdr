@@ -1,21 +1,55 @@
 <template>
-  <q-page-sticky v-if="expanded" :offset="[16, 16]" position="bottom-right">
-    <div class="column q-gutter-md">
-      <q-btn fab :icon="starIcon" color="secondary" :loading="starring" @click="store.toggleExpandedStar" />
-      <q-btn fab :icon="readIcon" color="secondary" :loading="reading" @click="store.toggleExpandedRead" />
-      <q-btn fab icon="close" color="primary" @click="store.closeExpanded" />
-    </div>
+  <q-page-sticky :offset="[16, 16]" position="bottom-right">
+    <template v-if="expanded">
+      <div class="column q-gutter-md">
+        <q-btn fab :icon="starIcon" color="secondary" :loading="starring" @click="store.toggleExpandedStar" />
+        <q-btn fab :icon="readIcon" color="secondary" :loading="reading" @click="store.toggleExpandedRead" />
+        <q-btn fab icon="close" color="primary" @click="store.closeExpanded" />
+      </div>
+    </template>
+    <template v-else>
+      <q-btn v-if="hasUnreadItems" fab color="primary" icon="done_all" @click="markAllAsRead()" />
+    </template>
   </q-page-sticky>
 </template>
 
 <script setup lang="ts">
+const $q = useQuasar();
+
 const store = useEntryStore();
 
 const expanded = computed(() => Object.values(store.expands).some((v) => v));
-
+const hasUnreadItems = computed(() => store.items.filter((i) => !i.entry.readAt).length > 0);
 const reading = computed(() => store.expandedRead === "reading");
 const readIcon = computed(() => (store.expandedRead === "read" ? "drafts" : "mail"));
-
 const starring = computed(() => store.expandedStarred === "starring");
 const starIcon = computed(() => (store.expandedStarred === "starred" ? "star" : "star_border"));
+
+function markAllAsRead() {
+  $q.dialog({
+    title: "Mark All as Read",
+    message: "Are you sure you want to mark all entries as read?",
+    options: {
+      type: "radio",
+      model: "all",
+      items: [
+        { label: store.filtered ? "Filtered" : "All", value: "all" },
+        { label: "Older than a day", value: "day" },
+        { label: "Older than a week", value: "week" },
+        { label: "Older than a month", value: "month" },
+        { label: "Older than a year", value: "year" },
+      ],
+    },
+    cancel: true,
+    ok: { color: "negative" },
+  }).onOk((olderThan) => {
+    if (olderThan === "all") {
+      const latestItem = store.latestItem;
+      if (!latestItem) return;
+      store.markAllAsRead({ before: latestItem.entry.date });
+    } else {
+      store.markAllAsRead({ olderThan });
+    }
+  });
+}
 </script>

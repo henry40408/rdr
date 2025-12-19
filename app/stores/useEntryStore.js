@@ -1,6 +1,6 @@
 // @ts-check
 
-import { secondsToMilliseconds } from "date-fns";
+import { secondsToMilliseconds, sub } from "date-fns";
 
 export const DEFAULT_STATUS = { label: "Unread", value: "unread" };
 export const STATUS = [
@@ -26,7 +26,7 @@ export const useEntryStore = defineStore("entry", () => {
   );
   const selectedFeedId = ref(route.query.feedId?.toString());
   const selectedCategoryId = ref(route.query.categoryId?.toString());
-  const status = ref(DEFAULT_STATUS.value);
+  const status = ref(route.query.status?.toString() ?? DEFAULT_STATUS.value);
 
   const query = computed(() => {
     /** @type {Record<String,unknown>} */
@@ -56,6 +56,16 @@ export const useEntryStore = defineStore("entry", () => {
     const entryId = expandedEntryId.value;
     if (entryId === undefined) return "unread";
     return entryReads.value[entryId];
+  });
+  const filtered = computed(() => !!selectedFeedId.value || !!selectedCategoryId.value);
+  const latestItem = computed(() => {
+    if (items.value.length === 0) return undefined;
+    const orderByDateDesc = items.value.slice().sort((a, b) => {
+      const aDate = new Date(a.entry.date);
+      const bDate = new Date(b.entry.date);
+      return bDate.valueOf() - aDate.valueOf();
+    });
+    return orderByDateDesc[0];
   });
   const selectedId = computed(() => {
     return selectedFeedId.value ?? selectedCategoryId.value;
@@ -125,6 +135,66 @@ export const useEntryStore = defineStore("entry", () => {
     hasMore.value = fetchedItems.length === limit.value;
   }
 
+  /**
+   * @param {object} params
+   * @param {string} [params.before]
+   * @param {'day'|'week'|'month'|'year'} [params.olderThan]
+   */
+  async function markAllAsRead({ before, olderThan }) {
+    if (!before && !olderThan) throw new Error("Either before or olderThan must be provided");
+    const { updated } = await $fetch("/api/entries/mark-as-read", {
+      method: "POST",
+      body: {
+        before,
+        olderThan,
+        selectedType: selectedType.value,
+        selectedId: selectedId.value,
+      },
+    });
+    if (updated === 0) return;
+    const now = new Date();
+    for (const item of items.value) {
+      if (shouldMarkAsRead(now, item, { before, olderThan })) {
+        entryReads.value[item.entry.id] = "read";
+      }
+    }
+  }
+
+  /**
+   * @param {Date} now
+   * @param {Awaited<ReturnType<typeof import('../../server/api/entries.get').default>>['items'][number]} item
+   * @param {object} params
+   * @param {string} [params.before]
+   * @param {'day'|'week'|'month'|'year'} [params.olderThan]
+   */
+  function shouldMarkAsRead(now, item, { before, olderThan }) {
+    const itemDate = new Date(item.entry.date);
+    if (before) {
+      const beforeDate = new Date(before);
+      return itemDate < beforeDate;
+    }
+    if (olderThan) {
+      let compareDate;
+      switch (olderThan) {
+        case "day":
+          compareDate = sub(now, { days: 1 });
+          break;
+        case "week":
+          compareDate = sub(now, { weeks: 1 });
+          break;
+        case "month":
+          compareDate = sub(now, { months: 1 });
+          break;
+        case "year":
+          compareDate = sub(now, { years: 1 });
+          break;
+      }
+      if (!compareDate) return false;
+      return itemDate < compareDate;
+    }
+    return false;
+  }
+
   function reset() {
     // count.value = 0; // keep count for better UX
     cursor.value = undefined;
@@ -170,6 +240,10 @@ export const useEntryStore = defineStore("entry", () => {
    * @param {string} newStatus
    */
   async function setStatus(newStatus) {
+    const route = useRoute();
+    const router = useRouter();
+    router.replace({ query: { ...route.query, status: newStatus === DEFAULT_STATUS.value ? undefined : newStatus } });
+
     reset();
     status.value = newStatus;
 
@@ -251,8 +325,10 @@ export const useEntryStore = defineStore("entry", () => {
     expands,
     expandedRead,
     expandedStarred,
+    filtered,
     hasMore,
     items,
+    latestItem,
     limit,
     selectedFeedId,
     selectedCategoryId,
@@ -260,6 +336,7 @@ export const useEntryStore = defineStore("entry", () => {
     closeExpanded,
     load,
     loadMore,
+    markAllAsRead,
     reset,
     setCategoryId,
     setFeedId,
