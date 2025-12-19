@@ -25,24 +25,10 @@ export const useEntryStore = defineStore("entry", () => {
   const items = ref(
     /** @type {Awaited<ReturnType<typeof import('../../server/api/entries.get').default>>['items']} */ ([]),
   );
+  const search = ref("");
   const selectedFeedId = ref(route.query.feedId?.toString());
   const selectedCategoryId = ref(route.query.categoryId?.toString());
   const status = ref(route.query.status?.toString() ?? DEFAULT_STATUS.value);
-
-  const query = computed(() => {
-    /** @type {Record<String,unknown>} */
-    const q = {
-      limit: limit.value,
-      selectedType: selectedType.value,
-      selectedId: selectedId.value,
-      status: status.value,
-    };
-    if (cursor.value) {
-      q.cursor = cursor.value.date;
-      q.id = cursor.value.id;
-    }
-    return q;
-  });
 
   const expandedEntryId = computed(() => {
     for (const [entryId, isExpanded] of Object.entries(expands.value)) if (isExpanded) return Number(entryId);
@@ -67,6 +53,21 @@ export const useEntryStore = defineStore("entry", () => {
       return bDate.valueOf() - aDate.valueOf();
     });
     return orderByDateDesc[0];
+  });
+  const query = computed(() => {
+    /** @type {Record<String,unknown>} */
+    const q = {
+      limit: limit.value,
+      search: search.value,
+      selectedType: selectedType.value,
+      selectedId: selectedId.value,
+      status: status.value,
+    };
+    if (cursor.value) {
+      q.cursor = cursor.value.date;
+      q.id = cursor.value.id;
+    }
+    return q;
   });
   const selectedId = computed(() => {
     return selectedFeedId.value ?? selectedCategoryId.value;
@@ -212,6 +213,17 @@ export const useEntryStore = defineStore("entry", () => {
     items.value = [];
   }
 
+  async function resetThenLoad() {
+    reset();
+    await load();
+  }
+  watch(
+    () => search.value,
+    () => {
+      resetThenLoad();
+    },
+  );
+
   /**
    * @param {number|string} [categoryId]
    */
@@ -340,6 +352,7 @@ export const useEntryStore = defineStore("entry", () => {
     items,
     latestItem,
     limit,
+    search,
     selectedFeedId,
     selectedCategoryId,
     status,

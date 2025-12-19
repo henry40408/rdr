@@ -23,13 +23,13 @@
           <TimeAgo :date="entry.date" />
         </q-item-label>
         <q-item-label>
-          <span class="q-mr-xs">
+          <span class="q-mr-sm">
             <q-avatar v-if="imageExists" square size="xs" color="white">
               <img :alt="`Feed image of ${feed.title}`" :src="`/api/images/external/${buildFeedImageKey(feed.id)}`" />
             </q-avatar>
             <q-icon v-else size="xs" name="rss_feed" />
           </span>
-          {{ entry.title }}
+          <MarkedText :text="entry.title" :keyword="entryStore.search" />
         </q-item-label>
       </q-item-section>
       <q-item-section top side>
@@ -49,10 +49,10 @@
           </q-chip>
         </q-card-section>
         <q-card-section class="row items-center q-gutter-xs q-py-xs">
-          <HomeEntryItemStarToggle :entry="entry" />
           <div class="text-h6">
             <ExternalLink :href="entry.link">
-              {{ entry.title }}
+              <HomeEntryItemStarToggle :entry="entry" />
+              <MarkedText :text="entry.title" :keyword="entryStore.search" />
             </ExternalLink>
           </div>
         </q-card-section>
@@ -104,17 +104,17 @@
             <q-btn color="secondary" :label="copied ? 'Copied!' : 'Copy'" @click="copy()" />
           </UseClipboard>
         </q-card-section>
-        <q-card-section>
+        <q-card-section class="entry-content">
           <div v-if="contentStatus === 'pending'" class="q-gutter-sm">
             <q-skeleton animated width="80%" />
             <q-skeleton animated width="90%" />
             <q-skeleton animated width="70%" />
           </div>
-          <!-- eslint-disable-next-line vue/no-v-html -->
-          <div v-if="showContent" class="entry-content" v-html="content" />
-          <div v-if="fullContentStatus === 'success' && fullContentData" class="q-mt-md">
-            <!-- eslint-disable-next-line vue/no-v-html -->
-            <div class="entry-content" v-html="fullContentData.content" />
+          <div v-if="showContent">
+            <MarkedText :text="content" :keyword="entryStore.search" />
+          </div>
+          <div v-if="fullContentStatus === 'success' && fullContentData">
+            <MarkedText :text="fullContentData.content" />
           </div>
         </q-card-section>
       </q-card>

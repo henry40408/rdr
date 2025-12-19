@@ -9,6 +9,20 @@
           </q-avatar>
           rdr
         </q-toolbar-title>
+        <q-input
+          v-model="entryStore.search"
+          dark
+          dense
+          filled
+          debounce="500"
+          input-class="text-right"
+          placeholder="Search entries"
+        >
+          <template #append>
+            <q-icon v-if="!entryStore.search" name="search" />
+            <q-icon v-else name="clear" class="cursor-pointer" @click="entryStore.search = ''" />
+          </template>
+        </q-input>
         <NavTabs />
         <q-btn flat dense round icon="menu" @click="rightDrawerOpen = !rightDrawerOpen" />
       </q-toolbar>
