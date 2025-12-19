@@ -4,8 +4,8 @@
 
 <script setup lang="ts">
 const props = defineProps<{
-  date: string;
+  datetime: string;
 }>();
 
-const formatted = computed(() => new Date(props.date).toLocaleString());
+const formatted = computed(() => new Date(props.datetime).toLocaleString());
 </script>

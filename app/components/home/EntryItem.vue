@@ -63,7 +63,7 @@
           </q-chip>
           <q-chip outline>
             <q-avatar><q-icon name="event" /></q-avatar>
-            <DateTime :date="entry.date" />
+            <DateTime :datetime="entry.date" />
           </q-chip>
         </q-card-section>
         <q-card-section>
