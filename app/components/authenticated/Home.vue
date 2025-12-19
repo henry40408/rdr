@@ -9,6 +9,7 @@
           </q-avatar>
           rdr
         </q-toolbar-title>
+        <NavTabs />
         <q-btn flat dense round icon="menu" @click="rightDrawerOpen = !rightDrawerOpen" />
       </q-toolbar>
     </q-header>
