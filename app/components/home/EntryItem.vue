@@ -3,6 +3,10 @@
     group="entry"
     hide-expand-icon
     :model-value="expanded"
+    :class="{
+      'bg-grey-9': isDark && read,
+      'bg-grey-3': !isDark && read,
+    }"
     @before-show="loadContent()"
     @update:model-value="entryStore.toggleExpand(entry.id)"
   >
@@ -154,6 +158,7 @@ const fullContent = ref("");
 const summarization = ref("");
 
 const expanded = computed(() => !!entryStore.expands[props.entry.id]);
+const read = computed(() => entryStore.entryReads[props.entry.id] === "read");
 const starred = computed(() => entryStore.entryStars[props.entry.id] === "starred");
 const imageExists = computed(
   () => categoryStore.categories.flatMap((c) => c.feeds).find((f) => f.id === props.feed.id)?.imageExists,
