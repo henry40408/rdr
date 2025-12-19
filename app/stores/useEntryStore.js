@@ -154,7 +154,7 @@ export const useEntryStore = defineStore("entry", () => {
         selectedId: selectedId.value,
       },
     });
-    if (updated === 0) return;
+    if (updated === 0) return 0;
 
     const now = new Date();
     for (const item of items.value) {
@@ -165,6 +165,8 @@ export const useEntryStore = defineStore("entry", () => {
 
     executeCount();
     categoryStore.load();
+
+    return updated;
   }
 
   /**

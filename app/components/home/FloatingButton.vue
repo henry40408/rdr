@@ -44,13 +44,23 @@ function markAllAsRead() {
     },
     cancel: true,
     ok: { color: "negative" },
-  }).onOk((olderThan) => {
+  }).onOk(async (olderThan) => {
     if (olderThan === "all") {
       const latestItem = store.latestItem;
       if (!latestItem) return;
-      store.markAllAsRead({ before: latestItem.entry.date });
+      const updated = await store.markAllAsRead({ before: latestItem.entry.date });
+      $q.notify({
+        type: "positive",
+        message: `${updated} entries marked as read.`,
+        actions: [{ icon: "close", color: "white" }],
+      });
     } else {
-      store.markAllAsRead({ olderThan });
+      const updated = await store.markAllAsRead({ olderThan });
+      $q.notify({
+        type: "positive",
+        message: `${updated} entries older than ${olderThan} marked as read.`,
+        actions: [{ icon: "close", color: "white" }],
+      });
     }
   });
 }
