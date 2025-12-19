@@ -33,7 +33,13 @@
         </q-item-label>
       </q-item-section>
       <q-item-section top side>
-        <q-icon v-if="starred" size="xs" name="star" color="accent" />
+        <div :class="$q.screen.lt.md ? 'column' : ''">
+          <q-icon v-if="starred" size="xs" name="star" color="accent" />
+          <q-spinner v-if="fullContentStatus === 'pending'" size="xs" />
+          <q-icon v-if="fullContentStatus === 'success'" size="xs" name="description" />
+          <q-spinner v-if="summarizationStatus === 'pending'" size="xs" />
+          <q-icon v-if="summarizationStatus === 'success'" size="xs" name="psychology" />
+        </div>
       </q-item-section>
     </template>
 
