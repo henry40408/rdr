@@ -211,18 +211,14 @@ export const useEntryStore = defineStore("entry", () => {
     items.value = [];
   }
 
-  async function resetThenLoad() {
-    reset();
-    await load();
-  }
   watch(
     () => search.value,
-    () => {
+    async () => {
       const route = useRoute();
       const router = useRouter();
-
       router.replace({ query: { ...route.query, search: search.value || undefined } });
-      resetThenLoad();
+      reset();
+      await load();
     },
   );
 
