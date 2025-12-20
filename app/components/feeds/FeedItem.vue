@@ -48,7 +48,7 @@
             {{ model.categoryName }}
             <q-icon name="edit" class="q-ml-xs" />
             <q-popup-edit v-slot="scope" v-model="model" dense buttons @save="save">
-              <q-input v-model="scope.value.categoryName" autofocus />
+              <FeedsCategorySelect v-model="scope.value.categoryName" />
             </q-popup-edit>
           </q-item-label>
         </q-item-section>
