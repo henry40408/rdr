@@ -18,7 +18,7 @@
     </q-drawer>
 
     <q-page-container>
-      <q-page>
+      <q-page class="q-pb-xl">
         <FeedsCategoryList />
       </q-page>
     </q-page-container>
@@ -36,5 +36,9 @@ onMounted(() => {
   });
 });
 
+const store = useCategoryStore();
+
 const leftDrawerOpen = ref(false);
+
+await store.load();
 </script>

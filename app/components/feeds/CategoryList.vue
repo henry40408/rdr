@@ -7,6 +7,4 @@
 
 <script setup lang="ts">
 const store = useCategoryStore();
-
-await store.load();
 </script>

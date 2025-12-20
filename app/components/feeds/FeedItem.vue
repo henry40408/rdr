@@ -2,7 +2,7 @@
   <q-expansion-item expand-icon-toggle :group="`category-${category.id}:feeds`">
     <template #header>
       <q-item-section side>
-        <q-avatar v-if="feed.imageExists" square size="xs">
+        <q-avatar v-if="feed.imageExists" square size="xs" color="white">
           <img :src="`/api/images/external/${buildFeedImageKey(feed.id)}`" />
         </q-avatar>
         <q-icon v-else size="xs" name="rss_feed" />
@@ -42,6 +42,10 @@
         </q-item-section>
       </q-item>
       <q-item>
+        <q-item-section>
+          <q-item-label caption>Category name</q-item-label>
+          <q-item-label>{{ category.name }}</q-item-label>
+        </q-item-section>
         <q-item-section>
           <q-item-label caption>Title</q-item-label>
           <q-item-label>{{ feed.title }}</q-item-label>
