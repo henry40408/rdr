@@ -13,7 +13,9 @@
       </q-toolbar>
     </q-header>
 
-    <q-drawer v-model="leftDrawerOpen" bordered persistent side="left" show-if-above></q-drawer>
+    <q-drawer v-model="leftDrawerOpen" bordered persistent side="left" show-if-above>
+      <FeedsSideCategoryList />
+    </q-drawer>
 
     <q-page-container>
       <q-page>

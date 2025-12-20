@@ -11,6 +11,9 @@
         <q-item-label>{{ feed.title }}</q-item-label>
       </q-item-section>
       <q-item-section side>
+        <UnreadCount :count="feed.unreadCount" />
+      </q-item-section>
+      <q-item-section side>
         <q-btn
           flat
           round
@@ -102,6 +105,7 @@ defineProps<{
     imageExists: boolean;
     lastError?: string;
     title: string;
+    unreadCount: number;
     userAgent?: string;
     xmlUrl: string;
   };

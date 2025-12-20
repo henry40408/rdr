@@ -1,11 +1,14 @@
 <template>
-  <q-expansion-item group="category" expand-icon-toggle>
+  <q-expansion-item :id="`category-${category.id}`" group="category" expand-icon-toggle>
     <template #header>
       <q-item-section side>
         <q-icon size="xs" name="category" />
       </q-item-section>
       <q-item-section>
         <q-item-label>{{ category.name }}</q-item-label>
+      </q-item-section>
+      <q-item-section side>
+        <UnreadCount :count="unreadCount" />
       </q-item-section>
       <q-item-section side>
         <q-btn
@@ -32,7 +35,7 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{
+const props = defineProps<{
   category: {
     id: number;
     name: string;
@@ -46,9 +49,12 @@ defineProps<{
       imageExists: boolean;
       lastError?: string;
       title: string;
+      unreadCount: number;
       userAgent?: string;
       xmlUrl: string;
     }[];
   };
 }>();
+
+const unreadCount = computed(() => props.category.feeds.reduce((sum, feed) => sum + feed.unreadCount, 0));
 </script>
