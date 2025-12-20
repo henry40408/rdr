@@ -22,7 +22,7 @@
           &middot;
           {{ category.name }}
           &middot;
-          <TimeAgo :date="entry.date" />
+          <TimeAgo :datetime="entry.date" />
         </q-item-label>
         <q-item-label>
           <span class="q-mr-sm">
