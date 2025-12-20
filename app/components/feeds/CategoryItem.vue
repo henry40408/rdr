@@ -5,7 +5,7 @@
         <q-icon size="xs" name="category" />
       </q-item-section>
       <q-item-section>
-        <q-item-label>{{ categoryName }}</q-item-label>
+        <q-item-label>{{ model.name }}</q-item-label>
       </q-item-section>
       <q-item-section side>
         <UnreadCount :count="unreadCount" />
@@ -27,24 +27,11 @@
           <q-item-label caption>Name</q-item-label>
           <q-item-label>
             <div class="row items-center q-gutter-sm">
-              <div>{{ categoryName }}</div>
+              <div>{{ model.name }}</div>
               <q-icon name="edit" />
             </div>
-            <q-popup-edit
-              v-slot="scope"
-              v-model="categoryName"
-              dense
-              buttons
-              :validate="validate"
-              @save="updateCategory"
-            >
-              <q-input
-                v-model="scope.value"
-                autofocus
-                :error="error"
-                :error-message="errorMessage"
-                @keyup.enter="scope.set"
-              />
+            <q-popup-edit v-slot="scope" v-model="model" dense buttons :validate="validate" @save="save">
+              <q-input v-model="scope.value.name" autofocus :error="error" :error-message="errorMessage.name" />
             </q-popup-edit>
           </q-item-label>
         </q-item-section>
@@ -81,37 +68,48 @@ const props = defineProps<{
 
 const store = useCategoryStore();
 
-const errorMessage = ref("");
-const categoryName = ref(props.category.name);
+interface CategoryModel {
+  name: string;
+}
+interface CategoryModelError {
+  name: string;
+}
 
-const error = computed(() => !!errorMessage.value);
+const errorMessage = ref<CategoryModelError>({
+  name: "",
+});
+const model = ref<CategoryModel>({
+  name: props.category.name,
+});
+
+const error = computed(() => Object.values(errorMessage.value).some((msg) => !!msg));
 const unreadCount = computed(() => props.category.feeds.reduce((sum, feed) => sum + feed.unreadCount, 0));
 
-function validate(name: string) {
+function validate(newModel: CategoryModel) {
   const categoryNames = store.categories.map((c) => c.name);
-  if (categoryNames.includes(name)) {
-    errorMessage.value = "Category name must be unique.";
+  if (categoryNames.includes(newModel.name)) {
+    errorMessage.value.name = "Category name must be unique.";
     return false;
   }
-  if (!name.trim()) {
-    errorMessage.value = "Category name cannot be empty.";
+  if (!newModel.name.trim()) {
+    errorMessage.value.name = "Category name cannot be empty.";
     return false;
   }
-  errorMessage.value = "";
+  errorMessage.value.name = "";
   return true;
 }
 
-async function updateCategory(name: string) {
+async function save(newModel: CategoryModel) {
   try {
     await $fetch(`/api/categories/${props.category.id}`, {
       method: "PATCH",
-      body: { name },
+      body: { name: newModel.name },
     });
     $q.notify({ type: "positive", message: "Category name updated successfully." });
     store.load();
   } catch (err) {
     $q.notify({ type: "negative", message: `Failed to update category name: ${err}` });
-    categoryName.value = props.category.name;
+    model.value.name = props.category.name;
   }
 }
 </script>
