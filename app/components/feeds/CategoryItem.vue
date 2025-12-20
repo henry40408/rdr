@@ -26,10 +26,8 @@
         <q-item-section>
           <q-item-label caption>Name</q-item-label>
           <q-item-label>
-            <div class="row items-center q-gutter-sm">
-              <div>{{ model.name }}</div>
-              <q-icon name="edit" />
-            </div>
+            {{ model.name }}
+            <q-icon name="edit" class="q-ml-xs" />
             <q-popup-edit v-slot="scope" v-model="model" dense buttons :validate="validate" @save="save">
               <q-input v-model="scope.value.name" autofocus :error="error" :error-message="errorMessage.name" />
             </q-popup-edit>

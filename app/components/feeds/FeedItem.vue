@@ -8,7 +8,7 @@
         <q-icon v-else size="xs" name="rss_feed" />
       </q-item-section>
       <q-item-section>
-        <q-item-label>{{ feed.title }}</q-item-label>
+        <q-item-label>{{ model.title }}</q-item-label>
       </q-item-section>
       <q-item-section side>
         <UnreadCount :count="feed.unreadCount" />
@@ -44,25 +44,49 @@
       <q-item>
         <q-item-section>
           <q-item-label caption>Category name</q-item-label>
-          <q-item-label>{{ category.name }}</q-item-label>
+          <q-item-label>
+            {{ model.categoryName }}
+            <q-icon name="edit" class="q-ml-xs" />
+            <q-popup-edit v-slot="scope" v-model="model" dense buttons @save="save">
+              <q-input v-model="scope.value.categoryName" autofocus />
+            </q-popup-edit>
+          </q-item-label>
         </q-item-section>
         <q-item-section>
           <q-item-label caption>Title</q-item-label>
-          <q-item-label>{{ feed.title }}</q-item-label>
+          <q-item-label>
+            {{ model.title }}
+            <q-icon name="edit" class="q-ml-xs" />
+            <q-popup-edit v-slot="scope" v-model="model" dense buttons @save="save">
+              <q-input v-model="scope.value.title" autofocus />
+            </q-popup-edit>
+          </q-item-label>
         </q-item-section>
       </q-item>
       <q-item>
         <q-item-section>
           <q-item-label caption>HTML URL</q-item-label>
           <q-item-label>
-            <ExternalLink :href="feed.htmlUrl">{{ feed.htmlUrl }}</ExternalLink>
+            <ExternalLink :href="model.htmlUrl">{{ model.htmlUrl }}</ExternalLink>
+            <span>
+              <q-icon name="edit" class="q-ml-xs" />
+              <q-popup-edit v-slot="scope" v-model="model" dense buttons @save="save">
+                <q-input v-model="scope.value.htmlUrl" autofocus />
+              </q-popup-edit>
+            </span>
           </q-item-label>
         </q-item-section>
       </q-item>
       <q-item>
         <q-item-section>
           <q-item-label caption>XML URL</q-item-label>
-          <q-item-label>{{ feed.xmlUrl }}</q-item-label>
+          <q-item-label>
+            {{ model.xmlUrl }}
+            <q-icon name="edit" class="q-ml-xs" />
+            <q-popup-edit v-slot="scope" v-model="model" dense buttons @save="save">
+              <q-input v-model="scope.value.xmlUrl" autofocus />
+            </q-popup-edit>
+          </q-item-label>
         </q-item-section>
       </q-item>
       <q-item>
@@ -82,14 +106,22 @@
         <q-item-section>
           <q-item-label caption>Disable HTTP/2</q-item-label>
           <q-item-label>
-            <q-badge :label="feed.disableHttp2 ? 'Yes' : 'No'" :color="feed.disableHttp2 ? 'positive' : 'dark'" />
+            <q-badge :label="model.disableHttp2 ? 'Yes' : 'No'" :color="model.disableHttp2 ? 'positive' : 'dark'" />
+            <q-icon name="edit" class="q-ml-xs" />
+            <q-popup-edit v-slot="scope" v-model="model" dense buttons @save="save">
+              <q-toggle v-model="scope.value.disableHttp2" label="Disable HTTP/2" />
+            </q-popup-edit>
           </q-item-label>
         </q-item-section>
         <q-item-section>
           <q-item-label caption>User Agent</q-item-label>
           <q-item-label>
-            <span v-if="feed.userAgent">{{ feed.userAgent }}</span>
+            <span v-if="model.userAgent">{{ model.userAgent }}</span>
             <q-badge v-else label="N/A" />
+            <q-icon name="edit" class="q-ml-xs" />
+            <q-popup-edit v-slot="scope" v-model="model" dense buttons @save="save">
+              <q-input v-model="scope.value.userAgent" autofocus />
+            </q-popup-edit>
           </q-item-label>
         </q-item-section>
       </q-item>
@@ -98,7 +130,9 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{
+const $q = useQuasar();
+
+const props = defineProps<{
   feed: {
     disableHttp2: boolean;
     errorCount: number;
@@ -118,4 +152,47 @@ defineProps<{
     name: string;
   };
 }>();
+
+const store = useCategoryStore();
+
+interface FeedModel {
+  categoryName: string;
+  title: string;
+  xmlUrl: string;
+  htmlUrl: string;
+  disableHttp2?: boolean;
+  userAgent?: string;
+}
+
+const model = ref<FeedModel>({
+  categoryName: props.category.name,
+  title: props.feed.title,
+  xmlUrl: props.feed.xmlUrl,
+  htmlUrl: props.feed.htmlUrl,
+  disableHttp2: props.feed.disableHttp2,
+  userAgent: props.feed.userAgent,
+});
+
+async function save(newModel: FeedModel) {
+  try {
+    const disableHttp2 = newModel.disableHttp2 ?? false;
+    const userAgent = newModel.userAgent?.trim() ?? undefined;
+    await $fetch(`/api/feeds/${props.feed.id}`, {
+      method: "PATCH",
+      body: {
+        categoryName: newModel.categoryName,
+        title: newModel.title,
+        xmlUrl: newModel.xmlUrl,
+        htmlUrl: newModel.htmlUrl,
+        disableHttp2,
+        userAgent,
+      },
+    });
+    $q.notify({ type: "positive", message: "Feed category updated successfully." });
+    store.load();
+  } catch (err) {
+    $q.notify({ type: "negative", message: `Failed to update feed category: ${err}` });
+    model.value.categoryName = props.category.name;
+  }
+}
 </script>
