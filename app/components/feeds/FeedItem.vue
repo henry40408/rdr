@@ -24,7 +24,7 @@
     <q-list padding>
       <q-item>
         <q-item-section>
-          <q-btn-group spread>
+          <q-btn-group push spread>
             <q-btn icon="refresh" label="Refresh" :loading="refreshingFeed" @click="onRefreshFeed()" />
           </q-btn-group>
         </q-item-section>
