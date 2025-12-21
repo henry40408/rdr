@@ -171,8 +171,9 @@ const model = ref<FeedModel>({
 });
 
 const show = computed(() => {
-  if (!store.showErrorOnly) return true;
-  return props.feed.errorCount > 0;
+  if (store.showErrorOnly) return props.feed.errorCount > 0;
+  if (store.hideEmpty) return props.feed.unreadCount > 0;
+  return true;
 });
 
 async function save(newModel: FeedModel) {

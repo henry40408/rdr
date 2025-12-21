@@ -4,6 +4,7 @@
     <q-item>
       <ClientOnly>
         <q-toggle v-model="store.showErrorOnly" label="Show only feeds with errors" />
+        <q-toggle v-model="store.hideEmpty" label="Hide empty" />
       </ClientOnly>
     </q-item>
     <FeedsCategoryItem v-for="category in store.categories" :key="category.id" :category="category" />

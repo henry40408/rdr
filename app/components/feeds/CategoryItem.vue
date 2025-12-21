@@ -81,8 +81,9 @@ const model = ref<CategoryModel>({
 
 const error = computed(() => Object.values(errorMessage.value).some((msg) => !!msg));
 const show = computed(() => {
-  if (!store.showErrorOnly) return true;
-  return props.category.feeds.some((feed) => feed.errorCount > 0);
+  if (store.showErrorOnly) return props.category.feeds.some((f) => f.errorCount > 0);
+  if (store.hideEmpty) return props.category.feeds.some((feed) => feed.unreadCount > 0);
+  return true;
 });
 const unreadCount = computed(() => props.category.feeds.reduce((sum, feed) => sum + feed.unreadCount, 0));
 
