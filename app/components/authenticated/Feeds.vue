@@ -42,6 +42,10 @@
 <script setup lang="ts">
 const $q = useQuasar();
 
+useHead({
+  title: "Feeds - rdr",
+});
+
 const colorMode = useColorMode();
 onMounted(() => {
   $q.dark.set(colorMode.value === "dark");
