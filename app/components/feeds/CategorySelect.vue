@@ -5,8 +5,10 @@
     use-input
     emit-value
     map-options
+    :error="error"
     :options="options"
-    label="Category name"
+    label="Category name *"
+    :error-message="errorMessage"
     @filter="filter"
     @new-value="createValue"
   />
@@ -14,6 +16,11 @@
 
 <script setup lang="ts">
 const model = defineModel<string>();
+
+defineProps<{
+  error?: boolean | null;
+  errorMessage?: string;
+}>();
 
 const store = useCategoryStore();
 const options = ref(

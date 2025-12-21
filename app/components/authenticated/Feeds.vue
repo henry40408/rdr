@@ -33,7 +33,10 @@
 
     <q-page-container>
       <q-page class="q-pb-xl">
+        <FeedsNewFeedForm id="new-feed" />
+        <q-separator spaced />
         <FeedsCategoryList />
+        <FeedsFloatingButton />
       </q-page>
     </q-page-container>
   </q-layout>

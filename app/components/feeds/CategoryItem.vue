@@ -17,6 +17,16 @@
 
       <q-list padding>
         <q-item>
+          <q-btn-group push>
+            <q-btn
+              label="View"
+              icon="visibility"
+              :href="$router.resolve({ name: 'index', query: { categoryId: category.id } }).href"
+            />
+            <q-btn icon="delete" label="Delete" color="negative" :loading="deleting" @click="onDeleteCategory()" />
+          </q-btn-group>
+        </q-item>
+        <q-item>
           <q-item-section>
             <q-item-label caption>Name</q-item-label>
             <q-item-label>
@@ -83,8 +93,6 @@ const model = ref<CategoryModel>({
 
 const error = computed(() => Object.values(errorMessage.value).some((msg) => !!msg));
 const show = computed(() => {
-  if (store.showErrorOnly) return props.category.feeds.some((f) => f.errorCount > 0);
-  if (store.hideEmpty) return props.category.feeds.some((feed) => feed.unreadCount > 0);
   if (store.keyword) {
     const categoryMatched = props.category.name.toLowerCase().includes(store.keyword.toLowerCase());
     const feedsMatched = props.category.feeds.some((feed) =>
@@ -92,9 +100,32 @@ const show = computed(() => {
     );
     return categoryMatched || feedsMatched;
   }
+  if (store.showErrorOnly) return props.category.feeds.some((f) => f.errorCount > 0);
+  if (store.hideEmpty) return props.category.feeds.some((feed) => feed.unreadCount > 0);
   return true;
 });
 const unreadCount = computed(() => props.category.feeds.reduce((sum, feed) => sum + feed.unreadCount, 0));
+
+const { pending: deleting, execute: deleteCategory } = useFetch(`/api/categories/${props.category.id}`, {
+  method: "DELETE",
+  immediate: false,
+});
+async function onDeleteCategory() {
+  $q.dialog({
+    title: "Delete Category",
+    message: `Are you sure you want to delete category "${props.category.name}" and its feeds? This action cannot be undone.`,
+    cancel: true,
+    ok: { label: "Delete", color: "negative" },
+  }).onOk(async () => {
+    try {
+      await deleteCategory();
+      $q.notify({ type: "positive", message: "Category deleted successfully." });
+      store.load();
+    } catch (err) {
+      $q.notify({ type: "negative", message: `Failed to delete category: ${err}` });
+    }
+  });
+}
 
 function validate(newModel: CategoryModel) {
   const categoryNames = store.categories.map((c) => c.name);

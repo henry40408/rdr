@@ -2,17 +2,17 @@
   <q-expansion-item v-show="show" :group="`category-${category.id}:feeds`">
     <template #header>
       <q-item-section side>
+        <q-icon v-if="feed.errorCount > 0" size="xs" name="error" color="negative" />
+        <q-icon v-else size="xs" color="positive" name="check_circle" />
+      </q-item-section>
+      <q-item-section side>
         <q-avatar v-if="feed.imageExists" square size="xs" color="white">
           <img :src="`/api/images/external/${buildFeedImageKey(feed.id)}`" />
         </q-avatar>
         <q-icon v-else size="xs" name="rss_feed" />
       </q-item-section>
       <q-item-section>
-        <q-item-label>
-          <span class="q-mr-xs">
-            <q-icon v-if="feed.errorCount > 0" size="xs" name="error" color="negative" />
-            <q-icon v-else size="xs" color="positive" name="check_circle" />
-          </span>
+        <q-item-label lines="1">
           <MarkedText :text="model.title" :keyword="store.keyword" />
         </q-item-label>
       </q-item-section>
@@ -23,11 +23,15 @@
 
     <q-list padding>
       <q-item>
-        <q-item-section>
-          <q-btn-group push spread>
-            <q-btn icon="refresh" label="Refresh" :loading="refreshingFeed" @click="onRefreshFeed()" />
-          </q-btn-group>
-        </q-item-section>
+        <q-btn-group push>
+          <q-btn
+            label="View"
+            icon="visibility"
+            :href="$router.resolve({ name: 'index', query: { categoryId: category.id, feedId: feed.id } }).href"
+          />
+          <q-btn icon="refresh" label="Refresh" :loading="refreshing" @click="onRefreshFeed()" />
+          <q-btn icon="delete" label="Delete" color="negative" :loading="deleting" @click="onDeleteFeed()" />
+        </q-btn-group>
       </q-item>
       <q-item>
         <q-item-section>
@@ -61,8 +65,14 @@
           <q-item-label>
             {{ model.title }}
             <q-icon name="edit" class="q-ml-xs" />
-            <q-popup-edit v-slot="scope" v-model="model" dense buttons @save="save">
-              <q-input v-model="scope.value.title" autofocus label="Title" />
+            <q-popup-edit v-slot="scope" v-model="model" dense buttons :validate="validate" @save="save">
+              <q-input
+                v-model="scope.value.title"
+                autofocus
+                :error="error"
+                label="Title *"
+                :error-message="errorMessages.title"
+              />
             </q-popup-edit>
           </q-item-label>
         </q-item-section>
@@ -87,8 +97,14 @@
           <q-item-label>
             {{ model.xmlUrl }}
             <q-icon name="edit" class="q-ml-xs" />
-            <q-popup-edit v-slot="scope" v-model="model" dense buttons @save="save">
-              <q-input v-model="scope.value.xmlUrl" autofocus label="XML URL" />
+            <q-popup-edit v-slot="scope" v-model="model" dense buttons :validate="validate" @save="save">
+              <q-input
+                v-model="scope.value.xmlUrl"
+                autofocus
+                :error="error"
+                label="XML URL *"
+                :error-message="errorMessages.xmlUrl"
+              />
             </q-popup-edit>
           </q-item-label>
         </q-item-section>
@@ -168,6 +184,10 @@ interface FeedModel {
   userAgent?: string;
 }
 
+const errorMessages = ref({
+  title: "",
+  xmlUrl: "",
+});
 const model = ref<FeedModel>({
   categoryName: props.category.name,
   title: props.feed.title,
@@ -177,14 +197,36 @@ const model = ref<FeedModel>({
   userAgent: props.feed.userAgent,
 });
 
+const error = computed(() => !!errorMessages.value.title || !!errorMessages.value.xmlUrl);
 const show = computed(() => {
+  if (store.keyword) return props.feed.title.toLowerCase().includes(store.keyword.toLowerCase());
   if (store.showErrorOnly) return props.feed.errorCount > 0;
   if (store.hideEmpty) return props.feed.unreadCount > 0;
-  if (store.keyword) return props.feed.title.toLowerCase().includes(store.keyword.toLowerCase());
   return true;
 });
 
-const { pending: refreshingFeed, execute: refreshFeed } = useFetch(`/api/feeds/${props.feed.id}/refresh`, {
+const { pending: deleting, execute: deleteFeed } = useFetch(`/api/feeds/${props.feed.id}`, {
+  method: "DELETE",
+  immediate: false,
+});
+async function onDeleteFeed() {
+  $q.dialog({
+    title: "Delete Feed",
+    message: `Are you sure you want to delete the feed "${props.feed.title}"? This action cannot be undone.`,
+    cancel: true,
+    ok: { color: "negative" },
+  }).onOk(async () => {
+    try {
+      await deleteFeed();
+      $q.notify({ type: "positive", message: "Feed deleted successfully." });
+      store.load();
+    } catch (err) {
+      $q.notify({ type: "negative", message: `Failed to delete feed: ${err}` });
+    }
+  });
+}
+
+const { pending: refreshing, execute: refreshFeed } = useFetch(`/api/feeds/${props.feed.id}/refresh`, {
   method: "POST",
   immediate: false,
 });
@@ -196,6 +238,20 @@ async function onRefreshFeed() {
   } catch (err) {
     $q.notify({ type: "negative", message: `Failed to refresh feed: ${err}` });
   }
+}
+
+function validate(newModel: FeedModel) {
+  if (!newModel.title.trim()) {
+    errorMessages.value.title = "Title cannot be empty.";
+    return false;
+  }
+  errorMessages.value.title = "";
+  if (!newModel.xmlUrl.trim()) {
+    errorMessages.value.xmlUrl = "XML URL cannot be empty.";
+    return false;
+  }
+  errorMessages.value.xmlUrl = "";
+  return true;
 }
 
 async function save(newModel: FeedModel) {
