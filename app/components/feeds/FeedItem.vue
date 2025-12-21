@@ -13,7 +13,7 @@
             <q-icon v-if="feed.errorCount > 0" size="xs" name="error" color="negative" />
             <q-icon v-else size="xs" color="positive" name="check_circle" />
           </span>
-          {{ model.title }}
+          <MarkedText :text="model.title" :keyword="store.keyword" />
         </q-item-label>
       </q-item-section>
       <q-item-section side>
@@ -22,6 +22,13 @@
     </template>
 
     <q-list padding>
+      <q-item>
+        <q-item-section>
+          <q-btn-group spread>
+            <q-btn icon="refresh" label="Refresh" :loading="refreshingFeed" @click="onRefreshFeed()" />
+          </q-btn-group>
+        </q-item-section>
+      </q-item>
       <q-item>
         <q-item-section>
           <q-item-label caption>Fetched at</q-item-label>
@@ -173,8 +180,23 @@ const model = ref<FeedModel>({
 const show = computed(() => {
   if (store.showErrorOnly) return props.feed.errorCount > 0;
   if (store.hideEmpty) return props.feed.unreadCount > 0;
+  if (store.keyword) return props.feed.title.toLowerCase().includes(store.keyword.toLowerCase());
   return true;
 });
+
+const { pending: refreshingFeed, execute: refreshFeed } = useFetch(`/api/feeds/${props.feed.id}/refresh`, {
+  method: "POST",
+  immediate: false,
+});
+async function onRefreshFeed() {
+  try {
+    await refreshFeed();
+    $q.notify({ type: "positive", message: "Feed refresh initiated." });
+    store.load();
+  } catch (err) {
+    $q.notify({ type: "negative", message: `Failed to refresh feed: ${err}` });
+  }
+}
 
 async function save(newModel: FeedModel) {
   try {

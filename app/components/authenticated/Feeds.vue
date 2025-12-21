@@ -9,6 +9,20 @@
           </q-avatar>
           rdr
         </q-toolbar-title>
+        <q-input
+          v-model="store.keyword"
+          dark
+          dense
+          filled
+          debounce="500"
+          input-class="text-right"
+          placeholder="Search categories / feeds"
+        >
+          <template #append>
+            <q-icon v-if="!store.keyword" name="search" />
+            <q-icon v-else name="clear" class="cursor-pointer" @click="store.keyword = ''" />
+          </template>
+        </q-input>
         <NavTabs />
       </q-toolbar>
     </q-header>

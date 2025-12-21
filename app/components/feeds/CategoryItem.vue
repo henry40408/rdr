@@ -6,7 +6,9 @@
           <q-icon size="xs" name="category" />
         </q-item-section>
         <q-item-section>
-          <q-item-label>{{ model.name }}</q-item-label>
+          <q-item-label>
+            <MarkedText :text="model.name" :keyword="store.keyword" />
+          </q-item-label>
         </q-item-section>
         <q-item-section side>
           <UnreadCount :count="unreadCount" />
@@ -83,6 +85,13 @@ const error = computed(() => Object.values(errorMessage.value).some((msg) => !!m
 const show = computed(() => {
   if (store.showErrorOnly) return props.category.feeds.some((f) => f.errorCount > 0);
   if (store.hideEmpty) return props.category.feeds.some((feed) => feed.unreadCount > 0);
+  if (store.keyword) {
+    const categoryMatched = props.category.name.toLowerCase().includes(store.keyword.toLowerCase());
+    const feedsMatched = props.category.feeds.some((feed) =>
+      feed.title.toLowerCase().includes(store.keyword.toLowerCase()),
+    );
+    return categoryMatched || feedsMatched;
+  }
   return true;
 });
 const unreadCount = computed(() => props.category.feeds.reduce((sum, feed) => sum + feed.unreadCount, 0));
