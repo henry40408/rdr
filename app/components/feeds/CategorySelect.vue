@@ -6,6 +6,7 @@
     emit-value
     map-options
     :options="options"
+    label="Category name"
     @filter="filter"
     @new-value="createValue"
   />

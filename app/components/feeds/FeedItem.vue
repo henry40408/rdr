@@ -58,7 +58,7 @@
             {{ model.title }}
             <q-icon name="edit" class="q-ml-xs" />
             <q-popup-edit v-slot="scope" v-model="model" dense buttons @save="save">
-              <q-input v-model="scope.value.title" autofocus />
+              <q-input v-model="scope.value.title" autofocus label="Title" />
             </q-popup-edit>
           </q-item-label>
         </q-item-section>
@@ -71,7 +71,7 @@
             <span>
               <q-icon name="edit" class="q-ml-xs" />
               <q-popup-edit v-slot="scope" v-model="model" dense buttons @save="save">
-                <q-input v-model="scope.value.htmlUrl" autofocus />
+                <q-input v-model="scope.value.htmlUrl" autofocus label="HTML URL" />
               </q-popup-edit>
             </span>
           </q-item-label>
@@ -84,7 +84,7 @@
             {{ model.xmlUrl }}
             <q-icon name="edit" class="q-ml-xs" />
             <q-popup-edit v-slot="scope" v-model="model" dense buttons @save="save">
-              <q-input v-model="scope.value.xmlUrl" autofocus />
+              <q-input v-model="scope.value.xmlUrl" autofocus label="XML URL" />
             </q-popup-edit>
           </q-item-label>
         </q-item-section>
@@ -114,13 +114,13 @@
           </q-item-label>
         </q-item-section>
         <q-item-section>
-          <q-item-label caption>User Agent</q-item-label>
+          <q-item-label caption>User agent</q-item-label>
           <q-item-label>
             <span v-if="model.userAgent">{{ model.userAgent }}</span>
             <q-badge v-else label="N/A" />
             <q-icon name="edit" class="q-ml-xs" />
             <q-popup-edit v-slot="scope" v-model="model" dense buttons @save="save">
-              <q-input v-model="scope.value.userAgent" autofocus />
+              <q-input v-model="scope.value.userAgent" autofocus label="User agent" />
             </q-popup-edit>
           </q-item-label>
         </q-item-section>
