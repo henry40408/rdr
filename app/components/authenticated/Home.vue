@@ -81,8 +81,7 @@ const entryStore = useEntryStore();
 const leftDrawerOpen = ref(false);
 const rightDrawerOpen = ref(false);
 
-const countLabel = computed(() => (entryStore.count > 999 ? "999+" : String(entryStore.count)));
-const title = computed(() => `(${countLabel.value}) rdr`);
+const title = computed(() => `(${entryStore.count > 999 ? "999+" : entryStore.count}) rdr`);
 useHead({ title });
 
 await Promise.all([categoryStore.load(), entryStore.load()]);

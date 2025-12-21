@@ -1,7 +1,7 @@
 <template>
   <q-pull-to-refresh @refresh="pullToRefresh">
     <q-infinite-scroll ref="infinite-scroll" @load="load">
-      <HomeEntryListSpinner v-if="entriesPending" />
+      <HomeEntryListSpinner v-if="store.entriesPending" />
       <q-list separator>
         <HomeEntryItem
           v-for="item in store.items"
@@ -14,7 +14,7 @@
       <template #loading>
         <HomeEntryListSpinner />
       </template>
-      <q-banner v-if="!hasMore" class="text-center">
+      <q-banner v-if="!store.hasMore" class="text-center">
         <q-icon name="info" class="q-mr-sm" />
         No more entries to load.
       </q-banner>
@@ -36,9 +36,6 @@ const store = useEntryStore();
 watch([() => store.selectedCategoryId, () => store.selectedFeedId, () => store.status], () => {
   resetInfiniteScroll();
 });
-
-const entriesPending = computed(() => store.entriesPending);
-const hasMore = computed(() => store.hasMore);
 
 async function load(_index: number, done: (stop: boolean) => void) {
   if (!store.hasMore) {
