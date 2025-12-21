@@ -1,49 +1,42 @@
 <template>
-  <q-expansion-item :id="`category-${category.id}`" group="category" expand-icon-toggle>
-    <template #header>
-      <q-item-section side>
-        <q-icon size="xs" name="category" />
-      </q-item-section>
-      <q-item-section>
-        <q-item-label>{{ model.name }}</q-item-label>
-      </q-item-section>
-      <q-item-section side>
-        <UnreadCount :count="unreadCount" />
-      </q-item-section>
-      <q-item-section side>
-        <q-btn
-          flat
-          round
-          replace
-          icon="search"
-          :href="$router.resolve({ name: 'index', query: { categoryId: category.id } }).href"
-        />
-      </q-item-section>
-    </template>
-
-    <q-list padding>
-      <q-item>
-        <q-item-section>
-          <q-item-label caption>Name</q-item-label>
-          <q-item-label>
-            {{ model.name }}
-            <q-icon name="edit" class="q-ml-xs" />
-            <q-popup-edit v-slot="scope" v-model="model" dense buttons :validate="validate" @save="save">
-              <q-input
-                v-model="scope.value.name"
-                autofocus
-                label="Name"
-                :error="error"
-                :error-message="errorMessage.name"
-              />
-            </q-popup-edit>
-          </q-item-label>
+  <div v-show="show">
+    <q-expansion-item :id="`category-${category.id}`" group="category">
+      <template #header>
+        <q-item-section side>
+          <q-icon size="xs" name="category" />
         </q-item-section>
-      </q-item>
-    </q-list>
-  </q-expansion-item>
-  <FeedsFeedList :category="category" :feeds="category.feeds" />
-  <q-separator spaced />
+        <q-item-section>
+          <q-item-label>{{ model.name }}</q-item-label>
+        </q-item-section>
+        <q-item-section side>
+          <UnreadCount :count="unreadCount" />
+        </q-item-section>
+      </template>
+
+      <q-list padding>
+        <q-item>
+          <q-item-section>
+            <q-item-label caption>Name</q-item-label>
+            <q-item-label>
+              {{ model.name }}
+              <q-icon name="edit" class="q-ml-xs" />
+              <q-popup-edit v-slot="scope" v-model="model" dense buttons :validate="validate" @save="save">
+                <q-input
+                  v-model="scope.value.name"
+                  autofocus
+                  label="Name"
+                  :error="error"
+                  :error-message="errorMessage.name"
+                />
+              </q-popup-edit>
+            </q-item-label>
+          </q-item-section>
+        </q-item>
+      </q-list>
+    </q-expansion-item>
+    <FeedsFeedList :category="category" :feeds="category.feeds" />
+    <q-separator spaced />
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -87,6 +80,10 @@ const model = ref<CategoryModel>({
 });
 
 const error = computed(() => Object.values(errorMessage.value).some((msg) => !!msg));
+const show = computed(() => {
+  if (!store.showErrorOnly) return true;
+  return props.category.feeds.some((feed) => feed.errorCount > 0);
+});
 const unreadCount = computed(() => props.category.feeds.reduce((sum, feed) => sum + feed.unreadCount, 0));
 
 function validate(newModel: CategoryModel) {

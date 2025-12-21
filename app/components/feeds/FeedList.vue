@@ -20,6 +20,7 @@ defineProps<{
     imageExists: boolean;
     lastError?: string;
     title: string;
+    unreadCount: number;
     userAgent?: string;
     xmlUrl: string;
   }[];

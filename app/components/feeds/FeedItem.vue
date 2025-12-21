@@ -1,5 +1,5 @@
 <template>
-  <q-expansion-item expand-icon-toggle :group="`category-${category.id}:feeds`">
+  <q-expansion-item v-show="show" :group="`category-${category.id}:feeds`">
     <template #header>
       <q-item-section side>
         <q-avatar v-if="feed.imageExists" square size="xs" color="white">
@@ -8,19 +8,16 @@
         <q-icon v-else size="xs" name="rss_feed" />
       </q-item-section>
       <q-item-section>
-        <q-item-label>{{ model.title }}</q-item-label>
+        <q-item-label>
+          <span class="q-mr-xs">
+            <q-icon v-if="feed.errorCount > 0" size="xs" name="error" color="negative" />
+            <q-icon v-else size="xs" color="positive" name="check_circle" />
+          </span>
+          {{ model.title }}
+        </q-item-label>
       </q-item-section>
       <q-item-section side>
         <UnreadCount :count="feed.unreadCount" />
-      </q-item-section>
-      <q-item-section side>
-        <q-btn
-          flat
-          round
-          replace
-          icon="search"
-          :href="$router.resolve({ name: 'index', query: { categoryId: category.id, feedId: feed.id } }).href"
-        />
       </q-item-section>
     </template>
 
@@ -171,6 +168,11 @@ const model = ref<FeedModel>({
   htmlUrl: props.feed.htmlUrl,
   disableHttp2: props.feed.disableHttp2,
   userAgent: props.feed.userAgent,
+});
+
+const show = computed(() => {
+  if (!store.showErrorOnly) return true;
+  return props.feed.errorCount > 0;
 });
 
 async function save(newModel: FeedModel) {

@@ -13,10 +13,12 @@ export const SORT = [
 
 export const CATEGORY_SORT = "settings:category-sort";
 export const HIDE_EMPTY = "settings:hide-empty";
+export const SHOW_ERROR_ONLY = "settings:show-error-only";
 
 export const useCategoryStore = defineStore("category", () => {
   const categorySort = useLocalStorage(CATEGORY_SORT, DEFAULT_SORT.value);
   const hideEmpty = useLocalStorage(HIDE_EMPTY, false);
+  const showErrorOnly = useLocalStorage(SHOW_ERROR_ONLY, false);
 
   const categories = ref(
     /** @type {Awaited<ReturnType<typeof import('../../server/api/categories/index.get').default>>['categories']} */ ([]),
@@ -72,6 +74,7 @@ export const useCategoryStore = defineStore("category", () => {
   return {
     categorySort: skipHydrate(categorySort),
     hideEmpty: skipHydrate(hideEmpty),
+    showErrorOnly: skipHydrate(showErrorOnly),
     categories,
     keyword,
     sortedCategories,
