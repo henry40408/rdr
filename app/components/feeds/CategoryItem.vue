@@ -23,6 +23,7 @@
               icon="visibility"
               :href="$router.resolve({ name: 'index', query: { categoryId: category.id } }).href"
             />
+            <q-btn icon="refresh" label="Refresh" :loading="refreshing" @click="onRefreshCategory()" />
             <q-btn icon="delete" label="Delete" color="negative" :loading="deleting" @click="onDeleteCategory()" />
           </q-btn-group>
         </q-item>
@@ -119,12 +120,30 @@ async function onDeleteCategory() {
   }).onOk(async () => {
     try {
       await deleteCategory();
-      $q.notify({ type: "positive", message: "Category deleted successfully." });
+      $q.notify({ type: "positive", message: `Category "${props.category.name}" deleted successfully.` });
       store.load();
     } catch (err) {
-      $q.notify({ type: "negative", message: `Failed to delete category: ${err}` });
+      $q.notify({ type: "negative", message: `Failed to delete category "${props.category.name}": ${err}` });
     }
   });
+}
+
+const { pending: refreshing, execute: refreshCategory } = useAsyncData(
+  `refresh-category-${props.category.id}`,
+  () => {
+    const tasks = [];
+    for (const feed of props.category.feeds) tasks.push($fetch(`/api/feeds/${feed.id}/refresh`, { method: "POST" }));
+    return Promise.allSettled(tasks);
+  },
+  { immediate: false },
+);
+async function onRefreshCategory() {
+  try {
+    await refreshCategory();
+    $q.notify({ type: "positive", message: `Category "${props.category.name}" refreshed.` });
+  } catch (err) {
+    $q.notify({ type: "negative", message: `Failed to refresh category "${props.category.name}": ${err}` });
+  }
 }
 
 function validate(newModel: CategoryModel) {
@@ -147,10 +166,10 @@ async function save(newModel: CategoryModel) {
       method: "PATCH",
       body: { name: newModel.name },
     });
-    $q.notify({ type: "positive", message: "Category name updated successfully." });
+    $q.notify({ type: "positive", message: `Category "${newModel.name}" updated successfully.` });
     store.load();
   } catch (err) {
-    $q.notify({ type: "negative", message: `Failed to update category name: ${err}` });
+    $q.notify({ type: "negative", message: `Failed to update category "${newModel.name}": ${err}` });
     model.value.name = props.category.name;
   }
 }

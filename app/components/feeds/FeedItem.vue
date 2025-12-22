@@ -218,10 +218,10 @@ async function onDeleteFeed() {
   }).onOk(async () => {
     try {
       await deleteFeed();
-      $q.notify({ type: "positive", message: "Feed deleted successfully." });
+      $q.notify({ type: "positive", message: `Feed "${props.feed.title}" deleted successfully.` });
       store.load();
     } catch (err) {
-      $q.notify({ type: "negative", message: `Failed to delete feed: ${err}` });
+      $q.notify({ type: "negative", message: `Failed to delete feed "${props.feed.title}": ${err}` });
     }
   });
 }
@@ -233,10 +233,10 @@ const { pending: refreshing, execute: refreshFeed } = useFetch(`/api/feeds/${pro
 async function onRefreshFeed() {
   try {
     await refreshFeed();
-    $q.notify({ type: "positive", message: "Feed refresh initiated." });
+    $q.notify({ type: "positive", message: `Feed "${props.feed.title}" refreshed.` });
     store.load();
   } catch (err) {
-    $q.notify({ type: "negative", message: `Failed to refresh feed: ${err}` });
+    $q.notify({ type: "negative", message: `Failed to refresh feed "${props.feed.title}": ${err}` });
   }
 }
 
@@ -269,10 +269,10 @@ async function save(newModel: FeedModel) {
         userAgent,
       },
     });
-    $q.notify({ type: "positive", message: "Feed category updated successfully." });
+    $q.notify({ type: "positive", message: `Feed "${newModel.title}" updated successfully.` });
     store.load();
   } catch (err) {
-    $q.notify({ type: "negative", message: `Failed to update feed category: ${err}` });
+    $q.notify({ type: "negative", message: `Failed to update feed "${newModel.title}": ${err}` });
     model.value.categoryName = props.category.name;
   }
 }
