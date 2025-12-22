@@ -22,5 +22,10 @@ export default defineEventHandler(async () => {
   return {
     canLogin: users.length > 0,
     canSignup: canSignup(users, config.singleUser, config.disableSignUp),
+    config: {
+      errorThreshold: config.errorThreshold,
+      httpTimeoutMs: config.httpTimeoutMs,
+      userAgent: config.userAgent,
+    },
   };
 });

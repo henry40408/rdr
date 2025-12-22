@@ -34,8 +34,8 @@
     </q-drawer>
 
     <q-drawer v-model="rightDrawerOpen" bordered persistent side="right" show-if-above>
-      <HomeVersionInfo />
-      <HomeUserInfo />
+      <VersionInfo />
+      <UserInfo />
       <HomeEntryListFilters />
     </q-drawer>
 
