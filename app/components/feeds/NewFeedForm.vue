@@ -1,7 +1,7 @@
 <template>
   <q-form @submit="onSubmit">
     <q-list padding>
-      <q-item-label header>New Feed</q-item-label>
+      <q-item-label header>New feed</q-item-label>
       <q-item>
         <q-item-section>
           <FeedsCategorySelect

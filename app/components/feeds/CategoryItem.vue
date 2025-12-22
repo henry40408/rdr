@@ -142,6 +142,7 @@ async function onRefreshCategory() {
   try {
     await refreshCategory();
     $q.notify({ type: "positive", message: `Category "${props.category.name}" refreshed.` });
+    store.load();
   } catch (err) {
     $q.notify({ type: "negative", message: `Failed to refresh category "${props.category.name}": ${err}` });
   }

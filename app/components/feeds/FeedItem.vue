@@ -3,7 +3,8 @@
     <template #header>
       <q-item-section side>
         <q-icon v-if="feed.errorCount > 0" size="xs" name="error" color="negative" />
-        <q-icon v-else size="xs" color="positive" name="check_circle" />
+        <q-icon v-else-if="feed.fetchedAt" size="xs" color="positive" name="check_circle" />
+        <q-icon v-else size="xs" name="pending" />
       </q-item-section>
       <q-item-section side>
         <q-avatar v-if="feed.imageExists" square size="xs" color="white">
