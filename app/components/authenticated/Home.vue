@@ -35,13 +35,15 @@
 
     <q-drawer v-model="rightDrawerOpen" bordered persistent side="right" show-if-above>
       <VersionInfo />
+      <q-separator />
       <UserInfo />
+      <q-separator />
       <HomeEntryListFilters />
     </q-drawer>
 
     <q-page-container>
       <q-page>
-        <q-list padding>
+        <q-list>
           <q-item>
             <q-item-section>
               <div class="row items-center q-gutter-xs">

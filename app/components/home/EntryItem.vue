@@ -5,8 +5,8 @@
     hide-expand-icon
     :model-value="expanded"
     :class="{
-      'bg-grey-9': isDark && read,
-      'bg-grey-3': !isDark && read,
+      'bg-grey-9': $q.dark.isActive && read,
+      'bg-grey-3': !$q.dark.isActive && read,
     }"
     @before-show="loadContent()"
     @after-show="scrollToEntry()"
@@ -106,7 +106,7 @@
         </q-card-section>
         <q-card-section v-if="summarizationStatus === 'success'">
           <UseClipboard v-slot="{ copy, copied }" :source="summarization">
-            <div class="entry-summary q-mb-md q-pa-md" :class="isDark ? 'bg-grey-8 text-white' : 'bg-grey-2'">
+            <div class="entry-summary q-mb-md q-pa-md" :class="$q.dark.isActive ? 'bg-grey-9 text-white' : 'bg-grey-3'">
               <pre>{{ summarization }}</pre>
             </div>
             <q-btn color="secondary" :label="copied ? 'Copied!' : 'Copy'" @click="copy()" />
@@ -158,9 +158,6 @@ const entryItemRef = useTemplateRef<QExpansionItem>("entry-item");
 function scrollToEntry() {
   entryItemRef.value?.$el.scrollIntoView({ behavior: "smooth" });
 }
-
-const colorMode = useColorMode();
-const isDark = computed(() => colorMode.value === "dark");
 
 const categoryStore = useCategoryStore();
 const entryStore = useEntryStore();

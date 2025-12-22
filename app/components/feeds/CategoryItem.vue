@@ -15,7 +15,7 @@
         </q-item-section>
       </template>
 
-      <q-list padding>
+      <q-list>
         <q-item>
           <q-btn-group push>
             <q-btn
@@ -49,7 +49,7 @@
       </q-list>
     </q-expansion-item>
     <FeedsFeedList :category="category" :feeds="category.feeds" />
-    <q-separator spaced />
+    <q-separator />
   </div>
 </template>
 

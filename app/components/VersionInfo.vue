@@ -1,5 +1,5 @@
 <template>
-  <q-list padding>
+  <q-list>
     <q-item-label header>Version</q-item-label>
     <q-item>
       <q-item-section>
@@ -16,5 +16,4 @@
       </q-item-section>
     </q-item>
   </q-list>
-  <q-separator spaced />
 </template>

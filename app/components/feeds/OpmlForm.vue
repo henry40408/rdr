@@ -1,6 +1,6 @@
 <template>
   <q-form @submit="importOpml()">
-    <q-list padding>
+    <q-list>
       <q-item-label header>Import / export OPML</q-item-label>
       <q-item>
         <q-item-section>

@@ -1,5 +1,5 @@
 <template>
-  <q-list padding>
+  <q-list>
     <q-item-label header>System Settings</q-item-label>
     <q-item>
       <q-item-section>

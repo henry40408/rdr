@@ -1,5 +1,5 @@
 <template>
-  <q-list padding>
+  <q-list>
     <q-item-label header>Account</q-item-label>
     <q-item v-if="session?.user">
       <q-item-section>
@@ -19,7 +19,6 @@
       </q-item-section>
     </q-item>
   </q-list>
-  <q-separator spaced />
 </template>
 
 <script setup lang="ts">

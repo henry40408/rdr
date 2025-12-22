@@ -22,7 +22,7 @@
       </q-item-section>
     </template>
 
-    <q-list padding>
+    <q-list>
       <q-item>
         <q-btn-group push>
           <q-btn

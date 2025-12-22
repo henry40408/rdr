@@ -9,8 +9,10 @@
       <UnreadCount :count="unreadCount" />
     </q-item-section>
   </q-item>
-  <HomeFeedList :category="category" :feeds="category.feeds" />
-  <q-separator v-show="show" spaced />
+  <q-list>
+    <HomeFeedList :category="category" :feeds="category.feeds" />
+  </q-list>
+  <q-separator />
 </template>
 
 <script setup lang="ts">

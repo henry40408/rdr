@@ -1,6 +1,6 @@
 <template>
-  <q-form @submit.prevent="save(model)">
-    <q-list padding>
+  <q-form @submit="save(model)">
+    <q-list>
       <q-item-label header>Change Password</q-item-label>
       <q-item>
         <q-item-section>

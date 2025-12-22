@@ -28,7 +28,7 @@
     </q-header>
 
     <q-drawer v-model="leftDrawerOpen" bordered persistent side="left" show-if-above>
-      <q-list padding>
+      <q-list>
         <q-item-label header>Navigation</q-item-label>
         <q-item clickable href="#import-export-opml">
           <q-item-section>Import / export OPML</q-item-section>
@@ -37,16 +37,16 @@
           <q-item-section>New feed</q-item-section>
         </q-item>
       </q-list>
-      <q-separator spaced />
+      <q-separator />
       <FeedsSideCategoryList />
     </q-drawer>
 
     <q-page-container>
       <q-page class="q-pb-xl">
         <FeedsOpmlForm id="import-export-opml" />
-        <q-separator spaced />
+        <q-separator />
         <FeedsNewFeedForm id="new-feed" />
-        <q-separator spaced />
+        <q-separator />
         <FeedsCategoryList />
         <FeedsFloatingButton />
       </q-page>

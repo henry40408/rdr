@@ -32,16 +32,16 @@
           </q-item-section>
         </q-item>
       </q-list>
-      <q-separator spaced />
+      <q-separator />
       <UserInfo />
     </q-drawer>
 
     <q-page-container>
       <q-page>
         <SettingsChangePasswordForm id="change-password" />
-        <q-separator spaced />
+        <q-separator />
         <SettingsPasskeyList id="passkeys" />
-        <q-separator spaced />
+        <q-separator />
         <SettingsSystemSettings id="system-settings" />
       </q-page>
     </q-page-container>

@@ -8,7 +8,7 @@ export const usePasskeyStore = defineStore("passkey", () => {
   );
 
   const { user } = useUserSession();
-  const { register: registerPasskey } = useWebAuthn();
+  const { register } = useWebAuthn();
 
   const headers = useRequestHeaders(["cookie"]);
   const {
@@ -26,9 +26,9 @@ export const usePasskeyStore = defineStore("passkey", () => {
   /**
    * @param {string} displayName
    */
-  async function addPasskey(displayName) {
+  async function registerPasskey(displayName) {
     if (!user.value) return;
-    await registerPasskey({ userName: user.value.username, displayName });
+    await register({ userName: user.value.username, displayName });
     await refresh();
   }
 
@@ -48,7 +48,7 @@ export const usePasskeyStore = defineStore("passkey", () => {
   return {
     passkeys,
     refreshing,
-    addPasskey,
+    registerPasskey,
     deletePasskey,
     load,
   };

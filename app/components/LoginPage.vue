@@ -21,7 +21,7 @@
             </ClientOnly>
           </q-card-section>
           <q-separator />
-          <form @submit.prevent="onSubmit('login')">
+          <q-form @submit="onSubmit('login')">
             <q-card-section class="q-gutter-md">
               <q-input v-model="username" outlined required label="Username" autocomplete="username" />
               <q-input
@@ -51,7 +51,7 @@
                 :disable="!store.canLogin"
               />
             </q-card-actions>
-          </form>
+          </q-form>
         </q-card>
       </q-page>
     </q-page-container>

@@ -1,5 +1,5 @@
 <template>
-  <q-list padding>
+  <q-list separator>
     <q-item-label header>Categories / feeds</q-item-label>
     <q-item>
       <ClientOnly>
