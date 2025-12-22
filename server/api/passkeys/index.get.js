@@ -9,5 +9,6 @@ export default defineEventHandler(async (event) => {
   const repository = container.resolve("repository");
 
   const username = session.user.username;
-  return await repository.findPasskeysByUsername(username);
+  const passkeys = await repository.findPasskeysByUsername(username);
+  return { passkeys };
 });

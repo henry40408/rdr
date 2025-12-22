@@ -21,6 +21,11 @@
             <q-item-label>Change password</q-item-label>
           </q-item-section>
         </q-item>
+        <q-item clickable href="#passkeys">
+          <q-item-section>
+            <q-item-label>WebAuthn (Passkeys)</q-item-label>
+          </q-item-section>
+        </q-item>
         <q-item clickable href="#system-settings">
           <q-item-section>
             <q-item-label>System settings</q-item-label>
@@ -35,28 +40,9 @@
       <q-page>
         <SettingsChangePasswordForm id="change-password" />
         <q-separator spaced />
-        <q-list id="system-settings" padding>
-          <q-item-label header>System Settings</q-item-label>
-          <q-item>
-            <q-item-section>
-              <q-item-label caption>Error threshold</q-item-label>
-              <q-item-label>{{ systemSettingsStore.config.errorThreshold }}</q-item-label>
-            </q-item-section>
-          </q-item>
-          <q-item>
-            <q-item-section>
-              <q-item-label caption>HTTP request timeout</q-item-label>
-              <q-item-label>{{ systemSettingsStore.config.httpTimeoutMs }}ms</q-item-label>
-            </q-item-section>
-          </q-item>
-          <q-item>
-            <q-item-section>
-              <q-item-label caption>User agent</q-item-label>
-              <q-item-label>{{ systemSettingsStore.config.userAgent }}</q-item-label>
-            </q-item-section>
-          </q-item>
-        </q-list>
+        <SettingsPasskeyList id="passkeys" />
         <q-separator spaced />
+        <SettingsSystemSettings id="system-settings" />
       </q-page>
     </q-page-container>
   </q-layout>
@@ -73,7 +59,11 @@ onMounted(() => {
   });
 });
 
+const passkeyStore = usePasskeyStore();
 const systemSettingsStore = useSystemSettingsStore();
 
 const leftDrawerOpen = ref(false);
+
+await systemSettingsStore.load();
+await passkeyStore.load();
 </script>
