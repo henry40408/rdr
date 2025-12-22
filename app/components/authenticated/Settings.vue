@@ -14,12 +14,28 @@
     </q-header>
 
     <q-drawer v-model="leftDrawerOpen" bordered persistent side="left" show-if-above>
+      <q-list>
+        <q-item-label header>Navigation</q-item-label>
+        <q-item clickable href="#change-password">
+          <q-item-section>
+            <q-item-label>Change password</q-item-label>
+          </q-item-section>
+        </q-item>
+        <q-item clickable href="#system-settings">
+          <q-item-section>
+            <q-item-label>System settings</q-item-label>
+          </q-item-section>
+        </q-item>
+      </q-list>
+      <q-separator spaced />
       <UserInfo />
     </q-drawer>
 
     <q-page-container>
       <q-page>
-        <q-list padding>
+        <SettingsChangePasswordForm id="change-password" />
+        <q-separator spaced />
+        <q-list id="system-settings" padding>
           <q-item-label header>System Settings</q-item-label>
           <q-item>
             <q-item-section>
@@ -40,6 +56,7 @@
             </q-item-section>
           </q-item>
         </q-list>
+        <q-separator spaced />
       </q-page>
     </q-page-container>
   </q-layout>

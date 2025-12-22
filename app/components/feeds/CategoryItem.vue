@@ -36,9 +36,10 @@
               <q-popup-edit v-slot="scope" v-model="model" dense buttons :validate="validate" @save="save">
                 <q-input
                   v-model="scope.value.name"
+                  required
                   autofocus
-                  label="Name"
                   :error="error"
+                  label="Name *"
                   :error-message="errorMessage.name"
                 />
               </q-popup-edit>

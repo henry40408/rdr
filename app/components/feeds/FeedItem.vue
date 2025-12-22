@@ -68,6 +68,7 @@
             <q-popup-edit v-slot="scope" v-model="model" dense buttons :validate="validate" @save="save">
               <q-input
                 v-model="scope.value.title"
+                required
                 autofocus
                 :error="error"
                 label="Title *"
@@ -100,6 +101,7 @@
             <q-popup-edit v-slot="scope" v-model="model" dense buttons :validate="validate" @save="save">
               <q-input
                 v-model="scope.value.xmlUrl"
+                required
                 autofocus
                 :error="error"
                 label="XML URL *"
