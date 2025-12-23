@@ -2,15 +2,15 @@
 
 import { z } from "zod";
 
-const schema = z.union([
+const schema = z.xor([
   z.object({
     kagiLanguage: z.string(),
     kagiSessionLink: z.union([z.url(), z.literal("")]),
   }),
   z.object({
-    linkdingApiUrl: z.url(),
+    linkdingApiUrl: z.union([z.url(), z.literal("")]),
     linkdingApiToken: z.string(),
-    linkdingDefaultTags: z.string(),
+    linkdingDefaultTags: z.array(z.string()).transform((tags) => JSON.stringify(tags)),
   }),
 ]);
 

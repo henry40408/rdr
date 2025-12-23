@@ -16,7 +16,13 @@
       </q-item>
       <q-item>
         <q-item-section>
-          <q-input v-model="model.kagiSessionLink" filled label="Kagi Session Link" />
+          <q-input
+            v-model="model.kagiSessionLink"
+            filled
+            clearable
+            label="Kagi Session Link"
+            placeholder="https://kagi.com/search?token=TOKEN"
+          />
         </q-item-section>
       </q-item>
       <q-item>
@@ -109,7 +115,7 @@ const model = ref<KagiSummarizerModel>({
 
 const store = useFeatureStore();
 
-const { pending, execute } = useFetch("/api/user-settings", {
+const { pending, error, execute } = useFetch("/api/user-settings", {
   key: "kagi-summarizer-settings",
   method: "POST",
   body: model,
@@ -119,6 +125,7 @@ const { pending, execute } = useFetch("/api/user-settings", {
 async function save() {
   try {
     await execute();
+    if (error.value) throw error.value;
     $q.notify({
       type: "positive",
       message: "Kagi Summarizer settings saved successfully",
