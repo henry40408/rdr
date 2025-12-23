@@ -109,6 +109,7 @@ const show = computed(() => {
 const unreadCount = computed(() => props.category.feeds.reduce((sum, feed) => sum + feed.unreadCount, 0));
 
 const { pending: deleting, execute: deleteCategory } = useFetch(`/api/categories/${props.category.id}`, {
+  key: `delete-category-${props.category.id}`,
   method: "DELETE",
   immediate: false,
 });

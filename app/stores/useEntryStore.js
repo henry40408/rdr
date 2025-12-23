@@ -1,6 +1,6 @@
 // @ts-check
 
-import { secondsToMilliseconds, sub } from "date-fns";
+import { sub } from "date-fns";
 
 export const DEFAULT_STATUS = { label: "Unread", value: "unread" };
 export const STATUS = [
@@ -87,7 +87,6 @@ export const useEntryStore = defineStore("entry", () => {
     headers,
     query,
     immediate: false,
-    timeout: secondsToMilliseconds(30),
     watch: false,
   });
   const count = computed(() => countData.value?.count ?? 0);
@@ -101,7 +100,6 @@ export const useEntryStore = defineStore("entry", () => {
     headers,
     query,
     immediate: false,
-    timeout: secondsToMilliseconds(30),
     watch: false,
   });
 

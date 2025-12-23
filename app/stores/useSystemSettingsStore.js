@@ -1,9 +1,7 @@
 // @ts-check
 
-import { secondsToMilliseconds } from "date-fns";
-
 export const useSystemSettingsStore = defineStore("systemSettings", () => {
-  const { data, refresh: load } = useFetch("/api/system-settings", { timeout: secondsToMilliseconds(30) });
+  const { data, refresh: load } = useFetch("/api/system-settings", { key: "system-settings" });
 
   const canLogin = computed(() => data.value?.canLogin ?? false);
   const canSignup = computed(() => data.value?.canSignup ?? false);

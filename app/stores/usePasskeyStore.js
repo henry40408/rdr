@@ -1,7 +1,5 @@
 // @ts-check
 
-import { secondsToMilliseconds } from "date-fns";
-
 export const usePasskeyStore = defineStore("passkey", () => {
   const passkeys = ref(
     /** @type {Awaited<ReturnType<typeof import('../../server/api/passkeys/index.get').default>>['passkeys']} */ ([]),
@@ -19,7 +17,6 @@ export const usePasskeyStore = defineStore("passkey", () => {
     key: "passkeys",
     headers,
     immediate: false,
-    timeout: secondsToMilliseconds(30),
     watch: false,
   });
 

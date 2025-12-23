@@ -1,6 +1,5 @@
 // @ts-check
 
-import { secondsToMilliseconds } from "date-fns";
 import { skipHydrate } from "pinia";
 
 export const DEFAULT_SORT = { value: "unread-desc", label: "Unread count (Descending)" };
@@ -34,7 +33,6 @@ export const useCategoryStore = defineStore("category", () => {
     key: "categories",
     headers,
     immediate: false,
-    timeout: secondsToMilliseconds(30),
     watch: false,
   });
 

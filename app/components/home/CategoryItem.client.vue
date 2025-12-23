@@ -12,7 +12,7 @@
   <q-list>
     <HomeFeedList :category="category" :feeds="category.feeds" />
   </q-list>
-  <q-separator />
+  <q-separator v-show="show" />
 </template>
 
 <script setup lang="ts">

@@ -71,11 +71,11 @@ onMounted(() => {
   });
 });
 
+const featureStore = useFeatureStore();
 const passkeyStore = usePasskeyStore();
 const systemSettingsStore = useSystemSettingsStore();
 
 const leftDrawerOpen = ref(false);
 
-await systemSettingsStore.load();
-await passkeyStore.load();
+await Promise.all([featureStore.load(), passkeyStore.load(), systemSettingsStore.load()]);
 </script>

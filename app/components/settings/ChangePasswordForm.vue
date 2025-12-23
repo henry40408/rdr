@@ -89,9 +89,11 @@ const {
   error: updateError,
   execute: updatePassword,
 } = useFetch("/api/change-password", {
+  key: "change-password",
   method: "POST",
   body: model,
   immediate: false,
+  watch: false,
 });
 async function save(newModel: NewPasswordModel) {
   if (!validate(newModel)) return;

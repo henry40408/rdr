@@ -209,6 +209,7 @@ const show = computed(() => {
 });
 
 const { pending: deleting, execute: deleteFeed } = useFetch(`/api/feeds/${props.feed.id}`, {
+  key: `delete-feed-${props.feed.id}`,
   method: "DELETE",
   immediate: false,
 });
@@ -230,6 +231,7 @@ async function onDeleteFeed() {
 }
 
 const { pending: refreshing, execute: refreshFeed } = useFetch(`/api/feeds/${props.feed.id}/refresh`, {
+  key: `refresh-feed-${props.feed.id}`,
   method: "POST",
   immediate: false,
 });

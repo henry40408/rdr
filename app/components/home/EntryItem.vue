@@ -133,7 +133,6 @@
 <script setup lang="ts">
 import type { QExpansionItem } from "quasar";
 import { UseClipboard } from "@vueuse/components";
-import { secondsToMilliseconds } from "date-fns";
 
 const props = defineProps<{
   entry: {
@@ -178,7 +177,10 @@ const {
   data: contentData,
   status: contentStatus,
   execute: fetchContent,
-} = useFetch(`/api/entries/${props.entry.id}/content`, { immediate: false, timeout: secondsToMilliseconds(30) });
+} = useFetch(`/api/entries/${props.entry.id}/content`, {
+  key: `entry-content-${props.entry.id}`,
+  immediate: false,
+});
 
 async function loadContent() {
   if (expanded.value && contentStatus.value === "idle") {
@@ -192,7 +194,10 @@ const {
   status: fullContentStatus,
   execute: fetchFullContent,
   clear: clearFullContent,
-} = useFetch(`/api/entries/${props.entry.id}/full-content`, { immediate: false, timeout: secondsToMilliseconds(30) });
+} = useFetch(`/api/entries/${props.entry.id}/full-content`, {
+  key: `entry-full-content-${props.entry.id}`,
+  immediate: false,
+});
 const showContent = computed(() => {
   if (fullContentStatus.value === "success") return false;
   return contentStatus.value === "success";
@@ -210,7 +215,10 @@ const {
   status: summarizationStatus,
   execute: fetchSummarization,
   clear: clearSummarization,
-} = useFetch(`/api/entries/${props.entry.id}/summarize`, { immediate: false, timeout: secondsToMilliseconds(300) });
+} = useFetch(`/api/entries/${props.entry.id}/summarize`, {
+  key: `entry-summarization-${props.entry.id}`,
+  immediate: false,
+});
 
 async function loadSummarization() {
   if (summarizationStatus.value === "idle") {
@@ -226,6 +234,7 @@ ${content}`;
 }
 
 const { status: saveStatus, execute: saveEntry } = useFetch(`/api/entries/${props.entry.id}/save`, {
+  key: `entry-save-${props.entry.id}`,
   method: "POST",
   immediate: false,
 });
