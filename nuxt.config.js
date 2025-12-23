@@ -34,6 +34,7 @@ export default defineNuxtConfig({
     httpTimeoutMs: 30_000,
     imageDigestSecret: "",
     logLevel: "",
+    multiUser: false,
     public: {
       buildDate: new Date().toISOString(),
       version: "dev",
@@ -51,7 +52,6 @@ export default defineNuxtConfig({
       name: "nuxt-session",
       password: process.env.NUXT_SESSION_PASSWORD || "",
     },
-    singleUser: true,
     webauthn: {
       register: {
         authenticatorSelection: {

@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
   /** @type {Repository} */
   const repository = container.resolve("repository");
 
-  if (config.singleUser) {
+  if (!config.multiUser) {
     const count = await repository.countUsers();
     if (count > 0) throw createError({ statusCode: 409, statusMessage: "User already exists" });
   }
