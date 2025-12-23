@@ -1,3 +1,5 @@
+// @ts-check
+
 export default defineEventHandler(async (event) => {
   const { container } = useNitroApp();
 
@@ -8,7 +10,12 @@ export default defineEventHandler(async (event) => {
   const repository = container.resolve("repository");
 
   const user = await repository.findUserById(userId);
-  if (!user?.isAdmin) return [];
+  if (!user?.isAdmin) {
+    const user = await repository.findUserById(userId);
+    if (user) return { users: [user] }; // Non-admins can only see their own user info
+    return { users: [] };
+  }
 
-  return await repository.findUsers();
+  const users = await repository.findUsers();
+  return { users };
 });

@@ -43,6 +43,12 @@
             <q-item-label>Linkding</q-item-label>
           </q-item-section>
         </q-item>
+        <q-item-label header>Administration</q-item-label>
+        <q-item clickable href="#users">
+          <q-item-section>
+            <q-item-label>User management</q-item-label>
+          </q-item-section>
+        </q-item>
       </q-list>
       <q-separator />
       <UserInfo />
@@ -57,6 +63,8 @@
         <SettingsSystemSettings id="system-settings" />
         <q-separator />
         <SettingsIntegrationForm />
+        <q-separator />
+        <SettingsUserList id="users" />
       </q-page>
     </q-page-container>
   </q-layout>
