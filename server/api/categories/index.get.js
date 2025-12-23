@@ -19,12 +19,14 @@ export default defineEventHandler(async (event) => {
     repository.findImagePks(userId),
   ]);
 
-  return categories.map((category) => ({
-    ...category,
-    feeds: category.feeds.map((feed) => ({
-      ...feed,
-      imageExists: imagePks.includes(buildFeedImageKey(feed.id)),
-      unreadCount: counts[feed.id]?.unread ?? 0,
+  return {
+    categories: categories.map((category) => ({
+      ...category,
+      feeds: category.feeds.map((feed) => ({
+        ...feed,
+        imageExists: imagePks.includes(buildFeedImageKey(feed.id)),
+        unreadCount: counts[feed.id]?.unread ?? 0,
+      })),
     })),
-  }));
+  };
 });

@@ -40,11 +40,9 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 500, statusMessage: "Failed to fetch entry content" });
   }
 
-  const doc = new JSDOM(await res.text(), { url: entry.link });
+  const sanitized = rewriteSanitizedContent(await res.text());
+  const doc = new JSDOM(sanitized, { url: entry.link });
   const reader = new Readability(doc.window.document);
-  const parsed = reader.parse();
-
-  const sanitized = rewriteSanitizedContent(parsed?.content || "");
-  const proxied = proxyImages(sanitized, feed.htmlUrl);
+  const proxied = proxyImages(reader.parse()?.content ?? "", feed.htmlUrl);
   return { content: proxied };
 });

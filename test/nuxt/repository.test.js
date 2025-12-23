@@ -499,18 +499,16 @@ describe("Repository", () => {
       const eve = await createUser("notoggleuser", "notogglepassword");
       const { entryId } = await createEntries(repository, alice);
       {
-        const res = await repository.toggleReadEntry(alice.id, entryId);
-        assert.strictEqual(res, 1);
+        const updated = await repository.updateEntriesStatus(alice.id, [entryId], "read");
+        assert.strictEqual(updated, 1);
       }
       {
-        const res = await repository.toggleReadEntry(alice.id, entryId);
-        assert.strictEqual(res, 1);
+        const updated = await repository.updateEntriesStatus(alice.id, [entryId], "unread");
+        assert.strictEqual(updated, 1);
       }
       // other user
-      await assert.rejects(() => repository.toggleReadEntry(eve.id, entryId), {
-        name: "Error",
-        message: `Entry with id ${entryId} not found`,
-      });
+      const upated = await repository.updateEntriesStatus(eve.id, [entryId], "read");
+      assert.strictEqual(upated, 0);
     });
 
     it("should toggle star entry", async () => {
@@ -518,18 +516,16 @@ describe("Repository", () => {
       const eve = await createUser("notogglestaruser", "notogglestarpassword");
       const { entryId } = await createEntries(repository, alice);
       {
-        const res = await repository.toggleStarEntry(alice.id, entryId);
-        assert.strictEqual(res, 1);
+        const updated = await repository.updateEntriesStatus(alice.id, [entryId], "starred");
+        assert.strictEqual(updated, 1);
       }
       {
-        const res = await repository.toggleStarEntry(alice.id, entryId);
-        assert.strictEqual(res, 1);
+        const updated = await repository.updateEntriesStatus(alice.id, [entryId], "unstarred");
+        assert.strictEqual(updated, 1);
       }
       // other user
-      await assert.rejects(() => repository.toggleStarEntry(eve.id, entryId), {
-        name: "Error",
-        message: `Entry with id ${entryId} not found`,
-      });
+      const updated = await repository.updateEntriesStatus(eve.id, [entryId], "starred");
+      assert.strictEqual(updated, 0);
     });
 
     it("should upsert categories", async () => {

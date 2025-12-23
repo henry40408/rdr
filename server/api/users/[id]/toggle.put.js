@@ -1,3 +1,5 @@
+// @ts-check
+
 import { z } from "zod";
 
 const schema = z.object({
@@ -14,7 +16,7 @@ export default defineEventHandler(async (event) => {
   const repository = container.resolve("repository");
 
   const user = await repository.findUserById(userId);
-  if (!user.isAdmin) throw createError({ statusCode: 403, statusMessage: "Forbidden" });
+  if (!user?.isAdmin) throw createError({ statusCode: 403, statusMessage: "Forbidden" });
 
   const { id } = await getValidatedRouterParams(event, (params) => schema.parse(params));
   if (userId === id) throw createError({ statusCode: 400, statusMessage: "Cannot toggle own user status" });

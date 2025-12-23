@@ -34,8 +34,7 @@ export default defineWebAuthnRegisterEventHandler({
     const found = await repository.findUserByUsername(user.userName);
     if (!found) throw createError({ statusCode: 401, statusMessage: "Unauthorized" });
 
-    const passkey = new PasskeyEntity({
-      id: 0,
+    const passkey = new NewPasskeyEntity({
       userId: found.id,
       credentialId: credential.id,
       publicKey: credential.publicKey,

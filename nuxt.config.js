@@ -20,6 +20,8 @@ export default defineNuxtConfig({
   modules: [
     "@nuxt/eslint",
     "@nuxt/test-utils/module",
+    "@nuxtjs/color-mode",
+    "@pinia/nuxt",
     "@vueuse/nuxt",
     "nuxt-auth-utils",
     "nuxt-quasar-ui",
@@ -27,11 +29,12 @@ export default defineNuxtConfig({
   ],
   runtimeConfig: {
     dbPath: "./data/db.sqlite3",
-    disableSignUp: false,
+    enableSignUp: false,
     errorThreshold: 5,
     httpTimeoutMs: 30_000,
     imageDigestSecret: "",
     logLevel: "",
+    multiUser: false,
     public: {
       buildDate: new Date().toISOString(),
       version: "dev",
@@ -49,7 +52,6 @@ export default defineNuxtConfig({
       name: "nuxt-session",
       password: process.env.NUXT_SESSION_PASSWORD || "",
     },
-    singleUser: true,
     webauthn: {
       register: {
         authenticatorSelection: {
@@ -61,7 +63,7 @@ export default defineNuxtConfig({
   },
   auth: { webAuthn: true },
   quasar: {
-    plugins: ["Dialog", "LoadingBar", "Notify"],
+    plugins: ["Dark", "Dialog", "LoadingBar", "Notify"],
     config: {
       brand: {
         primary: "#4682B4",
@@ -73,6 +75,7 @@ export default defineNuxtConfig({
         warning: "#FFA500",
         // dark: "#2F4F4F", // use default dark color
       },
+      dark: true,
     },
   },
   security: {

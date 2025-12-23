@@ -71,17 +71,17 @@ export class Repository {
 
   /**
    * @param {string|null|undefined} dateString
-   * @returns {string|undefined}
+   * @returns {string}
    */
   convertSqliteDate(dateString) {
-    if (!dateString) return undefined;
-    if (typeof dateString !== "string") return undefined;
+    if (!dateString || typeof dateString !== "string") throw new Error("Invalid date string");
 
     const pattern = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(?:\.\d+)?$/;
-    if (!pattern.test(dateString)) return undefined;
+    if (!pattern.test(dateString)) throw new Error("Invalid date string format");
 
     const date = new Date(`${dateString.replace(" ", "T")}Z`);
-    if (isNaN(date.valueOf())) return undefined;
+    if (isNaN(date.valueOf())) throw new Error("Invalid date string");
+
     return date.toISOString();
   }
 
@@ -256,6 +256,7 @@ export class Repository {
         backedUp: created.backed_up,
         transports: JSON.parse(created.transports),
         displayName: created.display_name,
+        createdAt: this.convertSqliteDate(created.created_at),
       });
     });
   }
@@ -1012,76 +1013,6 @@ export class Repository {
 
   /**
    * @param {number} userId
-   * @param {number} id
-   * @returns {Promise<number>}
-   */
-  async toggleReadEntry(userId, id) {
-    const logger = this.logger.child({ entryId: id });
-    return await this.knex.transaction(async (tx) => {
-      const row = await tx("entries")
-        .whereIn("feed_id", (builder) => {
-          builder
-            .select("id")
-            .from("feeds")
-            .whereIn("category_id", (builder) => {
-              builder.select("id").from("categories").where("user_id", userId);
-            });
-        })
-        .where({ id })
-        .first();
-      if (!row) throw new Error(`Entry with id ${id} not found`);
-
-      const now = new Date();
-      const isoNow = now.toISOString();
-      if (row.read_at) {
-        const updated = await tx("entries").where({ id }).update({ read_at: null, updated_at: isoNow });
-        logger.info({ msg: "Marked entry as unread", updated });
-        return updated;
-      } else {
-        const updated = await tx("entries").where({ id }).update({ read_at: isoNow, updated_at: isoNow });
-        logger.info({ msg: "Marked entry as read", updated });
-        return updated;
-      }
-    });
-  }
-
-  /**
-   * @param {number} userId
-   * @param {number} id
-   * @returns {Promise<number>}
-   */
-  async toggleStarEntry(userId, id) {
-    const logger = this.logger.child({ entryId: id });
-    return await this.knex.transaction(async (tx) => {
-      const row = await tx("entries")
-        .whereIn("feed_id", (builder) => {
-          builder
-            .select("id")
-            .from("feeds")
-            .whereIn("category_id", (builder) => {
-              builder.select("id").from("categories").where("user_id", userId);
-            });
-        })
-        .where({ id })
-        .first();
-      if (!row) throw new Error(`Entry with id ${id} not found`);
-
-      const now = new Date();
-      const isoNow = now.toISOString();
-      if (row.starred_at) {
-        const updated = await tx("entries").where({ id }).update({ starred_at: null, updated_at: isoNow });
-        logger.info({ msg: "Unstarred entry", updated });
-        return updated;
-      } else {
-        const updated = await tx("entries").where({ id }).update({ starred_at: isoNow, updated_at: isoNow });
-        logger.info({ msg: "Starred entry", updated });
-        return updated;
-      }
-    });
-  }
-
-  /**
-   * @param {number} userId
    */
   async toggleUser(userId) {
     const user = await this.findUserById(userId);
@@ -1096,6 +1027,49 @@ export class Repository {
         .update({ disabled_at: this.knex.fn.now(), updated_at: this.knex.fn.now() });
       this.logger.info({ msg: "Disabled user", userId });
     }
+  }
+
+  /**
+   * @param {number} userId
+   * @param {number[]} entryIds
+   * @param {"read"|"unread"|"starred"|"unstarred"} status
+   * @returns {Promise<number>}
+   */
+  async updateEntriesStatus(userId, entryIds, status) {
+    const update = {};
+    switch (status) {
+      case "read":
+        update.read_at = this.knex.fn.now();
+        break;
+      case "unread":
+        update.read_at = null;
+        break;
+      case "starred":
+        update.starred_at = this.knex.fn.now();
+        break;
+      case "unstarred":
+        update.starred_at = null;
+        break;
+    }
+    if (Object.keys(update).length === 0) {
+      this.logger.debug({ msg: "No entry status to update", entryIds, status });
+      return 0;
+    }
+    update.updated_at = this.knex.fn.now();
+
+    const updated = await this.knex("entries")
+      .whereIn("feed_id", (builder) => {
+        builder
+          .select("id")
+          .from("feeds")
+          .whereIn("category_id", (builder) => {
+            builder.select("id").from("categories").where("user_id", userId);
+          });
+      })
+      .whereIn("id", entryIds)
+      .update(update);
+    this.logger.info({ msg: "Updated entries status", entryIds, status, updated });
+    return updated;
   }
 
   /**
