@@ -16,19 +16,29 @@
     <q-drawer v-model="leftDrawerOpen" bordered persistent side="left" show-if-above>
       <q-list>
         <q-item-label header>Navigation</q-item-label>
-        <q-item clickable href="#change-password">
-          <q-item-section>
-            <q-item-label>Change password</q-item-label>
-          </q-item-section>
-        </q-item>
         <q-item clickable href="#passkeys">
           <q-item-section>
             <q-item-label>WebAuthn (Passkeys)</q-item-label>
           </q-item-section>
         </q-item>
+        <q-item clickable href="#change-password">
+          <q-item-section>
+            <q-item-label>Change password</q-item-label>
+          </q-item-section>
+        </q-item>
         <q-item clickable href="#system-settings">
           <q-item-section>
             <q-item-label>System settings</q-item-label>
+          </q-item-section>
+        </q-item>
+        <q-item clickable href="#integration-kagi-summarizer">
+          <q-item-section>
+            <q-item-label>Integration: Kagi summarizer</q-item-label>
+          </q-item-section>
+        </q-item>
+        <q-item clickable href="#integration-linkding">
+          <q-item-section>
+            <q-item-label>Integration: Linkding</q-item-label>
           </q-item-section>
         </q-item>
       </q-list>
@@ -38,9 +48,11 @@
 
     <q-page-container>
       <q-page>
+        <SettingsPasskeyList id="passkeys" />
+        <q-separator />
         <SettingsChangePasswordForm id="change-password" />
         <q-separator />
-        <SettingsPasskeyList id="passkeys" />
+        <SettingsIntegrationForm />
         <q-separator />
         <SettingsSystemSettings id="system-settings" />
       </q-page>

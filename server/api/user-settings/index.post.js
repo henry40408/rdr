@@ -2,7 +2,18 @@
 
 import { z } from "zod";
 
-const schema = z.record(z.string(), z.string());
+const schema = z.record(
+  z.enum([
+    // Kagi
+    "kagiLanguage",
+    "kagiSessionLink",
+    // Linkding
+    "linkdingApiUrl",
+    "linkdingApiToken",
+    "linkdingDefaultTags",
+  ]),
+  z.string(),
+);
 
 export default defineEventHandler(async (event) => {
   const { container } = useNitroApp();
