@@ -31,14 +31,16 @@
             <q-item-label>System settings</q-item-label>
           </q-item-section>
         </q-item>
+        <q-separator />
+        <q-item-label header>Integrations</q-item-label>
         <q-item clickable href="#integration-kagi-summarizer">
           <q-item-section>
-            <q-item-label>Integration: Kagi summarizer</q-item-label>
+            <q-item-label>Kagi summarizer</q-item-label>
           </q-item-section>
         </q-item>
         <q-item clickable href="#integration-linkding">
           <q-item-section>
-            <q-item-label>Integration: Linkding</q-item-label>
+            <q-item-label>Linkding</q-item-label>
           </q-item-section>
         </q-item>
       </q-list>
@@ -52,9 +54,9 @@
         <q-separator />
         <SettingsChangePasswordForm id="change-password" />
         <q-separator />
-        <SettingsIntegrationForm />
-        <q-separator />
         <SettingsSystemSettings id="system-settings" />
+        <q-separator />
+        <SettingsIntegrationForm />
       </q-page>
     </q-page-container>
   </q-layout>
