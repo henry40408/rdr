@@ -71,17 +71,17 @@ export class Repository {
 
   /**
    * @param {string|null|undefined} dateString
-   * @returns {string|undefined}
+   * @returns {string}
    */
   convertSqliteDate(dateString) {
-    if (!dateString) return undefined;
-    if (typeof dateString !== "string") return undefined;
+    if (!dateString || typeof dateString !== "string") throw new Error("Invalid date string");
 
     const pattern = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(?:\.\d+)?$/;
-    if (!pattern.test(dateString)) return undefined;
+    if (!pattern.test(dateString)) throw new Error("Invalid date string format");
 
     const date = new Date(`${dateString.replace(" ", "T")}Z`);
-    if (isNaN(date.valueOf())) return undefined;
+    if (isNaN(date.valueOf())) throw new Error("Invalid date string");
+
     return date.toISOString();
   }
 
@@ -256,6 +256,7 @@ export class Repository {
         backedUp: created.backed_up,
         transports: JSON.parse(created.transports),
         displayName: created.display_name,
+        createdAt: this.convertSqliteDate(created.created_at),
       });
     });
   }

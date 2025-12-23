@@ -19,9 +19,8 @@ export const useCategoryStore = defineStore("category", () => {
   const hideEmpty = useLocalStorage(HIDE_EMPTY, false);
   const showErrorOnly = useLocalStorage(SHOW_ERROR_ONLY, false);
 
-  const categories = ref(
-    /** @type {Awaited<ReturnType<typeof import('../../server/api/categories/index.get').default>>['categories']} */ ([]),
-  );
+  /** @type {Ref<Awaited<ReturnType<typeof import('../../server/api/categories/index.get').default>>['categories']>} */
+  const categories = ref([]);
   const keyword = ref("");
 
   const headers = useRequestHeaders(["cookie"]);

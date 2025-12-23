@@ -1,9 +1,8 @@
 // @ts-check
 
 export const usePasskeyStore = defineStore("passkey", () => {
-  const passkeys = ref(
-    /** @type {Awaited<ReturnType<typeof import('../../server/api/passkeys/index.get').default>>['passkeys']} */ ([]),
-  );
+  /** @type {Ref<Awaited<ReturnType<typeof import('../../server/api/passkeys/index.get').default>>['passkeys']>} */
+  const passkeys = ref([]);
 
   const { user } = useUserSession();
   const { register } = useWebAuthn();

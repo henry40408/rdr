@@ -16,15 +16,18 @@ export const useEntryStore = defineStore("entry", () => {
   const categoryStore = useCategoryStore();
   const route = useRoute();
 
-  const cursor = ref(/** @type { {date:string,id:number} | undefined } */ (undefined));
-  const entryReads = ref(/** @type {Record<number,'unread'|'reading'|'read'>} */ ({}));
-  const entryStars = ref(/** @type {Record<number,'starred'|'starring'|'unstarred'>} */ ({}));
-  const expands = ref(/** @type {Record<number,boolean>} */ ({}));
+  /** @type {Ref<{date:string,id:number}|undefined>} */
+  const cursor = ref(undefined);
+  /** @type {Ref<Record<number,'unread'|'reading'|'read'>>} */
+  const entryReads = ref({});
+  /** @type {Ref<Record<number,'starred'|'starring'|'unstarred'>>} */
+  const entryStars = ref({});
+  /** @type {Ref<Record<number,boolean>>} */
+  const expands = ref({});
   const hasMore = ref(true);
   const limit = ref(30);
-  const items = ref(
-    /** @type {Awaited<ReturnType<typeof import('../../server/api/entries.get').default>>['items']} */ ([]),
-  );
+  /** @type {Ref<Awaited<ReturnType<typeof import('../../server/api/entries.get').default>>['items']>} */
+  const items = ref([]);
   const search = ref(route.query.search?.toString());
   const selectedFeedId = ref(route.query.feedId?.toString());
   const selectedCategoryId = ref(route.query.categoryId?.toString());

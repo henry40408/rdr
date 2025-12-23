@@ -3,12 +3,12 @@
 /**
  * @param {UserEntity[]} users
  * @param {boolean} multiUser
- * @param {boolean} disableSignUp
+ * @param {boolean} enableSignUp
  */
-function canSignup(users, multiUser, disableSignUp) {
+function canSignup(users, multiUser, enableSignUp) {
   if (users.length <= 0) return true;
   if (!multiUser) return false;
-  return !disableSignUp;
+  return enableSignUp;
 }
 
 export default defineEventHandler(async () => {
@@ -21,7 +21,7 @@ export default defineEventHandler(async () => {
   const users = await repository.findUsers();
   return {
     canLogin: users.length > 0,
-    canSignup: canSignup(users, config.multiUser, config.disableSignUp),
+    canSignup: canSignup(users, config.multiUser, config.enableSignUp),
     config: {
       errorThreshold: config.errorThreshold,
       httpTimeoutMs: config.httpTimeoutMs,

@@ -1,11 +1,17 @@
 <template>
   <q-item>
     <q-item-section>
-      <q-item-label>{{ passkey.displayName || passkey.credentialId }}</q-item-label>
-      <q-item-label caption>Credential ID: {{ passkey.credentialId }}</q-item-label>
+      <q-item-label>
+        <span v-if="passkey.displayName">{{ passkey.displayName }}</span>
+        <q-badge v-else color="secondary">Unnamed</q-badge>
+      </q-item-label>
+      <q-item-label caption>
+        Credential ID: {{ passkey.credentialId }}, Created at:
+        <DateTime :datetime="passkey.createdAt" />
+      </q-item-label>
     </q-item-section>
     <q-item-section side>
-      <q-btn flat icon="delete" color="negative" @click="onDeletePasskey()" />
+      <q-btn flat round icon="delete" color="negative" @click="onDeletePasskey()" />
     </q-item-section>
   </q-item>
 </template>
@@ -17,6 +23,7 @@ const props = defineProps<{
   passkey: {
     id: number;
     credentialId: string;
+    createdAt: string;
     displayName?: string;
   };
 }>();

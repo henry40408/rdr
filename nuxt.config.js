@@ -29,7 +29,7 @@ export default defineNuxtConfig({
   ],
   runtimeConfig: {
     dbPath: "./data/db.sqlite3",
-    disableSignUp: false,
+    enableSignUp: false,
     errorThreshold: 5,
     httpTimeoutMs: 30_000,
     imageDigestSecret: "",
