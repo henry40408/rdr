@@ -12,18 +12,17 @@ export default defineEventHandler(async (event) => {
   const repository = container.resolve("repository");
 
   const user = await repository.findUserById(userId);
-  if (!user?.isAdmin) return [];
+
+  /** @type {(JobEntity & { description: string })[]} */
+  const jobs = [];
+  if (!user?.isAdmin) return { jobs };
 
   const entities = await repository.findJobs();
-  return jobService.jobs.map((job) => {
-    const entity = entities.find((e) => e.name === job.name);
-    return {
-      name: job.name,
-      description: job.description,
-      pausedAt: entity?.pausedAt,
-      lastDate: entity?.lastDate,
-      lastDurationMs: entity?.lastDurationMs,
-      lastError: entity?.lastError,
-    };
-  });
+  for (const entity of entities) {
+    const job = jobService.jobs.find((j) => j.name === entity.name);
+    if (!job) continue;
+    jobs.push({ ...entity, description: job.description });
+  }
+
+  return { jobs };
 });

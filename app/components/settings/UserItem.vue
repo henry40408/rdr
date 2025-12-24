@@ -16,7 +16,7 @@
       </q-item-label>
     </q-item-section>
     <q-item-section side>
-      <q-toggle :model-value="enabled" :disable="isCurrentUser" @update:model-value="toggleUser" />
+      <q-toggle :model-value="enabled" :disable="isCurrentUser || pending" @update:model-value="toggleUser" />
     </q-item-section>
   </q-item>
 </template>
@@ -40,7 +40,7 @@ const isCurrentUser = computed(() => props.user.username === session?.value?.use
 
 const enabled = ref(!props.user.disabledAt);
 
-const { execute } = useFetch(`/api/users/${props.user.id}/toggle`, {
+const { pending, execute, error } = useFetch(`/api/users/${props.user.id}/toggle`, {
   method: "PUT",
   immediate: false,
 });
@@ -48,6 +48,7 @@ async function toggleUser() {
   const oldVal = enabled.value;
   try {
     await execute();
+    if (error.value) throw error.value;
     $q.notify({
       type: "positive",
       message: `User "${props.user.username}" has been ${oldVal ? "disabled" : "enabled"}.`,
