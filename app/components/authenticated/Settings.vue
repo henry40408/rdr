@@ -43,7 +43,13 @@
             <q-item-label>Linkding</q-item-label>
           </q-item-section>
         </q-item>
+        <q-separator />
         <q-item-label header>Administration</q-item-label>
+        <q-item clickable href="#jobs">
+          <q-item-section>
+            <q-item-label>Job management</q-item-label>
+          </q-item-section>
+        </q-item>
         <q-item clickable href="#users">
           <q-item-section>
             <q-item-label>User management</q-item-label>
@@ -64,6 +70,8 @@
         <q-separator />
         <SettingsIntegrationForm />
         <q-separator />
+        <SettingsJobList id="jobs" />
+        <q-separator />
         <SettingsUserList id="users" />
       </q-page>
     </q-page-container>
@@ -82,11 +90,18 @@ onMounted(() => {
 });
 
 const featureStore = useFeatureStore();
+const jobStore = useJobStore();
 const passkeyStore = usePasskeyStore();
 const systemSettingsStore = useSystemSettingsStore();
 const userStore = useUserStore();
 
 const leftDrawerOpen = ref(false);
 
-await Promise.all([featureStore.load(), passkeyStore.load(), systemSettingsStore.load(), userStore.load()]);
+await Promise.all([
+  featureStore.load(),
+  jobStore.load(),
+  passkeyStore.load(),
+  systemSettingsStore.load(),
+  userStore.load(),
+]);
 </script>

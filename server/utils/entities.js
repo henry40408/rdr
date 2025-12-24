@@ -216,7 +216,7 @@ export class JobEntity {
    * @param {object} opts
    * @param {number} opts.id
    * @param {string} opts.name
-   * @param {string|null} [opts.pausedAt]
+   * @param {string} [opts.pausedAt]
    * @param {string} [opts.lastDate]
    * @param {number} [opts.lastDurationMs]
    * @param {string} [opts.lastError]
@@ -224,7 +224,7 @@ export class JobEntity {
   constructor({ id, name, pausedAt, lastDate, lastDurationMs, lastError }) {
     this.id = id;
     this.name = name;
-    this.pausedAt = pausedAt;
+    this.pausedAt = pausedAt ?? undefined;
     this.lastDate = lastDate;
     this.lastDurationMs = lastDurationMs;
     this.lastError = lastError;

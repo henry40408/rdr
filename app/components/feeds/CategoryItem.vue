@@ -3,7 +3,7 @@
     <q-expansion-item :id="`category-${category.id}`" group="category">
       <template #header>
         <q-item-section side>
-          <q-icon size="xs" name="category" />
+          <q-icon name="category" />
         </q-item-section>
         <q-item-section>
           <q-item-label>

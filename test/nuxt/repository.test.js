@@ -879,7 +879,7 @@ describe("Repository", () => {
       assert.strictEqual(jobs.length, 1);
       assert.ok(jobs[0] instanceof JobEntity);
       assert.strictEqual(jobs[0].name, job.name);
-      assert.strictEqual(jobs[0].pausedAt, null);
+      assert.strictEqual(jobs[0].pausedAt, undefined);
     });
 
     it("should delete feed and its entries", async () => {

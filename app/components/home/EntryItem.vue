@@ -26,10 +26,7 @@
         </q-item-label>
         <q-item-label>
           <span class="q-mr-sm">
-            <q-avatar v-if="imageExists" square size="xs" color="white">
-              <img :alt="`Feed image of ${feed.title}`" :src="`/api/images/external/${buildFeedImageKey(feed.id)}`" />
-            </q-avatar>
-            <q-icon v-else size="xs" name="rss_feed" />
+            <FeedIcon :feed="{ ...feed, imageExists }" />
           </span>
           <MarkedText :text="entry.title" :keyword="entryStore.search" />
         </q-item-label>
@@ -170,7 +167,7 @@ const expanded = computed(() => !!entryStore.expands[props.entry.id]);
 const read = computed(() => entryStore.entryReads[props.entry.id] === "read");
 const starred = computed(() => entryStore.entryStars[props.entry.id] === "starred");
 const imageExists = computed(
-  () => categoryStore.categories.flatMap((c) => c.feeds).find((f) => f.id === props.feed.id)?.imageExists,
+  () => categoryStore.categories.flatMap((c) => c.feeds).find((f) => f.id === props.feed.id)?.imageExists ?? false,
 );
 
 const {
