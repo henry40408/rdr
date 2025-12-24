@@ -7,10 +7,7 @@
         <q-icon v-else name="pending" />
       </q-item-section>
       <q-item-section side>
-        <q-avatar v-if="feed.imageExists" square size="xs" color="white">
-          <img :src="`/api/images/external/${buildFeedImageKey(feed.id)}`" />
-        </q-avatar>
-        <q-icon v-else size="xs" name="rss_feed" />
+        <FeedIcon :feed="feed" />
       </q-item-section>
       <q-item-section>
         <q-item-label lines="1">

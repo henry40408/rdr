@@ -1,21 +1,47 @@
 <template>
-  <q-item>
-    <q-item-section side>
-      <q-icon name="schedule" :color="job.pausedAt ? 'negative' : 'positive'" />
-    </q-item-section>
-    <q-item-section>
-      <q-item-label>{{ job.name }}</q-item-label>
-      <q-item-label caption>{{ job.description }}</q-item-label>
-      <q-item-label caption>
-        Paused at: <DateTime v-if="job.pausedAt" :datetime="job.pausedAt" /> <span v-else>Not paused</span>, Last run:
-        <DateTime v-if="job.lastDate" :datetime="job.lastDate" />
-        <span v-else>Never</span>
-      </q-item-label>
-    </q-item-section>
-    <q-item-section side>
-      <q-toggle :disable="pending" :model-value="enabled" @update:model-value="toggleJob" />
-    </q-item-section>
-  </q-item>
+  <q-expansion-item>
+    <template #header>
+      <q-item-section side>
+        <q-icon v-if="job.lastError" name="error" color="negative" />
+        <q-icon v-else name="schedule" :color="job.pausedAt ? 'negative' : 'positive'" />
+      </q-item-section>
+      <q-item-section>
+        <q-item-label>{{ job.name }}</q-item-label>
+        <q-item-label caption>{{ job.description }}</q-item-label>
+      </q-item-section>
+      <q-item-section side>
+        <q-toggle :disable="pending" :model-value="enabled" @update:model-value="toggleJob" />
+      </q-item-section>
+    </template>
+
+    <q-list>
+      <q-item>
+        <q-item-section>
+          <q-item-label caption>Paused at</q-item-label>
+          <q-item-label>
+            <DateTime v-if="job.pausedAt" :datetime="job.pausedAt" />
+            <span v-else>Not paused</span>
+          </q-item-label>
+        </q-item-section>
+        <q-item-section>
+          <q-item-label caption>Last run</q-item-label>
+          <q-item-label>
+            <DateTime v-if="job.lastDate" :datetime="job.lastDate" />
+            <span v-else>Never</span>
+          </q-item-label>
+        </q-item-section>
+      </q-item>
+      <q-item>
+        <q-item-section>
+          <q-item-label caption>Last error</q-item-label>
+          <q-item-label>
+            <span v-if="job.lastError">{{ job.lastError }}</span>
+            <span v-else>None</span>
+          </q-item-label>
+        </q-item-section>
+      </q-item>
+    </q-list>
+  </q-expansion-item>
 </template>
 
 <script setup lang="ts">
@@ -26,6 +52,7 @@ const props = defineProps<{
     name: string;
     description: string;
     lastDate?: string;
+    lastError?: string;
     pausedAt?: string;
   };
 }>();
