@@ -5,12 +5,7 @@ export const useJobStore = defineStore("job", () => {
   const jobs = ref([]);
 
   const headers = useRequestHeaders(["cookie"]);
-  const { data, refresh, pending } = useFetch("/api/jobs", {
-    key: "jobs",
-    headers,
-    immediate: false,
-    watch: false,
-  });
+  const { data, refresh, pending } = useFetch("/api/jobs", { key: "jobs", headers });
 
   async function load() {
     await refresh();

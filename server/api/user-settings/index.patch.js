@@ -10,7 +10,7 @@ const schema = z.xor([
   z.object({
     linkdingApiUrl: z.union([z.url(), z.literal("")]),
     linkdingApiToken: z.string(),
-    linkdingDefaultTags: z.array(z.string()).transform((tags) => JSON.stringify(tags)),
+    linkdingDefaultTags: z.string(),
   }),
 ]);
 
