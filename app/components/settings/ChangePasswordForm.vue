@@ -44,7 +44,7 @@
       </q-item>
       <q-item>
         <q-item-section>
-          <q-btn type="submit" color="primary" :loading="updating" label="Change Password" />
+          <q-btn type="submit" color="primary" label="Change Password" :loading="saveStatus === 'pending'" />
         </q-item-section>
       </q-item>
     </q-list>
@@ -84,36 +84,36 @@ function validate(newModel: NewPasswordModel) {
   return true;
 }
 
-const {
-  pending: updating,
-  error: updateError,
-  execute: updatePassword,
-} = useFetch("/api/change-password", {
-  key: "change-password",
-  method: "POST",
-  body: model,
-  immediate: false,
-  watch: false,
-});
+const saveStatus = ref<"idle" | "pending" | "success" | "error">("idle");
 async function save(newModel: NewPasswordModel) {
   if (!validate(newModel)) return;
+
+  saveStatus.value = "pending";
   try {
-    await updatePassword();
-    if (updateError.value) throw updateError.value;
-    $q.notify({
-      type: "positive",
-      message: "Password changed successfully",
+    await $fetch(`/api/settings/change-password`, {
+      method: "POST",
+      body: {
+        currentPassword: newModel.currentPassword,
+        newPassword: newModel.newPassword,
+        confirmPassword: newModel.confirmPassword,
+      },
     });
+    saveStatus.value = "success";
     model.value = {
       currentPassword: "",
       newPassword: "",
       confirmPassword: "",
     };
+    $q.notify({
+      type: "positive",
+      message: "Password changed successfully",
+    });
   } catch (err) {
     $q.notify({
       type: "negative",
       message: `Failed to change password: ${err}`,
     });
+    saveStatus.value = "error";
   }
 }
 </script>

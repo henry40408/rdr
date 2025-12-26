@@ -3,10 +3,10 @@
     <q-list>
       <q-item-label header>Integration: Kagi summarizer</q-item-label>
       <q-banner :class="$q.dark.isActive ? 'bg-grey-9 text-white' : 'bg-grey-3'">
-        <q-icon v-if="store.summarizationEnabled" class="q-mr-sm" color="positive" name="check_circle" />
+        <q-icon v-if="enabled" class="q-mr-sm" color="positive" name="check_circle" />
         <q-icon v-else name="block" class="q-mr-sm" color="negative" />
         Kagi Summarizer integration is
-        <span v-if="store.summarizationEnabled">enabled</span>
+        <span v-if="enabled">enabled</span>
         <span v-else>disabled</span>.
       </q-banner>
       <q-item>
@@ -106,36 +106,38 @@ interface KagiSummarizerModel {
   kagiSessionLink: string;
 }
 
-const headers = useRequestHeaders(["cookie"]);
-const { data } = await useFetch("/api/user-settings", { headers });
+const userSettingsStore = useUserSettingsStore();
+
+const enabled = computed(() => !!userSettingsStore.data?.kagiSessionLink?.trim());
+
 const model = ref<KagiSummarizerModel>({
-  kagiLanguage: options.find((o) => o.value === data.value?.kagiLanguage)?.value ?? defaultOption.value,
-  kagiSessionLink: data.value?.kagiSessionLink ?? "",
+  kagiLanguage: options.find((o) => o.value === userSettingsStore.data?.kagiLanguage)?.value ?? defaultOption.value,
+  kagiSessionLink: userSettingsStore.data?.kagiSessionLink ?? "",
 });
 
-const store = useFeatureStore();
-
-const { pending, error, execute } = useFetch("/api/user-settings", {
-  key: "kagi-summarizer-settings",
-  method: "POST",
-  body: model,
-  immediate: false,
-  watch: false,
-});
+const pending = ref(false);
 async function save() {
+  pending.value = true;
   try {
-    await execute();
-    if (error.value) throw error.value;
+    await $fetch("/api/user-settings", {
+      method: "PATCH",
+      body: {
+        kagiLanguage: model.value.kagiLanguage,
+        kagiSessionLink: model.value.kagiSessionLink,
+      },
+    });
     $q.notify({
       type: "positive",
       message: "Kagi Summarizer settings saved successfully",
     });
-    store.load();
+    userSettingsStore.load();
   } catch (err) {
     $q.notify({
       type: "negative",
       message: `Failed to save Kagi Summarizer settings: ${err}`,
     });
+  } finally {
+    pending.value = false;
   }
 }
 </script>

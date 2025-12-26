@@ -27,8 +27,8 @@
             icon="visibility"
             :href="$router.resolve({ name: 'index', query: { categoryId: category.id, feedId: feed.id } }).href"
           />
-          <q-btn icon="refresh" label="Refresh" :loading="refreshing" @click="onRefreshFeed()" />
-          <q-btn icon="delete" label="Delete" color="negative" :loading="deleting" @click="onDeleteFeed()" />
+          <q-btn icon="refresh" label="Refresh" :loading="refreshing" @click="refreshFeed()" />
+          <q-btn icon="delete" label="Delete" color="negative" :loading="deleting" @click="deleteFeed()" />
         </q-btn-group>
       </q-item>
       <q-item>
@@ -205,40 +205,38 @@ const show = computed(() => {
   return true;
 });
 
-const { pending: deleting, execute: deleteFeed } = useFetch(`/api/feeds/${props.feed.id}`, {
-  key: `delete-feed-${props.feed.id}`,
-  method: "DELETE",
-  immediate: false,
-});
-async function onDeleteFeed() {
+const deleting = ref(false);
+function deleteFeed() {
   $q.dialog({
     title: "Delete Feed",
     message: `Are you sure you want to delete the feed "${props.feed.title}"? This action cannot be undone.`,
     cancel: true,
     ok: { color: "negative" },
   }).onOk(async () => {
+    deleting.value = true;
     try {
-      await deleteFeed();
+      await $fetch(`/api/feeds/${props.feed.id}`, { method: "DELETE" });
       $q.notify({ type: "positive", message: `Feed "${props.feed.title}" deleted successfully.` });
       store.load();
     } catch (err) {
       $q.notify({ type: "negative", message: `Failed to delete feed "${props.feed.title}": ${err}` });
+    } finally {
+      deleting.value = false;
     }
   });
 }
 
-const { pending: refreshing, execute: refreshFeed } = useFetch(`/api/feeds/${props.feed.id}/refresh`, {
-  key: `refresh-feed-${props.feed.id}`,
-  method: "POST",
-  immediate: false,
-});
-async function onRefreshFeed() {
+const refreshing = ref(false);
+async function refreshFeed() {
+  refreshing.value = true;
   try {
-    await refreshFeed();
+    await $fetch(`/api/feeds/${props.feed.id}/refresh`, { method: "POST" });
     $q.notify({ type: "positive", message: `Feed "${props.feed.title}" refreshed.` });
     store.load();
   } catch (err) {
     $q.notify({ type: "negative", message: `Failed to refresh feed "${props.feed.title}": ${err}` });
+  } finally {
+    refreshing.value = false;
   }
 }
 

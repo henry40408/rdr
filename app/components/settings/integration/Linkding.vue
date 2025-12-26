@@ -62,38 +62,43 @@ interface LinkdingModel {
   linkdingDefaultTags: string[];
 }
 
-const headers = useRequestHeaders(["cookie"]);
-const { data } = await useFetch("/api/user-settings", { headers });
+const userSettingsStore = useUserSettingsStore();
 
-const enabled = ref(!!data.value?.linkdingApiUrl?.trim() && !!data.value?.linkdingApiToken?.trim());
+const enabled = ref(
+  !!userSettingsStore.data?.linkdingApiUrl?.trim() && !!userSettingsStore.data?.linkdingApiToken?.trim(),
+);
 const model = ref<LinkdingModel>({
-  linkdingApiUrl: data.value?.linkdingApiUrl ?? "",
-  linkdingApiToken: data.value?.linkdingApiToken ?? "",
-  linkdingDefaultTags: (data.value?.linkdingDefaultTags && JSON.parse(data.value.linkdingDefaultTags)) ?? [],
+  linkdingApiUrl: userSettingsStore.data?.linkdingApiUrl ?? "",
+  linkdingApiToken: userSettingsStore.data?.linkdingApiToken ?? "",
+  linkdingDefaultTags:
+    (userSettingsStore.data?.linkdingDefaultTags && JSON.parse(userSettingsStore.data.linkdingDefaultTags)) ?? [],
 });
 
-const { pending, error, execute } = useFetch("/api/user-settings", {
-  key: "update-linkding-settings",
-  method: "POST",
-  body: model,
-  immediate: false,
-  watch: false,
-});
-
+const pending = ref(false);
 async function save() {
+  pending.value = true;
   try {
-    await execute();
-    if (error.value) throw error.value;
+    await $fetch("/api/user-settings", {
+      method: "PATCH",
+      body: {
+        linkdingApiUrl: model.value.linkdingApiUrl,
+        linkdingApiToken: model.value.linkdingApiToken,
+        linkdingDefaultTags: JSON.stringify(model.value.linkdingDefaultTags),
+      },
+    });
     $q.notify({
       type: "positive",
       message: "Linkding settings saved successfully",
     });
     enabled.value = !!model.value.linkdingApiUrl.trim() && !!model.value.linkdingApiToken.trim();
+    userSettingsStore.load();
   } catch (err) {
     $q.notify({
       type: "negative",
       message: `Failed to save Linkding settings: ${err}`,
     });
+  } finally {
+    pending.value = false;
   }
 }
 </script>
