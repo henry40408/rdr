@@ -106,13 +106,13 @@ interface KagiSummarizerModel {
   kagiSessionLink: string;
 }
 
-const userSettingsStore = useUserSettingsStore();
+const store = useUserSettingsStore();
 
-const enabled = computed(() => !!userSettingsStore.data?.kagiSessionLink?.trim());
+const enabled = computed(() => !!store.userSettingsData?.kagiSessionLink?.trim());
 
 const model = ref<KagiSummarizerModel>({
-  kagiLanguage: options.find((o) => o.value === userSettingsStore.data?.kagiLanguage)?.value ?? defaultOption.value,
-  kagiSessionLink: userSettingsStore.data?.kagiSessionLink ?? "",
+  kagiLanguage: options.find((o) => o.value === store.userSettingsData?.kagiLanguage)?.value ?? defaultOption.value,
+  kagiSessionLink: store.userSettingsData?.kagiSessionLink ?? "",
 });
 
 const pending = ref(false);
@@ -130,7 +130,7 @@ async function save() {
       type: "positive",
       message: "Kagi Summarizer settings saved successfully",
     });
-    userSettingsStore.load();
+    store.load();
   } catch (err) {
     $q.notify({
       type: "negative",

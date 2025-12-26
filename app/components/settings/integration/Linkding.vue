@@ -62,16 +62,16 @@ interface LinkdingModel {
   linkdingDefaultTags: string[];
 }
 
-const userSettingsStore = useUserSettingsStore();
+const store = useUserSettingsStore();
 
 const enabled = ref(
-  !!userSettingsStore.data?.linkdingApiUrl?.trim() && !!userSettingsStore.data?.linkdingApiToken?.trim(),
+  !!store.userSettingsData?.linkdingApiUrl?.trim() && !!store.userSettingsData?.linkdingApiToken?.trim(),
 );
 const model = ref<LinkdingModel>({
-  linkdingApiUrl: userSettingsStore.data?.linkdingApiUrl ?? "",
-  linkdingApiToken: userSettingsStore.data?.linkdingApiToken ?? "",
+  linkdingApiUrl: store.userSettingsData?.linkdingApiUrl ?? "",
+  linkdingApiToken: store.userSettingsData?.linkdingApiToken ?? "",
   linkdingDefaultTags:
-    (userSettingsStore.data?.linkdingDefaultTags && JSON.parse(userSettingsStore.data.linkdingDefaultTags)) ?? [],
+    (store.userSettingsData?.linkdingDefaultTags && JSON.parse(store.userSettingsData.linkdingDefaultTags)) ?? [],
 });
 
 const pending = ref(false);
@@ -91,7 +91,7 @@ async function save() {
       message: "Linkding settings saved successfully",
     });
     enabled.value = !!model.value.linkdingApiUrl.trim() && !!model.value.linkdingApiToken.trim();
-    userSettingsStore.load();
+    store.load();
   } catch (err) {
     $q.notify({
       type: "negative",
