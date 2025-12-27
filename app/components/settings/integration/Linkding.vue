@@ -64,14 +64,12 @@ interface LinkdingModel {
 
 const store = useUserSettingsStore();
 
-const enabled = ref(
-  !!store.userSettingsData?.linkdingApiUrl?.trim() && !!store.userSettingsData?.linkdingApiToken?.trim(),
-);
+const enabled = ref(!!store.userSettings?.linkdingApiUrl?.trim() && !!store.userSettings?.linkdingApiToken?.trim());
 const model = ref<LinkdingModel>({
-  linkdingApiUrl: store.userSettingsData?.linkdingApiUrl ?? "",
-  linkdingApiToken: store.userSettingsData?.linkdingApiToken ?? "",
+  linkdingApiUrl: store.userSettings?.linkdingApiUrl ?? "",
+  linkdingApiToken: store.userSettings?.linkdingApiToken ?? "",
   linkdingDefaultTags:
-    (store.userSettingsData?.linkdingDefaultTags && JSON.parse(store.userSettingsData.linkdingDefaultTags)) ?? [],
+    (store.userSettings?.linkdingDefaultTags && JSON.parse(store.userSettings.linkdingDefaultTags)) ?? [],
 });
 
 const pending = ref(false);

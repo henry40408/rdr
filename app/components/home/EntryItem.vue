@@ -86,7 +86,7 @@
               icon="psychology"
               label="Summarize"
               :loading="summarizationStatus === 'pending'"
-              :disabled="!userSettingsStore.featureData?.summarization"
+              :disabled="!userSettingsStore.features?.summarization"
               @click="loadSummarization()"
             />
             <q-btn v-else icon="clear" label="Clear summary" @click="clearSummarization()" />
@@ -95,7 +95,7 @@
               icon="save"
               label="Save"
               :loading="saveStatus === 'pending'"
-              :disabled="!userSettingsStore.featureData?.save"
+              :disabled="!userSettingsStore.features?.save"
               @click="saveEntry()"
             />
             <q-btn v-else disable icon="check" label="Saved" />

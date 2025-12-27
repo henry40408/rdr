@@ -11,9 +11,12 @@ export const useUserSettingsStore = defineStore("userSettings", () => {
     headers,
   });
 
+  const features = computed(() => featureData.value);
+  const userSettings = computed(() => userSettingsData.value);
+
   async function load() {
     await Promise.all([loadFeatures(), loadUserSettings()]);
   }
 
-  return { featureData, userSettingsData, load };
+  return { features, userSettings, load };
 });

@@ -108,11 +108,11 @@ interface KagiSummarizerModel {
 
 const store = useUserSettingsStore();
 
-const enabled = computed(() => !!store.userSettingsData?.kagiSessionLink?.trim());
+const enabled = computed(() => !!store.userSettings?.kagiSessionLink?.trim());
 
 const model = ref<KagiSummarizerModel>({
-  kagiLanguage: options.find((o) => o.value === store.userSettingsData?.kagiLanguage)?.value ?? defaultOption.value,
-  kagiSessionLink: store.userSettingsData?.kagiSessionLink ?? "",
+  kagiLanguage: options.find((o) => o.value === store.userSettings?.kagiLanguage)?.value ?? defaultOption.value,
+  kagiSessionLink: store.userSettings?.kagiSessionLink ?? "",
 });
 
 const pending = ref(false);
