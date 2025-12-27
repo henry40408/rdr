@@ -2,15 +2,15 @@
   <q-expansion-item>
     <template #header>
       <q-item-section side>
+        <q-toggle :disable="toggling" :model-value="enabled" @update:model-value="toggleJob" />
+      </q-item-section>
+      <q-item-section side>
         <q-icon v-if="job.lastError" name="error" color="negative" />
         <q-icon v-else name="schedule" :color="job.pausedAt ? 'negative' : 'positive'" />
       </q-item-section>
       <q-item-section>
         <q-item-label>{{ job.name }}</q-item-label>
         <q-item-label caption>{{ job.description }}</q-item-label>
-      </q-item-section>
-      <q-item-section side>
-        <q-toggle :disable="toggling" :model-value="enabled" @update:model-value="toggleJob" />
       </q-item-section>
     </template>
 

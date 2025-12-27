@@ -1,14 +1,14 @@
 <template>
   <q-expansion-item>
     <template #header>
+      <q-item-section side>
+        <q-toggle :model-value="enabled" :disable="isCurrentUser || toggling" @update:model-value="toggleUser" />
+      </q-item-section>
       <q-item-section>
         <q-item-label>
           {{ user.username }}
           <q-badge v-if="isCurrentUser">You</q-badge>
         </q-item-label>
-      </q-item-section>
-      <q-item-section side>
-        <q-toggle :model-value="enabled" :disable="isCurrentUser || toggling" @update:model-value="toggleUser" />
       </q-item-section>
     </template>
 
