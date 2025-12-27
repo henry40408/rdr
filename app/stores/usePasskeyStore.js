@@ -8,16 +8,7 @@ export const usePasskeyStore = defineStore("passkey", () => {
   const { register } = useWebAuthn();
 
   const headers = useRequestHeaders(["cookie"]);
-  const {
-    data,
-    refresh,
-    pending: refreshing,
-  } = useFetch("/api/passkeys", {
-    key: "passkeys",
-    headers,
-    immediate: false,
-    watch: false,
-  });
+  const { data, refresh, pending } = useFetch("/api/passkeys", { key: "passkeys", headers });
 
   /**
    * @param {string} displayName
@@ -43,7 +34,7 @@ export const usePasskeyStore = defineStore("passkey", () => {
 
   return {
     passkeys,
-    refreshing,
+    pending,
     registerPasskey,
     deletePasskey,
     load,

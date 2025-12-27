@@ -1,5 +1,6 @@
 <template>
-  <q-layout view="lHh Lpr lFf">
+  <slot v-if="loggedIn" />
+  <q-layout v-else view="lHh Lpr lFf">
     <q-page-container>
       <q-page class="flex flex-center">
         <q-card style="width: 80vw">
@@ -21,7 +22,7 @@
             </ClientOnly>
           </q-card-section>
           <q-separator />
-          <q-form @submit="onSubmit('login')">
+          <q-form @submit="login">
             <q-card-section class="q-gutter-md">
               <q-input v-model="username" outlined required label="Username" autocomplete="username" />
               <q-input
@@ -40,7 +41,7 @@
                 icon="person_add"
                 :loading="loading"
                 :disable="!store.canSignup"
-                @click="onSubmit('signup')"
+                @click="signup"
               />
               <q-btn
                 icon="login"
@@ -59,10 +60,9 @@
 </template>
 
 <script setup lang="ts">
-const emit = defineEmits<{ authenticated: [] }>();
-
 const $q = useQuasar();
 const store = useSystemSettingsStore();
+const { loggedIn, fetch: fetchSession } = useUserSession();
 const { authenticate, isSupported } = useWebAuthn();
 
 const username = ref("");
@@ -72,27 +72,19 @@ const error = ref("");
 
 const isWebAuthnSupported = computed(() => store.canLogin && isSupported.value);
 
-async function onSubmit(action: "login" | "signup") {
-  if (action === "login") login();
-  else signup();
-}
-
 async function login() {
   error.value = "";
   loading.value = true;
   try {
     await $fetch("/api/login", {
       method: "POST",
-      body: {
-        username: username.value,
-        password: password.value,
-      },
+      body: { username: username.value, password: password.value },
     });
+    await fetchSession();
     $q.notify({
       type: "positive",
       message: "Log in successfully.",
     });
-    emit("authenticated");
   } catch (err) {
     error.value = String(err);
   } finally {
@@ -105,11 +97,11 @@ async function loginWithWebAuthn() {
   loading.value = true;
   try {
     await authenticate();
+    await fetchSession();
     $q.notify({
       type: "positive",
       message: "Authenticate with WebAuthn successfully.",
     });
-    emit("authenticated");
   } catch (err) {
     error.value = String(err);
   } finally {
@@ -123,16 +115,13 @@ async function signup() {
   try {
     await $fetch("/api/signup", {
       method: "POST",
-      body: {
-        username: username.value,
-        password: password.value,
-      },
+      body: { username: username.value, password: password.value },
     });
+    await fetchSession();
     $q.notify({
       type: "positive",
       message: "Sign up successfully.",
     });
-    emit("authenticated");
   } catch (err) {
     error.value = String(err);
   } finally {

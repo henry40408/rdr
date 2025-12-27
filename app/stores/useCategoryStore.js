@@ -24,16 +24,7 @@ export const useCategoryStore = defineStore("category", () => {
   const keyword = ref("");
 
   const headers = useRequestHeaders(["cookie"]);
-  const {
-    data,
-    refresh,
-    pending: refreshing,
-  } = useFetch("/api/categories", {
-    key: "categories",
-    headers,
-    immediate: false,
-    watch: false,
-  });
+  const { data, refresh, pending } = useFetch("/api/categories", { key: "categories", headers });
 
   const sortedCategories = computed(() =>
     categories.value
@@ -78,7 +69,7 @@ export const useCategoryStore = defineStore("category", () => {
     showErrorOnly: skipHydrate(showErrorOnly),
     categories,
     keyword,
-    refreshing,
+    pending,
     sortedCategories,
     load,
   };

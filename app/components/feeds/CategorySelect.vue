@@ -6,6 +6,7 @@
     emit-value
     map-options
     :error="error"
+    hide-bottom-space
     :options="options"
     label="Category name *"
     :error-message="errorMessage"

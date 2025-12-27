@@ -1,17 +1,27 @@
 <template>
-  <q-form @submit="save">
+  <q-form @submit="onSubmit">
     <q-list>
       <q-item-label header>Integration: Kagi summarizer</q-item-label>
       <q-banner :class="$q.dark.isActive ? 'bg-grey-9 text-white' : 'bg-grey-3'">
-        <q-icon v-if="store.summarizationEnabled" class="q-mr-sm" color="positive" name="check_circle" />
+        <q-icon v-if="enabled" class="q-mr-sm" color="positive" name="check_circle" />
         <q-icon v-else name="block" class="q-mr-sm" color="negative" />
         Kagi Summarizer integration is
-        <span v-if="store.summarizationEnabled">enabled</span>
+        <span v-if="enabled">enabled</span>
         <span v-else>disabled</span>.
       </q-banner>
       <q-item>
         <q-item-section>
-          <q-select v-model="model.kagiLanguage" filled emit-value map-options label="Language" :options="options" />
+          <q-select
+            v-model="model.kagiLanguage"
+            filled
+            emit-value
+            map-options
+            :error="error"
+            label="Language"
+            hide-bottom-space
+            :options="options"
+            :error-message="errors.kagiLanguage"
+          />
         </q-item-section>
       </q-item>
       <q-item>
@@ -20,7 +30,11 @@
             v-model="model.kagiSessionLink"
             filled
             clearable
+            type="url"
+            :error="error"
+            hide-bottom-space
             label="Kagi Session Link"
+            :error-message="errors.kagiSessionLink"
             placeholder="https://kagi.com/search?token=TOKEN"
           />
         </q-item-section>
@@ -35,6 +49,8 @@
 </template>
 
 <script setup lang="ts">
+import { z } from "zod";
+
 const $q = useQuasar();
 
 const defaultOption = { label: "English", value: "EN" } as const;
@@ -71,61 +87,87 @@ const options = [
   { label: "Chinese (traditional)", value: "ZH-HANT" },
 ] as const;
 
-interface KagiSummarizerModel {
-  kagiLanguage:
-    | "EN"
-    | "BG"
-    | "CS"
-    | "DA"
-    | "DE"
-    | "EL"
-    | "ES"
-    | "ET"
-    | "FI"
-    | "FR"
-    | "HU"
-    | "ID"
-    | "IT"
-    | "JA"
-    | "KO"
-    | "LT"
-    | "LV"
-    | "NB"
-    | "NL"
-    | "PL"
-    | "PT"
-    | "RO"
-    | "RU"
-    | "SK"
-    | "SL"
-    | "SV"
-    | "TR"
-    | "UK"
-    | "ZH"
-    | "ZH-HANT";
-  kagiSessionLink: string;
-}
-
-const headers = useRequestHeaders(["cookie"]);
-const { data } = await useFetch("/api/user-settings", { headers });
-const model = ref<KagiSummarizerModel>({
-  kagiLanguage: options.find((o) => o.value === data.value?.kagiLanguage)?.value ?? defaultOption.value,
-  kagiSessionLink: data.value?.kagiSessionLink ?? "",
+const schema = z.object({
+  kagiLanguage: z.enum([
+    "EN",
+    "BG",
+    "CS",
+    "DA",
+    "DE",
+    "EL",
+    "ES",
+    "ET",
+    "FI",
+    "FR",
+    "HU",
+    "ID",
+    "IT",
+    "JA",
+    "KO",
+    "LT",
+    "LV",
+    "NB",
+    "NL",
+    "PL",
+    "PT",
+    "RO",
+    "RU",
+    "SK",
+    "SL",
+    "SV",
+    "TR",
+    "UK",
+    "ZH",
+    "ZH-HANT",
+  ]),
+  kagiSessionLink: z.union([z.literal(""), z.url()]),
 });
+type Schema = z.infer<typeof schema>;
 
-const store = useFeatureStore();
+const store = useUserSettingsStore();
 
-const { pending, error, execute } = useFetch("/api/user-settings", {
-  key: "kagi-summarizer-settings",
-  method: "POST",
-  body: model,
-  immediate: false,
-  watch: false,
+const model = ref<Schema>({
+  kagiLanguage: options.find((o) => o.value === store.userSettings?.kagiLanguage)?.value ?? defaultOption.value,
+  kagiSessionLink: store.userSettings?.kagiSessionLink ?? "",
 });
-async function save() {
+const enabled = computed(() => !!model.value.kagiSessionLink?.trim());
+const errors = ref({
+  kagiLanguage: "",
+  kagiSessionLink: "",
+});
+const error = computed(() => Object.values(errors.value).some((msg) => !!msg));
+
+const pending = ref(false);
+async function onSubmit() {
+  errors.value = {
+    kagiLanguage: "",
+    kagiSessionLink: "",
+  };
+
+  pending.value = true;
   try {
-    await execute();
-    if (error.value) throw error.value;
+    const result = schema.safeParse(model.value);
+    if (!result.success) {
+      const fieldErrors = z.flattenError(result.error).fieldErrors;
+      errors.value = {
+        kagiLanguage: fieldErrors.kagiLanguage?.join(", ") ?? "",
+        kagiSessionLink: fieldErrors.kagiSessionLink?.join(", ") ?? "",
+      };
+      return;
+    }
+    const parsed = result.data;
+
+    await $fetch("/api/user-settings", {
+      method: "PATCH",
+      body: {
+        kagiLanguage: parsed.kagiLanguage,
+        kagiSessionLink: parsed.kagiSessionLink,
+      },
+    });
+    errors.value = {
+      kagiLanguage: "",
+      kagiSessionLink: "",
+    };
     $q.notify({
       type: "positive",
       message: "Kagi Summarizer settings saved successfully",
@@ -136,6 +178,8 @@ async function save() {
       type: "negative",
       message: `Failed to save Kagi Summarizer settings: ${err}`,
     });
+  } finally {
+    pending.value = false;
   }
 }
 </script>

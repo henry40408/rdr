@@ -89,19 +89,19 @@ onMounted(() => {
   });
 });
 
-const featureStore = useFeatureStore();
 const jobStore = useJobStore();
 const passkeyStore = usePasskeyStore();
 const systemSettingsStore = useSystemSettingsStore();
 const userStore = useUserStore();
+const userSettingsStore = useUserSettingsStore();
 
 const leftDrawerOpen = ref(false);
 
 await Promise.all([
-  featureStore.load(),
   jobStore.load(),
   passkeyStore.load(),
   systemSettingsStore.load(),
+  userSettingsStore.load(),
   userStore.load(),
 ]);
 </script>

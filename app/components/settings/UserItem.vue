@@ -1,14 +1,14 @@
 <template>
   <q-expansion-item>
     <template #header>
+      <q-item-section side>
+        <q-toggle :model-value="enabled" :disable="isCurrentUser || toggling" @update:model-value="toggleUser" />
+      </q-item-section>
       <q-item-section>
         <q-item-label>
           {{ user.username }}
           <q-badge v-if="isCurrentUser">You</q-badge>
         </q-item-label>
-      </q-item-section>
-      <q-item-section side>
-        <q-toggle :model-value="enabled" :disable="isCurrentUser || pending" @update:model-value="toggleUser" />
       </q-item-section>
     </template>
 
@@ -54,15 +54,12 @@ const isCurrentUser = computed(() => props.user.username === session?.value?.use
 
 const enabled = ref(!props.user.disabledAt);
 
-const { pending, execute, error } = useFetch(`/api/users/${props.user.id}/toggle`, {
-  method: "PUT",
-  immediate: false,
-});
+const toggling = ref(false);
 async function toggleUser() {
   const oldVal = enabled.value;
   try {
-    await execute();
-    if (error.value) throw error.value;
+    toggling.value = true;
+    await $fetch(`/api/users/${props.user.id}/toggle`, { method: "PUT" });
     $q.notify({
       type: "positive",
       message: `User "${props.user.username}" has been ${oldVal ? "disabled" : "enabled"}.`,
@@ -75,6 +72,8 @@ async function toggleUser() {
       message: `Failed to ${enabled.value ? "enable" : "disable"} user "${props.user.username}": ${err}`,
     });
     enabled.value = oldVal; // revert toggle on error
+  } finally {
+    toggling.value = false;
   }
 }
 </script>

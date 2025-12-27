@@ -79,7 +79,7 @@ onMounted(() => {
 
 const categoryStore = useCategoryStore();
 const entryStore = useEntryStore();
-const featureStore = useFeatureStore();
+const userSettingsStore = useUserSettingsStore();
 
 const leftDrawerOpen = ref(false);
 const rightDrawerOpen = ref(false);
@@ -87,7 +87,7 @@ const rightDrawerOpen = ref(false);
 const title = computed(() => `(${entryStore.count > 999 ? "999+" : entryStore.count}) rdr`);
 useHead({ title });
 
-await Promise.all([categoryStore.load(), entryStore.load(), featureStore.load()]);
+await Promise.all([categoryStore.load(), entryStore.load(), userSettingsStore.load()]);
 </script>
 
 <style>

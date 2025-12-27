@@ -1,8 +1,5 @@
 <template>
-  <AuthenticatedHome v-if="loggedIn" />
-  <LoginPage v-else @authenticated="fetchSession" />
+  <WithAuth>
+    <AuthenticatedHome />
+  </WithAuth>
 </template>
-
-<script setup lang="ts">
-const { loggedIn, fetch: fetchSession } = useUserSession();
-</script>

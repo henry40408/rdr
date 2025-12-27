@@ -1,5 +1,5 @@
 <template>
-  <q-form @submit="save(model)">
+  <q-form @submit="onSubmit">
     <q-list>
       <q-item-label header>Change Password</q-item-label>
       <q-item>
@@ -10,6 +10,7 @@
             required
             :error="error"
             type="password"
+            hide-bottom-space
             label="Current Password *"
             autocomplete="current-password"
           />
@@ -23,6 +24,7 @@
             required
             :error="error"
             type="password"
+            hide-bottom-space
             label="New password *"
             autocomplete="new-password"
           />
@@ -36,6 +38,7 @@
             required
             :error="error"
             type="password"
+            hide-bottom-space
             autocomplete="new-password"
             label="Confirm new password *"
             :error-message="errorMessages.confirmPassword"
@@ -44,7 +47,7 @@
       </q-item>
       <q-item>
         <q-item-section>
-          <q-btn type="submit" color="primary" :loading="updating" label="Change Password" />
+          <q-btn type="submit" color="primary" label="Change Password" :loading="saveStatus === 'pending'" />
         </q-item-section>
       </q-item>
     </q-list>
@@ -52,18 +55,26 @@
 </template>
 
 <script setup lang="ts">
+import { z } from "zod";
+
 const $q = useQuasar();
 
-interface NewPasswordModel {
-  currentPassword: string;
-  newPassword: string;
-  confirmPassword: string;
-}
+const schema = z
+  .object({
+    currentPassword: z.string().min(1, "Current password is required"),
+    newPassword: z.string().min(8, "New password must be at least 8 characters long"),
+    confirmPassword: z.string().min(1, "Please confirm your new password"),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "New password and confirmation do not match",
+    path: ["confirmPassword"],
+  });
+type Schema = z.infer<typeof schema>;
 
 const errorMessages = ref({
   confirmPassword: "",
 });
-const model = ref<NewPasswordModel>({
+const model = ref<Schema>({
   currentPassword: "",
   newPassword: "",
   confirmPassword: "",
@@ -71,49 +82,51 @@ const model = ref<NewPasswordModel>({
 
 const error = computed(() => !!errorMessages.value.confirmPassword);
 
-function validate(newModel: NewPasswordModel) {
-  if (newModel.newPassword !== newModel.confirmPassword) {
-    errorMessages.value.confirmPassword = "New password and confirmation do not match.";
-    return false;
-  }
-  if (newModel.newPassword.length < 8) {
-    errorMessages.value.confirmPassword = "New password must be at least 8 characters long.";
-    return false;
-  }
-  errorMessages.value.confirmPassword = "";
-  return true;
-}
+const saveStatus = ref<"idle" | "pending" | "success" | "error">("idle");
+async function onSubmit() {
+  errorMessages.value = {
+    confirmPassword: "",
+  };
 
-const {
-  pending: updating,
-  error: updateError,
-  execute: updatePassword,
-} = useFetch("/api/change-password", {
-  key: "change-password",
-  method: "POST",
-  body: model,
-  immediate: false,
-  watch: false,
-});
-async function save(newModel: NewPasswordModel) {
-  if (!validate(newModel)) return;
+  const result = schema.safeParse(model.value);
+  if (!result.success) {
+    const fieldErrors = z.flattenError(result.error).fieldErrors;
+    errorMessages.value = {
+      confirmPassword: fieldErrors.confirmPassword?.join(", ") ?? "",
+    };
+    return;
+  }
+  const parsed = result.data;
+
+  saveStatus.value = "pending";
   try {
-    await updatePassword();
-    if (updateError.value) throw updateError.value;
-    $q.notify({
-      type: "positive",
-      message: "Password changed successfully",
+    await $fetch(`/api/settings/change-password`, {
+      method: "POST",
+      body: {
+        currentPassword: parsed.currentPassword,
+        newPassword: parsed.newPassword,
+        confirmPassword: parsed.confirmPassword,
+      },
     });
+    saveStatus.value = "success";
     model.value = {
       currentPassword: "",
       newPassword: "",
       confirmPassword: "",
     };
+    errorMessages.value = {
+      confirmPassword: "",
+    };
+    $q.notify({
+      type: "positive",
+      message: "Password changed successfully",
+    });
   } catch (err) {
     $q.notify({
       type: "negative",
       message: `Failed to change password: ${err}`,
     });
+    saveStatus.value = "error";
   }
 }
 </script>
