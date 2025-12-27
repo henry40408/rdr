@@ -18,6 +18,7 @@
             filled
             :error="error"
             color="primary"
+            hide-bottom-space
             label="XML URL *"
             :error-message="errorMessages.xmlUrl"
           />

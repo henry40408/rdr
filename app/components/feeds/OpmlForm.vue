@@ -4,13 +4,17 @@
       <q-item-label header>Import / export OPML</q-item-label>
       <q-item>
         <q-item-section>
-          <q-file v-model="opmlFile" filled required color="primary" label="OPML file *" accept=".opml, .xml" />
+          <q-file v-model="opmlFile" filled required color="primary" label="OPML file *" accept=".opml, .xml">
+            <template #prepend>
+              <q-icon name="attach_file" />
+            </template>
+          </q-file>
         </q-item-section>
         <q-item-section side>
-          <q-btn type="submit" label="Import" color="primary" :disable="!opmlFile" />
+          <q-btn icon="upload" type="submit" label="Import" color="primary" :disable="!opmlFile" />
         </q-item-section>
         <q-item-section side>
-          <q-btn type="submit" label="Export" color="primary" href="/api/opml" />
+          <q-btn type="submit" label="Export" color="primary" icon="download" href="/api/opml" />
         </q-item-section>
       </q-item>
     </q-list>
