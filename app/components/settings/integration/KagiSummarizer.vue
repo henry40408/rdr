@@ -1,5 +1,5 @@
 <template>
-  <q-form @submit="save">
+  <q-form @submit="onSubmit">
     <q-list>
       <q-item-label header>Integration: Kagi summarizer</q-item-label>
       <q-banner :class="$q.dark.isActive ? 'bg-grey-9 text-white' : 'bg-grey-3'">
@@ -11,7 +11,17 @@
       </q-banner>
       <q-item>
         <q-item-section>
-          <q-select v-model="model.kagiLanguage" filled emit-value map-options label="Language" :options="options" />
+          <q-select
+            v-model="model.kagiLanguage"
+            filled
+            emit-value
+            map-options
+            :error="error"
+            label="Language"
+            hide-bottom-space
+            :options="options"
+            :error-message="errors.kagiLanguage"
+          />
         </q-item-section>
       </q-item>
       <q-item>
@@ -20,7 +30,11 @@
             v-model="model.kagiSessionLink"
             filled
             clearable
+            type="url"
+            :error="error"
+            hide-bottom-space
             label="Kagi Session Link"
+            :error-message="errors.kagiSessionLink"
             placeholder="https://kagi.com/search?token=TOKEN"
           />
         </q-item-section>
@@ -35,6 +49,8 @@
 </template>
 
 <script setup lang="ts">
+import { z } from "zod";
+
 const $q = useQuasar();
 
 const defaultOption = { label: "English", value: "EN" } as const;
@@ -71,61 +87,87 @@ const options = [
   { label: "Chinese (traditional)", value: "ZH-HANT" },
 ] as const;
 
-interface KagiSummarizerModel {
-  kagiLanguage:
-    | "EN"
-    | "BG"
-    | "CS"
-    | "DA"
-    | "DE"
-    | "EL"
-    | "ES"
-    | "ET"
-    | "FI"
-    | "FR"
-    | "HU"
-    | "ID"
-    | "IT"
-    | "JA"
-    | "KO"
-    | "LT"
-    | "LV"
-    | "NB"
-    | "NL"
-    | "PL"
-    | "PT"
-    | "RO"
-    | "RU"
-    | "SK"
-    | "SL"
-    | "SV"
-    | "TR"
-    | "UK"
-    | "ZH"
-    | "ZH-HANT";
-  kagiSessionLink: string;
-}
+const schema = z.object({
+  kagiLanguage: z.enum([
+    "EN",
+    "BG",
+    "CS",
+    "DA",
+    "DE",
+    "EL",
+    "ES",
+    "ET",
+    "FI",
+    "FR",
+    "HU",
+    "ID",
+    "IT",
+    "JA",
+    "KO",
+    "LT",
+    "LV",
+    "NB",
+    "NL",
+    "PL",
+    "PT",
+    "RO",
+    "RU",
+    "SK",
+    "SL",
+    "SV",
+    "TR",
+    "UK",
+    "ZH",
+    "ZH-HANT",
+  ]),
+  kagiSessionLink: z.union([z.literal(""), z.url()]),
+});
+type Schema = z.infer<typeof schema>;
 
 const store = useUserSettingsStore();
 
-const enabled = computed(() => !!store.userSettings?.kagiSessionLink?.trim());
-
-const model = ref<KagiSummarizerModel>({
+const model = ref<Schema>({
   kagiLanguage: options.find((o) => o.value === store.userSettings?.kagiLanguage)?.value ?? defaultOption.value,
   kagiSessionLink: store.userSettings?.kagiSessionLink ?? "",
 });
+const enabled = computed(() => !!model.value.kagiSessionLink?.trim());
+const errors = ref({
+  kagiLanguage: "",
+  kagiSessionLink: "",
+});
+const error = computed(() => Object.values(errors.value).some((msg) => !!msg));
 
 const pending = ref(false);
-async function save() {
+async function onSubmit() {
+  errors.value = {
+    kagiLanguage: "",
+    kagiSessionLink: "",
+  };
+
   pending.value = true;
   try {
+    const result = schema.safeParse(model.value);
+    if (!result.success) {
+      const fieldErrors = z.flattenError(result.error).fieldErrors;
+      errors.value = {
+        kagiLanguage: fieldErrors.kagiLanguage?.join(", ") ?? "",
+        kagiSessionLink: fieldErrors.kagiSessionLink?.join(", ") ?? "",
+      };
+      return;
+    }
+    const parsed = result.data;
+
     await $fetch("/api/user-settings", {
       method: "PATCH",
       body: {
-        kagiLanguage: model.value.kagiLanguage,
-        kagiSessionLink: model.value.kagiSessionLink,
+        kagiLanguage: parsed.kagiLanguage,
+        kagiSessionLink: parsed.kagiSessionLink,
       },
     });
+    errors.value = {
+      kagiLanguage: "",
+      kagiSessionLink: "",
+    };
     $q.notify({
       type: "positive",
       message: "Kagi Summarizer settings saved successfully",

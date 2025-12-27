@@ -1,5 +1,5 @@
 <template>
-  <q-form @submit="importOpml()">
+  <q-form @submit="onSubmit">
     <q-list>
       <q-item-label header>Import / export OPML</q-item-label>
       <q-item>
@@ -28,8 +28,9 @@ const store = useCategoryStore();
 
 const opmlFile = ref(undefined);
 
-async function importOpml() {
+async function onSubmit() {
   if (!opmlFile.value) return;
+
   try {
     const formData = new FormData();
     formData.append("file", opmlFile.value);

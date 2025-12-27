@@ -1,5 +1,5 @@
 <template>
-  <q-form @submit="save">
+  <q-form @submit="onSubmit">
     <q-list>
       <q-item-label header>Integration: Linkding</q-item-label>
       <q-banner :class="$q.dark.isActive ? 'bg-grey-9 text-white' : 'bg-grey-3'">
@@ -18,14 +18,26 @@
             filled
             clearable
             type="url"
+            :error="error"
+            hide-bottom-space
             label="Linkding API URL"
             placeholder="https://example.com"
+            :error-message="errorMessages.linkdingApiUrl"
           />
         </q-item-section>
       </q-item>
       <q-item>
         <q-item-section>
-          <q-input v-model="model.linkdingApiToken" filled clearable type="password" label="Linkding API Token" />
+          <q-input
+            v-model="model.linkdingApiToken"
+            filled
+            clearable
+            :error="error"
+            type="password"
+            hide-bottom-space
+            label="Linkding API Token"
+            :error-message="errorMessages.linkdingApiToken"
+          />
         </q-item-section>
       </q-item>
       <q-item>
@@ -37,10 +49,13 @@
             clearable
             use-chips
             use-input
+            :error="error"
+            hide-bottom-space
             hide-dropdown-icon
             label="Default Tags"
             new-value-mode="add-unique"
             hint="Tags to be added to each saved link"
+            :error-message="errorMessages.linkdingDefaultTags"
           />
         </q-item-section>
       </q-item>
@@ -54,26 +69,52 @@
 </template>
 
 <script setup lang="ts">
-const $q = useQuasar();
+import { z } from "zod";
 
-interface LinkdingModel {
-  linkdingApiUrl: string;
-  linkdingApiToken: string;
-  linkdingDefaultTags: string[];
-}
+const $q = useQuasar();
 
 const store = useUserSettingsStore();
 
-const enabled = ref(!!store.userSettings?.linkdingApiUrl?.trim() && !!store.userSettings?.linkdingApiToken?.trim());
-const model = ref<LinkdingModel>({
+const schema = z.object({
+  linkdingApiUrl: z.union([z.literal(""), z.url()]),
+  linkdingApiToken: z.string().or(z.literal("")),
+  linkdingDefaultTags: z.array(z.string()),
+});
+type Schema = z.infer<typeof schema>;
+
+const model = ref<Schema>({
   linkdingApiUrl: store.userSettings?.linkdingApiUrl ?? "",
   linkdingApiToken: store.userSettings?.linkdingApiToken ?? "",
   linkdingDefaultTags:
     (store.userSettings?.linkdingDefaultTags && JSON.parse(store.userSettings.linkdingDefaultTags)) ?? [],
 });
+const enabled = ref(!!model.value.linkdingApiUrl?.trim() && !!model.value.linkdingApiToken?.trim());
+const errorMessages = ref({
+  linkdingApiUrl: "",
+  linkdingApiToken: "",
+  linkdingDefaultTags: "",
+});
+const error = computed(() => Object.values(errorMessages.value).some((msg) => !!msg));
 
 const pending = ref(false);
-async function save() {
+async function onSubmit() {
+  errorMessages.value = {
+    linkdingApiUrl: "",
+    linkdingApiToken: "",
+    linkdingDefaultTags: "",
+  };
+
+  const result = schema.safeParse(model.value);
+  if (!result.success) {
+    const fieldErrors = z.flattenError(result.error).fieldErrors;
+    errorMessages.value = {
+      linkdingApiUrl: fieldErrors.linkdingApiUrl?.join(", ") ?? "",
+      linkdingApiToken: fieldErrors.linkdingApiToken?.join(", ") ?? "",
+      linkdingDefaultTags: fieldErrors.linkdingDefaultTags?.join(", ") ?? "",
+    };
+    return;
+  }
+
   pending.value = true;
   try {
     await $fetch("/api/user-settings", {
@@ -88,7 +129,11 @@ async function save() {
       type: "positive",
       message: "Linkding settings saved successfully",
     });
-    enabled.value = !!model.value.linkdingApiUrl.trim() && !!model.value.linkdingApiToken.trim();
+    errorMessages.value = {
+      linkdingApiUrl: "",
+      linkdingApiToken: "",
+      linkdingDefaultTags: "",
+    };
     store.load();
   } catch (err) {
     $q.notify({

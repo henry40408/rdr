@@ -16,6 +16,7 @@
           <q-input
             v-model="model.xmlUrl"
             filled
+            type="url"
             :error="error"
             color="primary"
             hide-bottom-space
@@ -26,7 +27,7 @@
       </q-item>
       <q-item>
         <q-item-section>
-          <q-input v-model="model.htmlUrl" filled color="primary" label="HTML URL" />
+          <q-input v-model="model.htmlUrl" filled type="url" color="primary" label="HTML URL" />
         </q-item-section>
       </q-item>
       <q-item>
@@ -39,51 +40,55 @@
 </template>
 
 <script setup lang="ts">
+import { z } from "zod";
+
 const $q = useQuasar();
 
 const store = useCategoryStore();
 
-interface NewFeedFormModel {
-  categoryName: string;
-  xmlUrl: string;
-  htmlUrl: string;
-}
+const schema = z.object({
+  categoryName: z.string().nonempty(),
+  xmlUrl: z.url(),
+  htmlUrl: z.union([z.literal(""), z.url()]),
+});
+type Schema = z.infer<typeof schema>;
 
 const errorMessages = ref({
   categoryName: "",
   xmlUrl: "",
 });
-const model = ref<NewFeedFormModel>({
+const model = ref<Schema>({
   categoryName: "",
   xmlUrl: "",
   htmlUrl: "",
 });
 
-const error = computed(() => !!errorMessages.value.categoryName || !!errorMessages.value.xmlUrl);
-
-function validate(newModel: NewFeedFormModel) {
-  if (!newModel.categoryName) {
-    errorMessages.value.categoryName = "Category is required.";
-    return false;
-  }
-  errorMessages.value.categoryName = "";
-  if (!newModel.xmlUrl) {
-    errorMessages.value.xmlUrl = "XML URL is required.";
-    return false;
-  }
-  errorMessages.value.xmlUrl = "";
-  return true;
-}
+const error = computed(() => Object.values(errorMessages.value).some((msg) => !!msg));
 
 async function onSubmit() {
-  if (!validate(model.value)) return;
+  errorMessages.value = {
+    categoryName: "",
+    xmlUrl: "",
+  };
+
   try {
+    const result = schema.safeParse(model.value);
+    if (!result.success) {
+      const fieldErrors = z.flattenError(result.error).fieldErrors;
+      errorMessages.value = {
+        categoryName: fieldErrors.categoryName?.join(", ") ?? "",
+        xmlUrl: fieldErrors.xmlUrl?.join(", ") ?? "",
+      };
+      return;
+    }
+    const parsed = result.data;
+
     await $fetch("/api/feeds", {
       method: "POST",
       body: {
-        categoryName: model.value.categoryName,
-        xmlUrl: model.value.xmlUrl,
-        htmlUrl: model.value.htmlUrl || undefined,
+        categoryName: parsed.categoryName,
+        xmlUrl: parsed.xmlUrl,
+        htmlUrl: parsed.htmlUrl || undefined,
       },
     });
     model.value = {
