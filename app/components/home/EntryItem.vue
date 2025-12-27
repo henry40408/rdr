@@ -9,6 +9,7 @@
       'bg-grey-3': !$q.dark.isActive && read,
     }"
     @before-show="loadContent()"
+    @after-hide="scrollToEntry()"
     @after-show="scrollToEntry()"
     @update:model-value="entryStore.toggleExpand(entry.id)"
   >
