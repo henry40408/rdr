@@ -9,6 +9,7 @@
       'bg-grey-3': !$q.dark.isActive && read,
     }"
     @before-show="loadContent()"
+    @after-hide="scrollToEntry()"
     @after-show="scrollToEntry()"
     @update:model-value="entryStore.toggleExpand(entry.id)"
   >
@@ -86,7 +87,7 @@
               icon="psychology"
               label="Summarize"
               :loading="summarizationStatus === 'pending'"
-              :disabled="!featureStore.summarizationEnabled"
+              :disabled="!userSettingsStore.features?.summarization"
               @click="loadSummarization()"
             />
             <q-btn v-else icon="clear" label="Clear summary" @click="clearSummarization()" />
@@ -95,7 +96,7 @@
               icon="save"
               label="Save"
               :loading="saveStatus === 'pending'"
-              :disabled="!featureStore.saveEnabled"
+              :disabled="!userSettingsStore.features?.save"
               @click="saveEntry()"
             />
             <q-btn v-else disable icon="check" label="Saved" />
@@ -118,8 +119,8 @@
           <div v-if="showContent">
             <MarkedText :text="content" :keyword="entryStore.search" />
           </div>
-          <div v-if="fullContentStatus === 'success' && fullContentData">
-            <MarkedText :text="fullContentData.content" />
+          <div v-if="fullContentStatus === 'success' && fullContent">
+            <MarkedText :text="fullContent" />
           </div>
         </q-card-section>
       </q-card>
@@ -157,7 +158,7 @@ function scrollToEntry() {
 
 const categoryStore = useCategoryStore();
 const entryStore = useEntryStore();
-const featureStore = useFeatureStore();
+const userSettingsStore = useUserSettingsStore();
 
 const content = ref("");
 const fullContent = ref("");
@@ -170,69 +171,76 @@ const imageExists = computed(
   () => categoryStore.categories.flatMap((c) => c.feeds).find((f) => f.id === props.feed.id)?.imageExists ?? false,
 );
 
-const {
-  data: contentData,
-  status: contentStatus,
-  execute: fetchContent,
-} = useFetch(`/api/entries/${props.entry.id}/content`, {
-  key: `entry-content-${props.entry.id}`,
-  immediate: false,
-});
-
+const contentStatus = ref<"idle" | "pending" | "success" | "error">("idle");
 async function loadContent() {
-  if (expanded.value && contentStatus.value === "idle") {
-    await fetchContent();
-    content.value = contentData.value?.content ?? "";
+  try {
+    if (expanded.value && contentStatus.value === "idle") {
+      contentStatus.value = "pending";
+      const data = await $fetch(`/api/entries/${props.entry.id}/content`);
+      content.value = data?.content ?? "";
+      contentStatus.value = "success";
+    }
+  } catch {
+    contentStatus.value = "error";
   }
 }
 
-const {
-  data: fullContentData,
-  status: fullContentStatus,
-  execute: fetchFullContent,
-  clear: clearFullContent,
-} = useFetch(`/api/entries/${props.entry.id}/full-content`, {
-  key: `entry-full-content-${props.entry.id}`,
-  immediate: false,
-});
+const fullContentStatus = ref<"idle" | "pending" | "success" | "error">("idle");
+async function loadFullContent() {
+  if (fullContentStatus.value === "idle") {
+    fullContentStatus.value = "pending";
+    try {
+      const data = await $fetch(`/api/entries/${props.entry.id}/full-content`);
+      fullContent.value = data?.content ?? "";
+      fullContentStatus.value = "success";
+    } catch {
+      fullContentStatus.value = "error";
+    }
+  }
+}
+function clearFullContent() {
+  fullContent.value = "";
+  fullContentStatus.value = "idle";
+}
+
 const showContent = computed(() => {
   if (fullContentStatus.value === "success") return false;
   return contentStatus.value === "success";
 });
 
-async function loadFullContent() {
-  if (fullContentStatus.value === "idle") {
-    await fetchFullContent();
-    fullContent.value = fullContentData.value?.content ?? "";
-  }
-}
-
-const {
-  data: summarizationData,
-  status: summarizationStatus,
-  execute: fetchSummarization,
-  clear: clearSummarization,
-} = useFetch(`/api/entries/${props.entry.id}/summarize`, {
-  key: `entry-summarization-${props.entry.id}`,
-  immediate: false,
-});
-
+const summarizationStatus = ref<"idle" | "pending" | "success" | "error">("idle");
 async function loadSummarization() {
-  if (summarizationStatus.value === "idle") {
-    await fetchSummarization();
-    const [prefixedTitle, content] = (summarizationData.value ?? "").split("\n\n");
-    const title = replaceForTiddlyWiki((prefixedTitle ?? "").replace("Title: ", ""));
-    summarization.value = `${title}
+  try {
+    if (summarizationStatus.value === "idle") {
+      summarizationStatus.value = "pending";
+      const data = await $fetch(`/api/entries/${props.entry.id}/summarize`);
+      summarizationStatus.value = "success";
+
+      const [prefixedTitle, content] = (data ?? "").split("\n\n");
+      const title = replaceForTiddlyWiki((prefixedTitle ?? "").replace("Title: ", ""));
+      summarization.value = `${title}
 
 ${props.entry.link}
 
 ${content}`;
+    }
+  } catch {
+    summarizationStatus.value = "error";
   }
 }
+function clearSummarization() {
+  summarization.value = "";
+  summarizationStatus.value = "idle";
+}
 
-const { status: saveStatus, execute: saveEntry } = useFetch(`/api/entries/${props.entry.id}/save`, {
-  key: `entry-save-${props.entry.id}`,
-  method: "POST",
-  immediate: false,
-});
+const saveStatus = ref<"idle" | "pending" | "success" | "error">("idle");
+async function saveEntry() {
+  saveStatus.value = "pending";
+  try {
+    await $fetch(`/api/entries/${props.entry.id}/save`, { method: "POST" });
+    saveStatus.value = "success";
+  } catch {
+    saveStatus.value = "error";
+  }
+}
 </script>

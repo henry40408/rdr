@@ -2,15 +2,15 @@
   <q-expansion-item>
     <template #header>
       <q-item-section side>
+        <q-toggle :disable="toggling" :model-value="enabled" @update:model-value="toggleJob" />
+      </q-item-section>
+      <q-item-section side>
         <q-icon v-if="job.lastError" name="error" color="negative" />
         <q-icon v-else name="schedule" :color="job.pausedAt ? 'negative' : 'positive'" />
       </q-item-section>
       <q-item-section>
         <q-item-label>{{ job.name }}</q-item-label>
         <q-item-label caption>{{ job.description }}</q-item-label>
-      </q-item-section>
-      <q-item-section side>
-        <q-toggle :disable="pending" :model-value="enabled" @update:model-value="toggleJob" />
       </q-item-section>
     </template>
 
@@ -61,16 +61,12 @@ const enabled = ref(!props.job.pausedAt);
 
 const store = useJobStore();
 
-const { pending, execute, error } = useFetch(`/api/jobs/${props.job.name}/toggle`, {
-  key: `toggle-job-${props.job.name}`,
-  method: "PUT",
-  immediate: false,
-});
+const toggling = ref(false);
 async function toggleJob() {
   const oldVal = enabled.value;
+  enabled.value = !oldVal;
   try {
-    await execute();
-    if (error.value) throw error.value;
+    await $fetch(`/api/jobs/${props.job.name}/toggle`, { method: "PUT" });
     $q.notify({
       type: "positive",
       message: `Job "${props.job.name}" has been ${oldVal ? "paused" : "resumed"}.`,
@@ -83,6 +79,8 @@ async function toggleJob() {
       message: `Failed to update job status: ${err}`,
     });
     enabled.value = oldVal; // revert on failure
+  } finally {
+    toggling.value = false;
   }
 }
 </script>

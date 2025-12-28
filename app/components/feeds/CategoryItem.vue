@@ -23,8 +23,8 @@
               icon="visibility"
               :href="$router.resolve({ name: 'index', query: { categoryId: category.id } }).href"
             />
-            <q-btn icon="refresh" label="Refresh" :loading="refreshing" @click="onRefreshCategory()" />
-            <q-btn icon="delete" label="Delete" color="negative" :loading="deleting" @click="onDeleteCategory()" />
+            <q-btn icon="refresh" label="Refresh" :loading="refreshing" @click="refreshCategory()" />
+            <q-btn icon="delete" label="Delete" color="negative" :loading="deleting" @click="deleteCategory()" />
           </q-btn-group>
         </q-item>
         <q-item>
@@ -108,44 +108,42 @@ const show = computed(() => {
 });
 const unreadCount = computed(() => props.category.feeds.reduce((sum, feed) => sum + feed.unreadCount, 0));
 
-const { pending: deleting, execute: deleteCategory } = useFetch(`/api/categories/${props.category.id}`, {
-  key: `delete-category-${props.category.id}`,
-  method: "DELETE",
-  immediate: false,
-});
-async function onDeleteCategory() {
+const deleting = ref(false);
+function deleteCategory() {
   $q.dialog({
     title: "Delete Category",
     message: `Are you sure you want to delete category "${props.category.name}" and its feeds? This action cannot be undone.`,
     cancel: true,
     ok: { label: "Delete", color: "negative" },
   }).onOk(async () => {
+    deleting.value = true;
     try {
-      await deleteCategory();
+      await $fetch(`/api/categories/${props.category.id}`, { method: "DELETE" });
       $q.notify({ type: "positive", message: `Category "${props.category.name}" deleted successfully.` });
       store.load();
     } catch (err) {
       $q.notify({ type: "negative", message: `Failed to delete category "${props.category.name}": ${err}` });
+    } finally {
+      deleting.value = false;
     }
   });
 }
 
-const { pending: refreshing, execute: refreshCategory } = useAsyncData(
-  `refresh-category-${props.category.id}`,
-  () => {
-    const tasks = [];
-    for (const feed of props.category.feeds) tasks.push($fetch(`/api/feeds/${feed.id}/refresh`, { method: "POST" }));
-    return Promise.allSettled(tasks);
-  },
-  { immediate: false },
-);
-async function onRefreshCategory() {
+const refreshing = ref(false);
+async function refreshCategory() {
+  refreshing.value = true;
   try {
-    await refreshCategory();
+    const tasks = [];
+    for (const feed of props.category.feeds) {
+      tasks.push($fetch(`/api/feeds/${feed.id}/refresh`, { method: "POST" }));
+    }
+    await Promise.allSettled(tasks);
     $q.notify({ type: "positive", message: `Category "${props.category.name}" refreshed.` });
     store.load();
   } catch (err) {
     $q.notify({ type: "negative", message: `Failed to refresh category "${props.category.name}": ${err}` });
+  } finally {
+    refreshing.value = false;
   }
 }
 
