@@ -14,7 +14,7 @@
   >
     <template #header>
       <q-item-section side>
-        <HomeEntryItemReadToggle :entry="entry" />
+        <HomeEntryItemReadToggle :entry="entry" @after-read="scrollToEntry" />
       </q-item-section>
       <q-item-section>
         <q-item-label caption>
