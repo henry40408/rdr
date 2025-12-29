@@ -7,7 +7,7 @@
     unchecked-icon="star_outline"
     indeterminate-icon="star_half"
     :model-value="store.entryStars[entry.id]"
-    @update:model-value="store.toggleEntryStar(entry.id)"
+    @update:model-value="store.setEntryStar(entry.id, 'toggle')"
   />
 </template>
 

@@ -7,7 +7,7 @@
     unchecked-icon="mail"
     indeterminate-icon="mark_email_unread"
     :model-value="store.entryReads[entry.id]"
-    @update:model-value="store.toggleEntryRead(entry.id)"
+    @update:model-value="store.setEntryRead(entry.id, 'toggle')"
   />
 </template>
 

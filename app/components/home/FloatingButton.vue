@@ -2,8 +2,8 @@
   <q-page-sticky :offset="[16, 16]" position="bottom-right">
     <template v-if="expanded">
       <div class="column q-gutter-md">
-        <q-btn fab :icon="starIcon" color="secondary" :loading="starring" @click="store.toggleExpandedStar" />
-        <q-btn fab :icon="readIcon" color="secondary" :loading="reading" @click="store.toggleExpandedRead" />
+        <q-btn fab :icon="starIcon" color="secondary" :loading="starring" @click="store.setExpandedStar('toggle')" />
+        <q-btn fab :icon="readIcon" color="secondary" :loading="reading" @click="store.setExpandedRead('toggle')" />
         <q-btn fab icon="close" color="primary" @click="store.closeExpanded" />
       </div>
     </template>
