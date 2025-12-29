@@ -115,10 +115,15 @@ export const useEntryStore = defineStore("entry", () => {
     await executeCount();
   }
 
+  async function firstLoad() {
+    await load({ skipCategoryAndCountRefresh: true });
+  }
+
   /**
-   * @param {'init'} [signal]
+   * @param {object} [params]
+   * @param {boolean} [params.skipCategoryAndCountRefresh]
    */
-  async function load(signal) {
+  async function load({ skipCategoryAndCountRefresh } = {}) {
     await executeEntries();
 
     items.value = entriesData.value?.items ?? [];
@@ -128,7 +133,7 @@ export const useEntryStore = defineStore("entry", () => {
     }
     hasMore.value = items.value.length === limit.value;
 
-    if (signal !== "init") await refreshCategoryAndCount();
+    if (!skipCategoryAndCountRefresh) await refreshCategoryAndCount();
   }
 
   async function loadMore() {
@@ -382,6 +387,7 @@ export const useEntryStore = defineStore("entry", () => {
     selectedCategoryId,
     status,
     closeExpanded,
+    firstLoad,
     load,
     loadMore,
     markAllAsRead,
