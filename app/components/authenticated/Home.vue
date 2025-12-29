@@ -87,7 +87,7 @@ const rightDrawerOpen = ref(false);
 const title = computed(() => `(${entryStore.count > 999 ? "999+" : entryStore.count}) rdr`);
 useHead({ title });
 
-await Promise.all([categoryStore.load(), entryStore.load(), userSettingsStore.load()]);
+await Promise.all([categoryStore.load(), entryStore.load("init"), userSettingsStore.load()]);
 </script>
 
 <style>

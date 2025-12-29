@@ -110,12 +110,15 @@ export const useEntryStore = defineStore("entry", () => {
     expands.value = {};
   }
 
-  function refreshCategoryAndCount() {
-    categoryStore.load();
-    executeCount();
+  async function refreshCategoryAndCount() {
+    await categoryStore.load();
+    await executeCount();
   }
 
-  async function load() {
+  /**
+   * @param {'init'} [signal]
+   */
+  async function load(signal) {
     await executeEntries();
 
     items.value = entriesData.value?.items ?? [];
@@ -125,7 +128,7 @@ export const useEntryStore = defineStore("entry", () => {
     }
     hasMore.value = items.value.length === limit.value;
 
-    refreshCategoryAndCount();
+    if (signal !== "init") await refreshCategoryAndCount();
   }
 
   async function loadMore() {
