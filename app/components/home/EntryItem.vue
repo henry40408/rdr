@@ -10,7 +10,7 @@
     }"
     @before-show="loadContent()"
     @after-show="scrollToEntry()"
-    @update:model-value="entryStore.setExpand(entry.id, 'toggle')"
+    @update:model-value="entryStore.toggleExpand(entry.id)"
   >
     <template #header>
       <q-item-section side>

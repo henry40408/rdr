@@ -22,8 +22,8 @@ const emit = defineEmits<{
 
 const store = useEntryStore();
 
-async function updateModelValue(value: "unread" | "read" | "toggle") {
-  await store.setEntryRead(props.entry.id, value);
+async function updateModelValue() {
+  await store.toggleEntryRead(props.entry.id);
   if (store.entryReads[props.entry.id] === "read") emit("after-read");
 }
 </script>
