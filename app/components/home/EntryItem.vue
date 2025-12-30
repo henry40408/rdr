@@ -9,13 +9,12 @@
       'bg-grey-3': !$q.dark.isActive && read,
     }"
     @before-show="loadContent()"
-    @after-hide="scrollToEntry()"
     @after-show="scrollToEntry()"
     @update:model-value="entryStore.toggleExpand(entry.id)"
   >
     <template #header>
       <q-item-section side>
-        <HomeEntryItemReadToggle :entry="entry" />
+        <HomeEntryItemReadToggle :entry="entry" @after-read="scrollToEntry" />
       </q-item-section>
       <q-item-section>
         <q-item-label caption>

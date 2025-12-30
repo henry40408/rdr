@@ -11,9 +11,7 @@
           :category="item.category"
         />
       </q-list>
-      <template #loading>
-        <HomeEntryListSpinner />
-      </template>
+      <HomeEntryListSpinner v-show="store.entriesPending" />
       <q-banner v-if="!store.hasMore" class="text-center" :class="$q.dark.isActive ? 'bg-grey-9' : 'bg-grey-3'">
         <q-icon name="info" class="q-mr-sm" />
         No more entries to load.
