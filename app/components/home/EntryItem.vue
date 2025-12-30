@@ -14,7 +14,7 @@
   >
     <template #header>
       <q-item-section side>
-        <HomeEntryItemReadToggle :entry="entry" @after-read="scrollToEntry" />
+        <HomeEntryItemReadToggle :entry="entry" @after-read="onAfterRead" />
       </q-item-section>
       <q-item-section>
         <q-item-label caption>
@@ -241,5 +241,11 @@ async function saveEntry() {
   } catch {
     saveStatus.value = "error";
   }
+}
+
+function onAfterRead() {
+  if (entryStore.expandedEntryId !== props.entry.id) return;
+  scrollToEntry();
+  entryStore.toggleExpand(props.entry.id);
 }
 </script>

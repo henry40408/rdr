@@ -299,8 +299,6 @@ export const useEntryStore = defineStore("entry", () => {
       });
       entryReads.value[entryId] = updated > 0 ? newVal : oldVal;
 
-      if (newVal === "read" && expands.value[entryId]) expands.value[entryId] = false;
-
       refreshCategoryAndCount();
     } catch (error) {
       entryReads.value[entryId] = oldVal;
