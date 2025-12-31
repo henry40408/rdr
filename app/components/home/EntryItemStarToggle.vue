@@ -7,14 +7,20 @@
     unchecked-icon="star_outline"
     indeterminate-icon="star_half"
     :model-value="store.entryStars[entry.id]"
-    @update:model-value="store.toggleEntryStar(entry.id)"
+    @update:model-value="toggleEntryStar()"
   />
 </template>
 
 <script setup lang="ts">
-defineProps<{
+const props = defineProps<{
   entry: { id: number };
 }>();
 
 const store = useEntryStore();
+
+async function toggleEntryStar() {
+  const previous = store.entryStars[props.entry.id];
+  const value = previous === "starred" ? "unstarred" : "starred";
+  await store.setEntryStar(props.entry.id, value);
+}
 </script>

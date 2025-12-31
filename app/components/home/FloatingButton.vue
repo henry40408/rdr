@@ -2,8 +2,8 @@
   <q-page-sticky :offset="[16, 16]" position="bottom-right">
     <template v-if="expanded">
       <div class="column q-gutter-md">
-        <q-btn fab :icon="starIcon" color="secondary" :loading="starring" @click="store.toggleExpandedStar" />
-        <q-btn fab :icon="readIcon" color="secondary" :loading="reading" @click="store.toggleExpandedRead" />
+        <q-btn fab :icon="starIcon" color="secondary" :loading="starring" @click="toggleExpandedStar()" />
+        <q-btn fab :icon="readIcon" color="secondary" :loading="reading" @click="toggleExpandedRead()" />
         <q-btn fab icon="close" color="primary" @click="store.closeExpanded" />
       </div>
     </template>
@@ -63,5 +63,27 @@ function markAllAsRead() {
       });
     }
   });
+}
+
+async function toggleExpandedRead() {
+  const expandedEntryId = store.expandedEntryId;
+  if (!expandedEntryId) return;
+
+  const previous = store.entryReads[expandedEntryId];
+  if (!previous || previous === "reading") return;
+
+  const value = previous === "read" ? "unread" : "read";
+  await store.setExpandedRead(value);
+}
+
+async function toggleExpandedStar() {
+  const expandedEntryId = store.expandedEntryId;
+  if (!expandedEntryId) return;
+
+  const previous = store.entryStars[expandedEntryId];
+  if (!previous || previous === "starring") return;
+
+  const value = previous === "starred" ? "unstarred" : "starred";
+  await store.setExpandedStar(value);
 }
 </script>
