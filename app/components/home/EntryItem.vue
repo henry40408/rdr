@@ -149,6 +149,14 @@ const props = defineProps<{
   };
 }>();
 
+onMounted(() => {
+  eventBus.on(buildEventToScrollToEntry(props.entry.id), scrollToEntry);
+});
+
+onUnmounted(() => {
+  eventBus.off(buildEventToScrollToEntry(props.entry.id), scrollToEntry);
+});
+
 const entryItemRef = useTemplateRef<QExpansionItem>("entry-item");
 
 function scrollToEntry() {

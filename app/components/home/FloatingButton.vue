@@ -75,7 +75,10 @@ async function toggleExpandedRead() {
   const value = previous === "read" ? "unread" : "read";
   await store.setExpandedRead(value);
 
-  if (value === "read") store.setExpand(expandedEntryId, false);
+  if (value === "read") {
+    store.setExpand(expandedEntryId, false);
+    eventBus.emit(buildEventToScrollToEntry(expandedEntryId));
+  }
 }
 
 async function toggleExpandedStar() {

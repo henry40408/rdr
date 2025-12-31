@@ -1,5 +1,17 @@
 // @ts-check
 
+import mitt from "mitt";
+
+/**
+ * @param {number} entryId
+ * @returns {string}
+ */
+export function buildEventToScrollToEntry(entryId) {
+  return `entry-item:${entryId}:scroll`;
+}
+
+export const eventBus = mitt();
+
 /**
  * Marks all occurrences of keyword in HTML with <mark> tags
  * but don't break existing HTML tags or URLs.
