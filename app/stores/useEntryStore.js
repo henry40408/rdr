@@ -110,20 +110,15 @@ export const useEntryStore = defineStore("entry", () => {
     expands.value = {};
   }
 
-  async function refreshCategoryAndCount() {
-    await categoryStore.load();
-    await executeCount();
-  }
-
   async function firstLoad() {
-    await load({ skipCategoryAndCountRefresh: true });
+    await load({ skipCategoryRefresh: true });
   }
 
   /**
    * @param {object} [params]
-   * @param {boolean} [params.skipCategoryAndCountRefresh]
+   * @param {boolean} [params.skipCategoryRefresh]
    */
-  async function load({ skipCategoryAndCountRefresh } = {}) {
+  async function load({ skipCategoryRefresh } = {}) {
     await executeEntries();
 
     items.value = entriesData.value?.items ?? [];
@@ -133,7 +128,8 @@ export const useEntryStore = defineStore("entry", () => {
     }
     hasMore.value = items.value.length === limit.value;
 
-    if (!skipCategoryAndCountRefresh) await refreshCategoryAndCount();
+    await executeCount();
+    if (!skipCategoryRefresh) categoryStore.load();
   }
 
   async function loadMore() {
@@ -178,7 +174,8 @@ export const useEntryStore = defineStore("entry", () => {
       }
     }
 
-    refreshCategoryAndCount();
+    executeCount();
+    categoryStore.load();
 
     return updated;
   }
@@ -299,7 +296,8 @@ export const useEntryStore = defineStore("entry", () => {
       });
       entryReads.value[entryId] = updated > 0 ? newVal : oldVal;
 
-      refreshCategoryAndCount();
+      executeCount();
+      categoryStore.load();
     } catch (error) {
       entryReads.value[entryId] = oldVal;
       console.error("Failed to update entry read status", error);
