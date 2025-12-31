@@ -10,11 +10,11 @@
     }"
     @before-show="loadContent()"
     @after-show="scrollToEntry()"
-    @update:model-value="entryStore.toggleExpand(entry.id)"
+    @update:model-value="toggleExpand()"
   >
     <template #header>
       <q-item-section side>
-        <HomeEntryItemReadToggle :entry="entry" @after-read="scrollToEntry" />
+        <HomeEntryItemReadToggle :entry="entry" @after-read="onAfterRead" />
       </q-item-section>
       <q-item-section>
         <q-item-label caption>
@@ -149,6 +149,14 @@ const props = defineProps<{
   };
 }>();
 
+onMounted(() => {
+  eventBus.on(buildEventToScrollToEntry(props.entry.id), scrollToEntry);
+});
+
+onUnmounted(() => {
+  eventBus.off(buildEventToScrollToEntry(props.entry.id), scrollToEntry);
+});
+
 const entryItemRef = useTemplateRef<QExpansionItem>("entry-item");
 
 function scrollToEntry() {
@@ -241,5 +249,17 @@ async function saveEntry() {
   } catch {
     saveStatus.value = "error";
   }
+}
+
+function onAfterRead() {
+  if (entryStore.expandedEntryId !== props.entry.id) return;
+  scrollToEntry();
+  entryStore.setExpand(props.entry.id, false);
+}
+
+function toggleExpand() {
+  const previous = entryStore.expands[props.entry.id];
+  const value = previous ? false : true;
+  entryStore.setExpand(props.entry.id, value);
 }
 </script>

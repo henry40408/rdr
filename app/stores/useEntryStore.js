@@ -110,20 +110,15 @@ export const useEntryStore = defineStore("entry", () => {
     expands.value = {};
   }
 
-  async function refreshCategoryAndCount() {
-    await categoryStore.load();
-    await executeCount();
-  }
-
   async function firstLoad() {
-    await load({ skipCategoryAndCountRefresh: true });
+    await load({ skipCategoryRefresh: true });
   }
 
   /**
    * @param {object} [params]
-   * @param {boolean} [params.skipCategoryAndCountRefresh]
+   * @param {boolean} [params.skipCategoryRefresh]
    */
-  async function load({ skipCategoryAndCountRefresh } = {}) {
+  async function load({ skipCategoryRefresh } = {}) {
     await executeEntries();
 
     items.value = entriesData.value?.items ?? [];
@@ -133,7 +128,8 @@ export const useEntryStore = defineStore("entry", () => {
     }
     hasMore.value = items.value.length === limit.value;
 
-    if (!skipCategoryAndCountRefresh) await refreshCategoryAndCount();
+    await executeCount();
+    if (!skipCategoryRefresh) categoryStore.load();
   }
 
   async function loadMore() {
@@ -178,7 +174,8 @@ export const useEntryStore = defineStore("entry", () => {
       }
     }
 
-    refreshCategoryAndCount();
+    executeCount();
+    categoryStore.load();
 
     return updated;
   }
@@ -254,6 +251,30 @@ export const useEntryStore = defineStore("entry", () => {
   }
 
   /**
+   * @param {number} entryId
+   * @param {boolean} value
+   */
+  function setExpand(entryId, value) {
+    expands.value[entryId] = value;
+  }
+
+  /**
+   * @param {'unread'|'read'} value
+   */
+  async function setExpandedRead(value) {
+    const entryId = expandedEntryId.value;
+    if (entryId) await setEntryRead(entryId, value);
+  }
+
+  /**
+   * @param {'unstarred'|'starred'} value
+   */
+  async function setExpandedStar(value) {
+    const entryId = expandedEntryId.value;
+    if (entryId) await setEntryStar(entryId, value);
+  }
+
+  /**
    * @param {number|string} [categoryId]
    * @param {number|string} [feedId]
    */
@@ -285,68 +306,47 @@ export const useEntryStore = defineStore("entry", () => {
 
   /**
    * @param {number} entryId
+   * @param {'unread'|'read'} value
    */
-  async function toggleEntryRead(entryId) {
-    const oldVal = entryReads.value[entryId];
-    if (!oldVal || oldVal === "reading") return;
+  async function setEntryRead(entryId, value) {
+    const previous = entryReads.value[entryId];
+    if (!previous || previous === "reading") return;
 
-    const newVal = oldVal === "unread" ? "read" : "unread";
     entryReads.value[entryId] = "reading";
     try {
       const { updated } = await $fetch("/api/entries/status", {
         method: "PUT",
-        body: { entryIds: [entryId], status: newVal },
+        body: { entryIds: [entryId], status: value },
       });
-      entryReads.value[entryId] = updated > 0 ? newVal : oldVal;
+      entryReads.value[entryId] = updated > 0 ? value : previous;
 
-      if (newVal === "read" && expands.value[entryId]) expands.value[entryId] = false;
-
-      refreshCategoryAndCount();
+      executeCount();
+      categoryStore.load();
     } catch (error) {
-      entryReads.value[entryId] = oldVal;
+      entryReads.value[entryId] = previous;
       console.error("Failed to update entry read status", error);
     }
   }
 
   /**
    * @param {number} entryId
+   * @param {'unstarred'|'starred'} value
    */
-  async function toggleEntryStar(entryId) {
-    const oldVal = entryStars.value[entryId];
-    if (!oldVal || oldVal === "starring") return;
+  async function setEntryStar(entryId, value) {
+    const previous = entryStars.value[entryId];
+    if (!previous || previous === "starring") return;
 
-    const newVal = oldVal === "unstarred" ? "starred" : "unstarred";
     entryStars.value[entryId] = "starring";
     try {
       const { updated } = await $fetch("/api/entries/status", {
         method: "PUT",
-        body: {
-          entryIds: [entryId],
-          status: newVal,
-        },
+        body: { entryIds: [entryId], status: value },
       });
-      entryStars.value[entryId] = updated > 0 ? newVal : oldVal;
+      entryStars.value[entryId] = updated > 0 ? value : previous;
     } catch (error) {
-      entryStars.value[entryId] = oldVal;
+      entryStars.value[entryId] = previous;
       console.error("Failed to update entry star status", error);
     }
-  }
-
-  /**
-   * @param {number} entryId
-   */
-  function toggleExpand(entryId) {
-    expands.value[entryId] = !expands.value[entryId];
-  }
-
-  function toggleExpandedRead() {
-    const entryId = expandedEntryId.value;
-    if (entryId) toggleEntryRead(entryId);
-  }
-
-  function toggleExpandedStar() {
-    const entryId = expandedEntryId.value;
-    if (entryId) toggleEntryStar(entryId);
   }
 
   return {
@@ -376,12 +376,12 @@ export const useEntryStore = defineStore("entry", () => {
     markAllAsRead,
     reset,
     setCategoryId,
+    setEntryRead,
+    setEntryStar,
+    setExpand,
+    setExpandedRead,
+    setExpandedStar,
     setFeedId,
     setStatus,
-    toggleEntryRead,
-    toggleEntryStar,
-    toggleExpand,
-    toggleExpandedRead,
-    toggleExpandedStar,
   };
 });
