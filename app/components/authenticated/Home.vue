@@ -49,6 +49,7 @@
               <div class="row items-center q-gutter-xs">
                 <HomeEntryListHeader />
                 <div>
+                  <HomeSearchKeyword />
                   <HomeSelectedCategory />
                   <HomeSelectedFeed />
                 </div>
