@@ -9,6 +9,6 @@ const props = defineProps<{
   datetime: string;
 }>();
 
-const formatted = computed(() => new Date(props.datetime).toLocaleString());
+const formatted = new Date(props.datetime).toLocaleString();
 const timeAgo = computed(() => formatDistanceToNow(new Date(props.datetime), { addSuffix: true }));
 </script>

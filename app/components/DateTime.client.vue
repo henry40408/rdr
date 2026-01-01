@@ -7,5 +7,5 @@ const props = defineProps<{
   datetime: string;
 }>();
 
-const formatted = computed(() => new Date(props.datetime).toLocaleString());
+const formatted = new Date(props.datetime).toLocaleString();
 </script>
