@@ -4,7 +4,7 @@
       <div class="column q-gutter-md">
         <q-btn fab :icon="starIcon" color="secondary" :loading="starring" @click="toggleExpandedStar()" />
         <q-btn fab :icon="readIcon" color="secondary" :loading="reading" @click="toggleExpandedRead()" />
-        <q-btn fab icon="close" color="primary" @click="store.closeExpanded" />
+        <q-btn fab icon="close" color="primary" @click="closeExpanded()" />
       </div>
     </template>
     <template v-else>
@@ -26,6 +26,13 @@ const reading = computed(() => store.expandedRead === "reading");
 const readIcon = computed(() => (store.expandedRead === "read" ? "drafts" : "mail"));
 const starring = computed(() => store.expandedStarred === "starring");
 const starIcon = computed(() => (store.expandedStarred === "starred" ? "star" : "star_border"));
+
+function closeExpanded() {
+  const expandedEntryId = store.expandedEntryId;
+  if (!expandedEntryId) return;
+  eventBus.emit(buildEventToScrollToEntry(expandedEntryId));
+  store.setExpand(expandedEntryId, false);
+}
 
 function markAllAsRead() {
   $q.dialog({
