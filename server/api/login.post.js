@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
 
   await setUserSession(event, {
     user: { id: user.id, username: user.username, nonce: user.nonce },
-    loggedInAt: new Date(),
+    loggedInAt: new Date().toISOString(),
   });
 
   return { userId: user.id };

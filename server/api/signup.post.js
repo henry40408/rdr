@@ -28,7 +28,7 @@ export default defineEventHandler(async (event) => {
   const created = await repository.createUser(user, body.password);
   await setUserSession(event, {
     user: { id: created.id, username: created.username, nonce: created.nonce },
-    loggedInAt: new Date(),
+    loggedInAt: new Date().toISOString(),
   });
 
   return { userId: created.id };

@@ -38,7 +38,7 @@ export default defineEventHandler(async (event) => {
         username: user.username,
         nonce: user.nonce,
       },
-      loggedInAt: new Date(),
+      loggedInAt: new Date().toISOString(),
     });
   }
 

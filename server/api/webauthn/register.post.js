@@ -47,7 +47,7 @@ export default defineWebAuthnRegisterEventHandler({
 
     await setUserSession(event, {
       user: { id: found.id, username: found.username, nonce: found.nonce },
-      loggedInAt: new Date(),
+      loggedInAt: new Date().toISOString(),
     });
   },
   excludeCredentials: async (event, userName) => {
