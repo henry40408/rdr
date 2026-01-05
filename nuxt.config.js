@@ -66,14 +66,13 @@ export default defineNuxtConfig({
     plugins: ["Dark", "Dialog", "LoadingBar", "Notify"],
     config: {
       brand: {
-        primary: "#4682B4",
-        secondary: "#5F9EA0",
-        accent: "#FF7F50",
-        positive: "#3CB371",
-        negative: "#FF6347",
-        info: "#1E90FF",
-        warning: "#FFA500",
-        // dark: "#2F4F4F", // use default dark color
+        primary: "#bd93f9", // Dracula Purple
+        secondary: "#6272a4", // Dracula Comment
+        accent: "#ff79c6", // Dracula Pink
+        positive: "#50FA7B", // Dracula Green
+        negative: "#ff5555", // Dracula Red
+        info: "#8be9fd", // Dracula Cyan
+        warning: "#ffb86c", // Dracula Orange
       },
       dark: true,
     },
