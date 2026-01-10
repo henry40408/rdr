@@ -1,7 +1,7 @@
 <template>
   <div class="dark:bg-gray-900 min-h-screen">
-    <WithLogin>
+    <WithAuth>
       <AuthenticatedHome />
-    </WithLogin>
+    </WithAuth>
   </div>
 </template>
