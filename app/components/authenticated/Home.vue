@@ -2,10 +2,10 @@
   <div class="flex min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
     <aside
       :class="[
-        'bg-gray-100 dark:bg-gray-800 p-4 border-r dark:border-gray-700',
-        'fixed md:static inset-y-0 left-0 z-50 w-full md:w-1/4',
-        'transform transition-transform duration-200 ease-in-out',
-        'flex flex-col space-y-4',
+        'fixed inset-y-0 left-0 z-50 w-full p-4 flex flex-col space-y-4',
+        'bg-gray-100 dark:bg-gray-800 border-r dark:border-gray-700',
+        'transition-transform duration-200 ease-in-out',
+        'md:static md:w-1/4',
         leftDrawerOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
       ]"
     >
@@ -36,17 +36,22 @@
       <LogoutButton class="w-full" />
     </aside>
 
-    <main class="flex-1 p-4 space-y-4 md:ml-1/4">
-      <div class="flex items-center gap-2">
-        <button
-          class="md:hidden text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white border rounded-full py-1 px-3"
-          @click="leftDrawerOpen = true"
-        >
-          &#9776;
-        </button>
-        <HomeEntryListHeader />
+    <main class="flex-1 flex flex-col h-screen overflow-hidden">
+      <div class="p-4 space-y-4">
+        <div class="flex items-center gap-2">
+          <button
+            class="md:hidden text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white border rounded-full py-1 px-3"
+            @click="leftDrawerOpen = true"
+          >
+            &#9776;
+          </button>
+          <HomeEntryListHeader />
+        </div>
+        <HomeEntryListToggles />
       </div>
-      <HomeEntryListToggles />
+      <div class="flex-1 overflow-y-auto">
+        <HomeEntryList />
+      </div>
     </main>
   </div>
 </template>
@@ -55,7 +60,7 @@
 const entryStore = useEntryStore();
 const { session } = useUserSession();
 
-await callOnce(() => entryStore.loadCount());
+await callOnce(() => entryStore.load());
 const countLabel = computed(() => {
   const count = entryStore.count;
   if (count > 999) return "999+";

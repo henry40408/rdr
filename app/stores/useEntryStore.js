@@ -6,6 +6,8 @@ export const useEntryStore = defineStore("entry", {
     status: useRoute().query.status ?? "unread",
     // result
     count: 0,
+    /** @type {Awaited<ReturnType<typeof import("../../server/api/entries.get").default>>['items']} */
+    items: [],
   }),
   getters: {
     query: (state) => {
@@ -13,11 +15,17 @@ export const useEntryStore = defineStore("entry", {
     },
   },
   actions: {
-    async loadCount() {
+    async load() {
       const headers = useRequestHeaders(["cookie"]);
       const query = this.query;
-      const data = await $fetch("/api/entries/count", { headers, query });
-      this.count = data.count;
+      const [data1, data2] = await Promise.all([
+        $fetch("/api/entries/count", { headers, query }),
+        $fetch("/api/entries", { headers, query }),
+      ]);
+      this.$patch({
+        count: data1.count,
+        items: data2.items,
+      });
     },
     /**
      * @param {'read'|'unread'|'all'|'starred'} newStatus
@@ -25,7 +33,7 @@ export const useEntryStore = defineStore("entry", {
     async setStatus(newStatus) {
       this.status = newStatus;
       await navigateTo({ query: { status: newStatus } });
-      await this.loadCount();
+      await this.load();
     },
   },
 });
