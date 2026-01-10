@@ -1,4 +1,5 @@
 import { isProduction } from "std-env";
+import tailwindcss from "@tailwindcss/vite";
 
 export default defineNuxtConfig({
   compatibilityDate: "2025-09-25",
@@ -16,6 +17,7 @@ export default defineNuxtConfig({
       title: "rdr",
     },
   },
+  css: ["@/assets/css/main.css"],
   modules: [
     "@nuxt/eslint",
     "@nuxt/test-utils/module",
@@ -58,6 +60,9 @@ export default defineNuxtConfig({
         },
       },
     },
+  },
+  vite: {
+    plugins: [tailwindcss()],
   },
   auth: { webAuthn: true },
   security: {
