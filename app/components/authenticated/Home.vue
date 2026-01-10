@@ -10,7 +10,9 @@
       ]"
     >
       <div class="flex justify-between items-center">
-        <div class="font-bold dark:text-white">rdr</div>
+        <div class="font-bold dark:text-white">
+          <a href="/" class="hover:underline">rdr</a>
+        </div>
         <button
           class="md:hidden text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white border rounded-full py-1 px-3"
           @click="leftDrawerOpen = false"
@@ -34,7 +36,7 @@
       <LogoutButton class="w-full" />
     </aside>
 
-    <main class="flex-1 p-4">
+    <main class="flex-1 p-4 space-y-4 md:ml-1/4">
       <div class="flex items-center gap-2">
         <button
           class="md:hidden text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white border rounded-full py-1 px-3"
@@ -42,14 +44,24 @@
         >
           &#9776;
         </button>
-        <h1 class="text-2xl font-bold dark:text-white">Unread</h1>
+        <HomeEntryListHeader />
       </div>
+      <HomeEntryListToggles />
     </main>
   </div>
 </template>
 
 <script setup lang="ts">
+const entryStore = useEntryStore();
 const { session } = useUserSession();
+
+await callOnce(() => entryStore.loadCount());
+const countLabel = computed(() => {
+  const count = entryStore.count;
+  if (count > 999) return "999+";
+  return count.toString();
+});
+useHead({ title: () => `(${countLabel.value}) rdr` });
 
 const leftDrawerOpen = ref(false);
 </script>
