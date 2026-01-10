@@ -1,5 +1,3 @@
 <template>
-  <WithAuth>
-    <AuthenticatedHome />
-  </WithAuth>
+  <div>home</div>
 </template>

@@ -16,7 +16,6 @@ export default defineNuxtConfig({
       title: "rdr",
     },
   },
-  css: ["@/assets/css/main.css", "@/assets/css/anchor.css"],
   modules: [
     "@nuxt/eslint",
     "@nuxt/test-utils/module",
@@ -24,7 +23,6 @@ export default defineNuxtConfig({
     "@pinia/nuxt",
     "@vueuse/nuxt",
     "nuxt-auth-utils",
-    "nuxt-quasar-ui",
     "nuxt-security",
   ],
   runtimeConfig: {
@@ -62,21 +60,6 @@ export default defineNuxtConfig({
     },
   },
   auth: { webAuthn: true },
-  quasar: {
-    plugins: ["Dark", "Dialog", "LoadingBar", "Notify"],
-    config: {
-      brand: {
-        primary: "#bd93f9", // Dracula Purple
-        secondary: "#6272a4", // Dracula Comment
-        accent: "#ff79c6", // Dracula Pink
-        positive: "#50FA7B", // Dracula Green
-        negative: "#ff5555", // Dracula Red
-        info: "#8be9fd", // Dracula Cyan
-        warning: "#ffb86c", // Dracula Orange
-      },
-      dark: true,
-    },
-  },
   security: {
     // Built-in rate limiter is not suitable for complex production applications.
     // It is meant to help simpler applications handle the issue of brute forcing.
