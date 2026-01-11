@@ -1,5 +1,5 @@
 <template>
-  <div class="mb-4">
+  <div v-if="localSettings.showEmpty || count > 0" class="mb-4">
     <div>
       <span class="text-gray-600 dark:text-gray-400">&gt;</span>
       {{ category.name }}
@@ -25,6 +25,7 @@ const props = defineProps<{
 }>();
 
 const categoryStore = useCategoryStore();
+const localSettings = useLocalSettings();
 
 const count = computed(
   () =>

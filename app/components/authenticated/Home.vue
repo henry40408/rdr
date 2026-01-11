@@ -26,7 +26,8 @@
         <a href="#" class="block text-gray-700 dark:text-gray-300 hover:underline">Feeds</a>
         <a href="#" class="block text-gray-700 dark:text-gray-300 hover:underline">Settings</a>
       </nav>
-      <div>Categories &amp; Feeds</div>
+      <div class="font-bold dark:text-white">Categories &amp; Feeds</div>
+      <HomeCategoryListOptions />
       <div class="flex-1 overflow-y-auto">
         <HomeCategoryList />
       </div>
