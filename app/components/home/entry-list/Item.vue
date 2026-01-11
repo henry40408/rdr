@@ -75,6 +75,6 @@ async function loadContent() {
   @apply mb-2;
 }
 .x-content pre {
-  @apply font-mono bg-gray-100 dark:bg-gray-800 p-2 rounded overflow-x-auto;
+  @apply bg-gray-100 dark:bg-gray-800 p-2 overflow-x-auto;
 }
 </style>

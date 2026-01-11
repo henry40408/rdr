@@ -14,7 +14,7 @@
           <a href="/" class="hover:underline">rdr</a>
         </div>
         <button
-          class="md:hidden text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white border rounded-full py-1 px-3"
+          class="md:hidden text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white border py-1 px-3"
           @click="leftDrawerOpen = false"
         >
           &times;
@@ -40,7 +40,7 @@
       <div class="p-4 space-y-4">
         <div class="flex items-center gap-2">
           <button
-            class="md:hidden text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white border rounded-full py-1 px-3"
+            class="md:hidden text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white border py-1 px-3"
             @click="leftDrawerOpen = true"
           >
             &#9776;
