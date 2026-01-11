@@ -57,10 +57,11 @@
 </template>
 
 <script setup lang="ts">
+const categoryStore = useCategoryStore();
 const entryStore = useEntryStore();
 const { session } = useUserSession();
 
-await callOnce(() => entryStore.load());
+await callOnce(() => Promise.all([categoryStore.load(), entryStore.load()]));
 const countLabel = computed(() => {
   const count = entryStore.count;
   if (count > 999) return "999+";

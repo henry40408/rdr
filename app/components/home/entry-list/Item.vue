@@ -1,7 +1,13 @@
 <template>
   <div>
-    <div class="text-sm text-gray-500 dark:text-gray-400">{{ category.name }} &middot; {{ feed.title }}</div>
-    <div>
+    <div class="text-sm text-gray-500 dark:text-gray-400">{{ feed.title }} &middot; {{ category.name }}</div>
+    <div class="flex items-center gap-2">
+      <img
+        v-if="imageExists"
+        alt="Feed Image"
+        class="w-4 h-4 bg-white"
+        :src="`/api/images/external/${buildFeedImageKey(feed.id)}`"
+      />
       <ExternalLink :href="entry.link">{{ entry.title }}</ExternalLink>
     </div>
     <details :open="open" @toggle="toggle">
@@ -16,6 +22,8 @@
 </template>
 
 <script setup lang="ts">
+const categoryStore = useCategoryStore();
+
 const props = defineProps<{
   entry: {
     id: number;
@@ -34,6 +42,12 @@ const props = defineProps<{
 
 const content = ref("");
 const open = ref(false);
+
+const imageExists = computed(
+  () =>
+    categoryStore.categories.find((c) => c.id === props.category.id)?.feeds.find((f) => f.id === props.feed.id)
+      ?.imageExists ?? false,
+);
 
 function toggle() {
   open.value = !open.value;
