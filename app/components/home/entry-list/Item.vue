@@ -7,7 +7,9 @@
     <details :open="open" @toggle="toggle">
       <summary>content</summary>
       <div class="border border-gray-700 p-2">
-        <MarkedText :text="content" class="x-content" />
+        <MarkedText v-if="contentStatus === 'success'" :text="content" class="x-content" />
+        <div v-if="contentStatus === 'pending'">Loading...</div>
+        <div v-else-if="contentStatus === 'error'" class="text-red-600 dark:text-red-400">{{ content }}</div>
       </div>
     </details>
   </div>
@@ -40,7 +42,7 @@ function toggle() {
 
 const contentStatus = ref<"idle" | "pending" | "success" | "error">("idle");
 async function loadContent() {
-  if (contentStatus.value !== "idle") return;
+  if (["pending", "success"].includes(contentStatus.value)) return;
 
   content.value = "";
   contentStatus.value = "pending";
