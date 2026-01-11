@@ -1,11 +1,11 @@
 <template>
-  <div class="flex min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+  <div class="flex h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
     <aside
       :class="[
         'fixed inset-y-0 left-0 z-50 w-full p-4 flex flex-col space-y-4',
         'bg-gray-100 dark:bg-gray-800 border-r dark:border-gray-700',
         'transition-transform duration-200 ease-in-out',
-        'md:static md:w-1/4',
+        'md:static md:w-1/4 md:h-screen',
         leftDrawerOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
       ]"
     >
@@ -26,7 +26,10 @@
         <a href="#" class="block text-gray-700 dark:text-gray-300 hover:underline">Feeds</a>
         <a href="#" class="block text-gray-700 dark:text-gray-300 hover:underline">Settings</a>
       </nav>
-      <div class="flex-1" />
+      <div>Categories &amp; Feeds</div>
+      <div class="flex-1 overflow-y-auto">
+        <HomeCategoryList />
+      </div>
       <div class="text-sm dark:text-gray-400">
         <div>
           Logged in as <strong>{{ session?.user?.username }}</strong>
