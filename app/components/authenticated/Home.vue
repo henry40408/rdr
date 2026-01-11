@@ -23,7 +23,7 @@
       <div class="font-bold dark:text-white">Navigation</div>
       <nav class="space-y-2">
         <a href="#" class="block text-gray-700 dark:text-gray-300 hover:underline">Home</a>
-        <a href="#" class="block text-gray-700 dark:text-gray-300 hover:underline">Profile</a>
+        <a href="#" class="block text-gray-700 dark:text-gray-300 hover:underline">Feeds</a>
         <a href="#" class="block text-gray-700 dark:text-gray-300 hover:underline">Settings</a>
       </nav>
       <div class="flex-1" />
