@@ -1,7 +1,10 @@
 <template>
   <div class="border-b last:border-b-0 p-2 space-y-2 border-b-gray-500">
     <div class="text-sm">
-      {{ feed.title }} &middot; {{ category.name }} &middot; <DurationToNow :datetime="entry.date" />
+      <a href="#" @click.prevent="entryStore.setFeed(feed.id, category.id)">{{ feed.title }}</a>
+      &middot;
+      <a href="#" @click.prevent="entryStore.setCategory(category.id)">{{ category.name }}</a>
+      &middot; <DurationToNow :datetime="entry.date" />
     </div>
     <div class="flex items-center gap-2">
       <img
@@ -25,6 +28,7 @@
 
 <script setup lang="ts">
 const categoryStore = useCategoryStore();
+const entryStore = useEntryStore();
 
 const props = defineProps<{
   entry: {

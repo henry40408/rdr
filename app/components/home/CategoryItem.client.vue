@@ -1,5 +1,5 @@
 <template>
-  <div v-if="localSettings.showEmpty || count > 0" class="border-b last:border-b-0 p-2 border-b-gray-500">
+  <div v-if="localSettings.showEmpty || count > 0" class="border-b last:border-b-0 p-2 border-b-gray-500 space-y-2">
     <div>
       <span>&gt;</span>
       {{ " " }}
