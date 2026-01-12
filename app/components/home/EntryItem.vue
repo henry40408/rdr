@@ -1,5 +1,5 @@
 <template>
-  <div class="border-b last:border-b-0 p-2 space-y-2">
+  <div class="border-b last:border-b-0 p-2 space-y-2 border-b-gray-500">
     <div class="text-sm">
       {{ feed.title }} &middot; {{ category.name }} &middot; <DurationToNow :datetime="entry.date" />
     </div>

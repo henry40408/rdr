@@ -1,5 +1,5 @@
 <template>
-  <div class="border">
+  <div class="border dark:border-gray-500">
     <HomeCategoryItem v-for="category in store.categories" :key="category.id" :category="category" />
   </div>
 </template>

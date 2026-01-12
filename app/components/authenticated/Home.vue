@@ -3,7 +3,7 @@
     <aside
       :class="[
         'fixed inset-y-0 left-0 z-50 w-full p-2 flex flex-col space-y-4',
-        'border-r dark:border-gray-700',
+        'border-r dark:border-gray-500',
         'transition-transform duration-200 ease-in-out',
         'md:static md:w-1/4 md:h-screen',
         'bg-gray-300 dark:bg-gray-800',

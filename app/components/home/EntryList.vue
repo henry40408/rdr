@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div v-if="store.items.length > 0" class="border">
+    <div v-if="store.items.length > 0" class="border dark:border-gray-500">
       <HomeEntryItem
         v-for="item in store.items"
         :key="item.entry.id"
