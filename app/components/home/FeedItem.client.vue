@@ -3,6 +3,7 @@
     <span>&gt;&gt;</span>
     {{ " " }}
     <a href="#" @click.prevent="entryStore.setFeed(feed.id, category.id)">{{ feed.title }}</a>
+    {{ " " }}
     <span>({{ feed.unreadCount }})</span>
   </div>
 </template>

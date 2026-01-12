@@ -4,6 +4,7 @@
       <span>&gt;</span>
       {{ " " }}
       <a href="#" @click.prevent="entryStore.setCategory(category.id)">{{ category.name }}</a>
+      {{ " " }}
       <span>({{ count }})</span>
     </div>
     <div>

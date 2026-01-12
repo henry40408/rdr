@@ -29,7 +29,7 @@
       Starred
     </button>
   </div>
-  <div class="flex">
+  <div class="md:flex">
     <div v-if="store.selectedCategory" class="p-2 bg-gray-800">
       {{ store.selectedCategory.name }}
       <a href="#" @click.prevent="store.setCategory(undefined)">clear</a>
