@@ -39,7 +39,7 @@ const store = useEntryStore();
 @reference "tailwindcss";
 
 .x-button {
-  @apply bg-gray-300 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700;
+  @apply bg-gray-300 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700;
 }
 
 .x-selected {
