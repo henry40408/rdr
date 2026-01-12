@@ -1,5 +1,5 @@
 <template>
-  <div class="px-2">
+  <div>
     <div v-if="store.items.length > 0" class="border">
       <HomeEntryItem
         v-for="item in store.items"
@@ -9,6 +9,7 @@
         :category="item.category"
       />
     </div>
+    <div v-else>No entries to display.</div>
   </div>
 </template>
 

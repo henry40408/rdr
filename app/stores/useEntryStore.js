@@ -32,8 +32,12 @@ export const useEntryStore = defineStore("entry", {
      */
     async setStatus(newStatus) {
       this.status = newStatus;
-      await navigateTo({ query: { status: newStatus } });
+      await this.updateRoute();
       await this.load();
+    },
+    async updateRoute() {
+      const status = this.status;
+      await navigateTo({ query: { status } });
     },
   },
 });
