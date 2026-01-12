@@ -6,7 +6,7 @@
         'border-r dark:border-gray-700',
         'transition-transform duration-200 ease-in-out',
         'md:static md:w-1/4 md:h-screen',
-        'bg-gray-100 dark:bg-gray-800',
+        'bg-gray-300 dark:bg-gray-800',
         leftDrawerOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
       ]"
     >
