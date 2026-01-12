@@ -2,14 +2,16 @@
   <div v-if="localSettings.showEmpty || feed.unreadCount > 0">
     <span>&gt;&gt;</span>
     {{ " " }}
-    <a href="#" @click.prevent="entryStore.setFeed(feed.id, category.id)">{{ feed.title }}</a>
+    <a href="#" :class="{ 'text-green-500': selected }" @click.prevent="entryStore.setFeed(feed.id, category.id)">{{
+      feed.title
+    }}</a>
     {{ " " }}
     <span>({{ feed.unreadCount }})</span>
   </div>
 </template>
 
 <script setup lang="ts">
-defineProps<{
+const props = defineProps<{
   feed: {
     id: number;
     title: string;
@@ -23,4 +25,8 @@ defineProps<{
 
 const entryStore = useEntryStore();
 const localSettings = useLocalSettings();
+
+const selected = computed(
+  () => entryStore.selectedFeed?.id === props.feed.id && entryStore.selectedCategory?.id === props.category.id,
+);
 </script>

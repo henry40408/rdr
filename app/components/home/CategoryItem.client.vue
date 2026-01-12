@@ -3,7 +3,9 @@
     <div>
       <span>&gt;</span>
       {{ " " }}
-      <a href="#" @click.prevent="entryStore.setCategory(category.id)">{{ category.name }}</a>
+      <a href="#" @click.prevent="entryStore.setCategory(category.id)" :class="{ 'text-green-500': selected }">{{
+        category.name
+      }}</a>
       {{ " " }}
       <span>({{ count }})</span>
     </div>
@@ -36,4 +38,5 @@ const count = computed(
       .find((c) => c.id === props.category.id)
       ?.feeds.reduce((acc, f) => acc + (f.unreadCount ?? 0), 0) ?? 0,
 );
+const selected = computed(() => entryStore.selectedCategory?.id === props.category.id);
 </script>
