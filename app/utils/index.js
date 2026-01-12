@@ -1,5 +1,19 @@
 // @ts-check
 
+import mitt from "mitt";
+
+export const EVENT_COLLAPSE_OTHERS = "EVENT_COLLAPSE_OTHERS";
+
+/**
+ * @typedef {object} EventType
+ * @property {number} EVENT_COLLAPSE_OTHERS
+ */
+
+/**
+ * @type {import('mitt').Emitter<EventType>}
+ */
+export const eventBus = mitt();
+
 /**
  * Marks all occurrences of keyword in HTML with <mark> tags
  * but don't break existing HTML tags or URLs.

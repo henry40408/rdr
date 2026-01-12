@@ -1,5 +1,5 @@
 <template>
-  <div class="border-b last:border-b-0 p-2 space-y-2 border-b-gray-500">
+  <div ref="entry" class="border-b last:border-b-0 p-2 space-y-2 border-b-gray-500">
     <div class="text-sm">
       <a href="#" @click.prevent="entryStore.setFeed(feed.id, category.id)">{{ feed.title }}</a>
       &middot;
@@ -15,8 +15,8 @@
       />
       <ExternalLink :href="entry.link">{{ entry.title }}</ExternalLink>
     </div>
-    <details :open="open" @toggle="toggle">
-      <summary>content</summary>
+    <details :open="open">
+      <summary @click.prevent="toggle">content</summary>
       <div class="mt-2 space-y-2">
         <div>
           <a v-if="fullContentStatus === 'idle'" href="#" @click.prevent="loadFullContent">full content</a>
@@ -44,6 +44,7 @@
 <script setup lang="ts">
 const categoryStore = useCategoryStore();
 const entryStore = useEntryStore();
+const templateRef = useTemplateRef("entry");
 
 const props = defineProps<{
   entry: {
@@ -72,9 +73,24 @@ const imageExists = computed(
       ?.imageExists ?? false,
 );
 
-function toggle() {
-  open.value = !open.value;
-  if (open.value) loadContent();
+function onCollapseOthers(entryId: number) {
+  if (entryId !== props.entry.id) open.value = false;
+}
+onMounted(() => {
+  eventBus.on(EVENT_COLLAPSE_OTHERS, onCollapseOthers);
+});
+onUnmounted(() => {
+  eventBus.off(EVENT_COLLAPSE_OTHERS, onCollapseOthers);
+});
+
+async function toggle() {
+  const newValue = !open.value;
+  if (newValue) {
+    eventBus.emit(EVENT_COLLAPSE_OTHERS, props.entry.id); // Collapse others
+    await loadContent();
+    templateRef.value?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  open.value = newValue;
 }
 
 const contentStatus = ref<"idle" | "pending" | "success" | "error">("idle");
