@@ -17,10 +17,25 @@
     </div>
     <details :open="open" @toggle="toggle">
       <summary>content</summary>
-      <div class="mt-2">
-        <MarkedText v-if="contentStatus === 'success'" :text="content" class="x-content" />
-        <div v-if="contentStatus === 'pending'">Loading...</div>
-        <div v-else-if="contentStatus === 'error'">{{ content }}</div>
+      <div class="mt-2 space-y-2">
+        <div>
+          <a v-if="fullContentStatus === 'idle'" href="#" @click.prevent="loadFullContent">full content</a>
+          <a v-if="fullContentStatus !== 'idle'" href="#" @click.prevent="fullContentStatus = 'idle'">
+            read original
+          </a>
+        </div>
+        <div>
+          <div v-if="fullContentStatus !== 'idle'">
+            <MarkedText class="x-content" :text="fullContent" />
+            <div v-if="fullContentStatus === 'pending'">Loading...</div>
+            <div v-else-if="fullContentStatus === 'error'">{{ fullContent }}</div>
+          </div>
+          <div v-else>
+            <MarkedText v-if="contentStatus === 'success'" :text="content" class="x-content" />
+            <div v-if="contentStatus === 'pending'">Loading...</div>
+            <div v-else-if="contentStatus === 'error'">{{ content }}</div>
+          </div>
+        </div>
       </div>
     </details>
   </div>
@@ -48,6 +63,7 @@ const props = defineProps<{
 }>();
 
 const content = ref("");
+const fullContent = ref("");
 const open = ref(false);
 
 const imageExists = computed(
@@ -74,6 +90,22 @@ async function loadContent() {
   } catch (e) {
     contentStatus.value = "error";
     content.value = String(e);
+  }
+}
+
+const fullContentStatus = ref<"idle" | "pending" | "success" | "error">("idle");
+async function loadFullContent() {
+  if (["pending", "success"].includes(fullContentStatus.value)) return;
+
+  fullContent.value = "";
+  fullContentStatus.value = "pending";
+  try {
+    const data = await $fetch(`/api/entries/${props.entry.id}/full-content`);
+    fullContent.value = data.content;
+    fullContentStatus.value = "success";
+  } catch (e) {
+    fullContentStatus.value = "error";
+    fullContent.value = String(e);
   }
 }
 </script>
