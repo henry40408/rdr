@@ -1,5 +1,5 @@
 <template>
-  <HomeFeedItem v-for="feed in category.feeds" :key="feed.id" :feed="feed" />
+  <HomeFeedItem v-for="feed in category.feeds" :key="feed.id" :feed="feed" :category="category" />
 </template>
 
 <script setup lang="ts">

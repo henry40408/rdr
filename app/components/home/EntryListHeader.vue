@@ -1,6 +1,6 @@
 <template>
   <div class="text-2xl font-bold">
-    (<span :title="String(store.count)">{{ countLabel }}</span
+    (<span v-if="store.pending">...</span><span v-else :title="String(store.count)">{{ countLabel }}</span
     >) {{ statusLabel }}
   </div>
 </template>

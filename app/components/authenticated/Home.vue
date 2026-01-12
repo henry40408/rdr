@@ -18,7 +18,7 @@
       </div>
       <div class="font-bold">Navigation</div>
       <nav class="space-y-2">
-        <a href="#" class="block hover:underline">Home</a>
+        <a href="/" class="block hover:underline">Home</a>
         <a href="#" class="block hover:underline">Feeds</a>
         <a href="#" class="block hover:underline">Settings</a>
       </nav>

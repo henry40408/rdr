@@ -2,7 +2,8 @@
   <div v-if="localSettings.showEmpty || count > 0" class="border-b last:border-b-0 p-2 border-b-gray-500">
     <div>
       <span>&gt;</span>
-      {{ category.name }}
+      {{ " " }}
+      <a href="#" @click.prevent="entryStore.setCategory(category.id)">{{ category.name }}</a>
       <span>({{ count }})</span>
     </div>
     <div>
@@ -25,6 +26,7 @@ const props = defineProps<{
 }>();
 
 const categoryStore = useCategoryStore();
+const entryStore = useEntryStore();
 const localSettings = useLocalSettings();
 
 const count = computed(

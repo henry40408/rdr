@@ -29,6 +29,16 @@
       Starred
     </button>
   </div>
+  <div class="flex">
+    <div v-if="store.selectedCategory" class="p-2 bg-gray-800">
+      {{ store.selectedCategory.name }}
+      <a href="#" @click.prevent="store.setCategory(undefined)">clear</a>
+    </div>
+    <div v-if="store.selectedFeed" class="p-2 bg-gray-800">
+      {{ store.selectedFeed.title }}
+      <a href="#" @click.prevent="store.setFeed(undefined, store.selectedFeed.categoryId)">clear</a>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
