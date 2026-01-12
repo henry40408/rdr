@@ -2,7 +2,7 @@
   <div class="flex h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
     <aside
       :class="[
-        'fixed inset-y-0 left-0 z-50 w-full p-4 flex flex-col space-y-4',
+        'fixed inset-y-0 left-0 z-50 w-full p-2 flex flex-col space-y-4',
         'bg-gray-100 dark:bg-gray-800 border-r dark:border-gray-700',
         'transition-transform duration-200 ease-in-out',
         'md:static md:w-1/4 md:h-screen',

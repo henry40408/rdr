@@ -1,5 +1,5 @@
 <template>
-  <div v-if="localSettings.showEmpty || count > 0" class="mb-4">
+  <div v-if="localSettings.showEmpty || count > 0" class="border-b last:border-b-0 p-2">
     <div>
       <span class="text-gray-600 dark:text-gray-400">&gt;</span>
       {{ category.name }}

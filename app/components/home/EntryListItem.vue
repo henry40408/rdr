@@ -1,6 +1,8 @@
 <template>
-  <div>
-    <div class="text-sm text-gray-500 dark:text-gray-400">{{ feed.title }} &middot; {{ category.name }}</div>
+  <div class="border-b last:border-b-0 p-2 space-y-2">
+    <div class="text-sm text-gray-500 dark:text-gray-400">
+      {{ feed.title }} &middot; {{ category.name }} &middot; <DurationToNow :datetime="entry.date" />
+    </div>
     <div class="flex items-center gap-2">
       <img
         v-if="imageExists"
@@ -12,7 +14,7 @@
     </div>
     <details :open="open" @toggle="toggle">
       <summary>content</summary>
-      <div class="border border-gray-700 p-2">
+      <div class="mt-2">
         <MarkedText v-if="contentStatus === 'success'" :text="content" class="x-content" />
         <div v-if="contentStatus === 'pending'">Loading...</div>
         <div v-else-if="contentStatus === 'error'" class="text-red-600 dark:text-red-400">{{ content }}</div>
@@ -29,6 +31,7 @@ const props = defineProps<{
     id: number;
     title: string;
     link: string;
+    date: string;
   };
   feed: {
     id: number;
