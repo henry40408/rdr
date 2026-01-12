@@ -99,14 +99,21 @@ export const useEntryStore = defineStore("entry", {
      * @param {'read'|'unread'|'starred'|'unstarred'} status
      */
     async updateStatus(entryId, status) {
+      const categoryStore = useCategoryStore();
+
       const { updated } = await $fetch("/api/entries/status", {
         method: "PUT",
         body: { status, entryIds: [entryId] },
       });
-      if (updated > 0) {
-        if (status === "read") this.readIds.push(entryId);
-        if (status !== "unread") this.readIds = this.readIds.filter((id) => id !== entryId);
-      }
+      if (updated === 0) return;
+
+      const query = this.query;
+      const [data] = await Promise.all([$fetch("/api/entries/count", { query }), categoryStore.load()]);
+      this.$patch((state) => {
+        state.count = data.count;
+        if (status === "read" && !state.readIds.includes(entryId)) state.readIds.push(entryId);
+        if (status === "unread") state.readIds = state.readIds.filter((id) => id !== entryId);
+      });
     },
   },
 });

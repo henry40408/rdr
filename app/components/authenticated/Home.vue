@@ -37,7 +37,7 @@
     </aside>
 
     <main class="flex-1 flex flex-col h-screen overflow-hidden">
-      <div class="p-2 space-y-4">
+      <div class="p-2 space-y-2">
         <div class="flex items-center gap-2">
           <button class="md:hidden hover:underline border py-1 px-3" @click="leftDrawerOpen = true">&#9776;</button>
           <HomeEntryListHeader />
