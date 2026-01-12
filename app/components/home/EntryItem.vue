@@ -7,13 +7,20 @@
       &middot; <DurationToNow :datetime="entry.date" />
     </div>
     <div class="flex items-center gap-2">
+      <input type="checkbox" :checked="isRead" @change="toggleRead" />
       <img
         v-if="imageExists"
         alt="Feed Image"
         class="w-4 h-4 bg-white"
         :src="`/api/images/external/${buildFeedImageKey(feed.id)}`"
       />
-      <ExternalLink :href="entry.link">{{ entry.title }}</ExternalLink>
+      <ExternalLink
+        :href="entry.link"
+        :class="{
+          'line-through text-gray-500': isRead,
+        }"
+        >{{ entry.title }}</ExternalLink
+      >
     </div>
     <details :open="open">
       <summary @click.prevent="toggle">content</summary>
@@ -72,6 +79,7 @@ const imageExists = computed(
     categoryStore.categories.find((c) => c.id === props.category.id)?.feeds.find((f) => f.id === props.feed.id)
       ?.imageExists ?? false,
 );
+const isRead = computed(() => entryStore.readIds.includes(props.entry.id));
 
 function onCollapseOthers(entryId: number) {
   if (entryId !== props.entry.id) open.value = false;
@@ -123,6 +131,10 @@ async function loadFullContent() {
     fullContentStatus.value = "error";
     fullContent.value = String(e);
   }
+}
+
+function toggleRead() {
+  entryStore.updateStatus(props.entry.id, isRead.value ? "unread" : "read");
 }
 </script>
 

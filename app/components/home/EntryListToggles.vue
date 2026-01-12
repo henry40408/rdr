@@ -30,11 +30,11 @@
     </button>
   </div>
   <div class="md:flex">
-    <div v-if="store.selectedCategory" class="p-2 bg-gray-800">
+    <div v-if="store.selectedCategory" class="p-2 x-button">
       {{ store.selectedCategory.name }}
       <a href="#" @click.prevent="store.setCategory(undefined)">clear</a>
     </div>
-    <div v-if="store.selectedFeed" class="p-2 bg-gray-800">
+    <div v-if="store.selectedFeed" class="p-2 x-button">
       {{ store.selectedFeed.title }}
       <a href="#" @click.prevent="store.setFeed(undefined, store.selectedFeed.categoryId)">clear</a>
     </div>

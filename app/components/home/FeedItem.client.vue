@@ -2,9 +2,13 @@
   <div v-if="localSettings.showEmpty || feed.unreadCount > 0">
     <span>&gt;&gt;</span>
     {{ " " }}
-    <a href="#" :class="{ 'text-green-500': selected }" @click.prevent="entryStore.setFeed(feed.id, category.id)">{{
-      feed.title
-    }}</a>
+    <a
+      href="#"
+      :class="{ 'text-green-600 dark:text-green-400': selected }"
+      @click.prevent="entryStore.setFeed(feed.id, category.id)"
+    >
+      {{ feed.title }}
+    </a>
     {{ " " }}
     <span>({{ feed.unreadCount }})</span>
   </div>

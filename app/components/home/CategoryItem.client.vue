@@ -3,9 +3,13 @@
     <div>
       <span>&gt;</span>
       {{ " " }}
-      <a href="#" @click.prevent="entryStore.setCategory(category.id)" :class="{ 'text-green-500': selected }">{{
-        category.name
-      }}</a>
+      <a
+        href="#"
+        :class="{ 'text-green-600 dark:text-green-400': selected }"
+        @click.prevent="entryStore.setCategory(category.id)"
+      >
+        {{ category.name }}
+      </a>
       {{ " " }}
       <span>({{ count }})</span>
     </div>

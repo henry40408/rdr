@@ -5,6 +5,8 @@ export const useEntryStore = defineStore("entry", {
     const route = useRoute();
     return {
       // parameters
+      /** @type {number[]} */
+      readIds: [],
       selectedCategoryId: (route.query.categoryId && String(route.query.categoryId)) ?? undefined,
       selectedFeedId: (route.query.feedId && String(route.query.feedId)) ?? undefined,
       status: (route.query.status && String(route.query.status)) ?? "unread",
@@ -56,6 +58,7 @@ export const useEntryStore = defineStore("entry", {
       this.$patch({
         count: data1.count,
         items: data2.items,
+        readIds: data2.items.map((i) => (i.entry.readAt ? i.entry.id : undefined)).filter((i) => !!i),
       });
     },
     /**
@@ -90,6 +93,20 @@ export const useEntryStore = defineStore("entry", {
       const feedId = this.selectedFeedId;
       const status = this.status;
       await navigateTo({ query: { categoryId, feedId, status } });
+    },
+    /**
+     * @param {number} entryId
+     * @param {'read'|'unread'|'starred'|'unstarred'} status
+     */
+    async updateStatus(entryId, status) {
+      const { updated } = await $fetch("/api/entries/status", {
+        method: "PUT",
+        body: { status, entryIds: [entryId] },
+      });
+      if (updated > 0) {
+        if (status === "read") this.readIds.push(entryId);
+        if (status !== "unread") this.readIds = this.readIds.filter((id) => id !== entryId);
+      }
     },
   },
 });
