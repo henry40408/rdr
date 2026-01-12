@@ -1,5 +1,5 @@
 <template>
-  <div class="text-2xl font-bold dark:text-white">
+  <div class="text-2xl font-bold">
     (<span :title="String(store.count)">{{ countLabel }}</span
     >) {{ statusLabel }}
   </div>

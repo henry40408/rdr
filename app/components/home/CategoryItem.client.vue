@@ -1,9 +1,9 @@
 <template>
   <div v-if="localSettings.showEmpty || count > 0" class="border-b last:border-b-0 p-2">
     <div>
-      <span class="text-gray-600 dark:text-gray-400">&gt;</span>
+      <span>&gt;</span>
       {{ category.name }}
-      <span class="text-gray-600 dark:text-gray-400">({{ count }})</span>
+      <span>({{ count }})</span>
     </div>
     <div>
       <HomeFeedList :category="category" />

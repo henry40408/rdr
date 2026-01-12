@@ -1,7 +1,7 @@
 <template>
   <div v-if="localSettings.showEmpty || feed.unreadCount > 0">
-    <span class="text-gray-600 dark:text-gray-400">&gt;&gt;</span>
-    {{ feed.title }} <span class="text-gray-600 dark:text-gray-400">({{ feed.unreadCount }})</span>
+    <span>&gt;&gt;</span>
+    {{ feed.title }} <span>({{ feed.unreadCount }})</span>
   </div>
 </template>
 

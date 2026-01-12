@@ -1,5 +1,5 @@
 <template>
-  <div class="dark:bg-gray-900 min-h-screen">
+  <div class="min-h-screen">
     <WithAuth>
       <AuthenticatedHome />
     </WithAuth>

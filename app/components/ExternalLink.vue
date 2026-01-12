@@ -12,6 +12,6 @@ defineProps<{ href: string }>();
 <style scoped>
 @reference "tailwindcss";
 a {
-  @apply text-blue-600 dark:text-blue-400 hover:underline;
+  @apply hover:underline;
 }
 </style>

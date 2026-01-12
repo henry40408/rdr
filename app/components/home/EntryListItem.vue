@@ -1,13 +1,13 @@
 <template>
   <div class="border-b last:border-b-0 p-2 space-y-2">
-    <div class="text-sm text-gray-500 dark:text-gray-400">
+    <div class="text-sm">
       {{ feed.title }} &middot; {{ category.name }} &middot; <DurationToNow :datetime="entry.date" />
     </div>
     <div class="flex items-center gap-2">
       <img
         v-if="imageExists"
         alt="Feed Image"
-        class="w-4 h-4 bg-white"
+        class="w-4 h-4"
         :src="`/api/images/external/${buildFeedImageKey(feed.id)}`"
       />
       <ExternalLink :href="entry.link">{{ entry.title }}</ExternalLink>
@@ -17,7 +17,7 @@
       <div class="mt-2">
         <MarkedText v-if="contentStatus === 'success'" :text="content" class="x-content" />
         <div v-if="contentStatus === 'pending'">Loading...</div>
-        <div v-else-if="contentStatus === 'error'" class="text-red-600 dark:text-red-400">{{ content }}</div>
+        <div v-else-if="contentStatus === 'error'">{{ content }}</div>
       </div>
     </details>
   </div>
@@ -78,7 +78,7 @@ async function loadContent() {
 @reference "tailwindcss";
 
 .x-content a {
-  @apply text-blue-600 dark:text-blue-400 underline hover:text-blue-800 dark:hover:text-blue-600;
+  @apply underline;
 }
 .x-content h1,
 .x-content h2,
@@ -92,6 +92,6 @@ async function loadContent() {
   @apply mb-2;
 }
 .x-content pre {
-  @apply bg-gray-100 dark:bg-gray-800 p-2 overflow-x-auto;
+  @apply p-2 overflow-x-auto;
 }
 </style>
