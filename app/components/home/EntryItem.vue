@@ -7,7 +7,7 @@
       <img
         v-if="imageExists"
         alt="Feed Image"
-        class="w-4 h-4"
+        class="w-4 h-4 bg-white"
         :src="`/api/images/external/${buildFeedImageKey(feed.id)}`"
       />
       <ExternalLink :href="entry.link">{{ entry.title }}</ExternalLink>

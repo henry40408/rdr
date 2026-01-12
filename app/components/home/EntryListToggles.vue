@@ -1,27 +1,31 @@
 <template>
   <div>
     <button
-      :class="{ 'font-bold': store.status === 'unread' }"
-      class="px-3 py-1 hover:cursor-pointer"
+      class="x-button px-3 py-1 hover:cursor-pointer"
+      :class="{ 'x-selected font-bold': store.status === 'unread' }"
       @click="store.setStatus('unread')"
     >
       Unread
     </button>
     <button
-      :class="{ 'font-bold': store.status === 'all' }"
-      class="px-3 py-1 hover:cursor-pointer"
+      class="x-button px-3 py-1 hover:cursor-pointer"
+      :class="{ 'x-selected font-bold': store.status === 'all' }"
       @click="store.setStatus('all')"
     >
       All
     </button>
     <button
-      :class="{ 'font-bold': store.status === 'read' }"
-      class="px-3 py-1 hover:cursor-pointer"
+      class="x-button px-3 py-1 hover:cursor-pointer"
+      :class="{ 'x-selected font-bold': store.status === 'read' }"
       @click="store.setStatus('read')"
     >
       Read
     </button>
-    <button :class="{ 'font-bold': store.status === 'starred' }" class="px-3 py-1" @click="store.setStatus('starred')">
+    <button
+      class="x-button px-3 py-1 hover:cursor-pointer"
+      :class="{ 'x-selected font-bold': store.status === 'starred' }"
+      @click="store.setStatus('starred')"
+    >
       Starred
     </button>
   </div>
@@ -30,3 +34,15 @@
 <script setup lang="ts">
 const store = useEntryStore();
 </script>
+
+<style scope>
+@reference "tailwindcss";
+
+.x-button {
+  @apply bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700;
+}
+
+.x-selected {
+  @apply bg-green-100 dark:bg-green-800;
+}
+</style>

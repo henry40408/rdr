@@ -1,7 +1,7 @@
 <template>
   <div class="px-2">
-    <div class="border">
-      <HomeEntryListItem
+    <div v-if="store.items.length > 0" class="border">
+      <HomeEntryItem
         v-for="item in store.items"
         :key="item.entry.id"
         :feed="item.feed"
