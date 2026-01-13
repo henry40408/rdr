@@ -65,6 +65,12 @@
       </div>
     </main>
   </div>
+  <button
+    class="fixed bottom-4 right-4 bg-gray-600 hover:bg-gray-500 text-white rounded-full w-12 h-12 text-4xl rounded-full hover:cursor-pointer"
+    @click="eventBus.emit(EVENT_COLLAPSE_OTHERS, 0)"
+  >
+    &times;
+  </button>
 </template>
 
 <script setup lang="ts">

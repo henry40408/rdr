@@ -108,8 +108,8 @@ export const useEntryStore = defineStore("entry", {
         query: {
           categoryId: this.selectedCategoryId,
           feedId: this.selectedFeedId,
-          search: this.search ? this.search : undefined,
-          status: this.status !== DEFAULT_STATUS ? this.status : undefined,
+          search: this.search === "" ? undefined : this.search,
+          status: this.status === DEFAULT_STATUS ? undefined : this.status,
         },
       });
     },

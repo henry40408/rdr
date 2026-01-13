@@ -9,19 +9,29 @@
         &middot; <DurationToNow :datetime="entry.date" />
       </div>
       <div class="flex items-center space-x-2">
-        <input type="checkbox" :checked="isRead" :disabled="reading" @change="toggleRead" />
-        <img
-          v-if="imageExists"
-          alt="Feed Image"
-          class="w-4 h-4 bg-white"
-          :src="`/api/images/external/${buildFeedImageKey(feed.id)}`"
-        />
-        <ExternalLink :href="entry.link" :class="{ 'line-through text-gray-500': isRead }">
-          <MarkedText :text="entry.title" :keyword="entryStore.search" />
-        </ExternalLink>
+        <input type="checkbox" :checked="isRead" :disabled="reading" @change.prevent.stop="toggleRead" />
+        <div>
+          <img
+            v-if="imageExists"
+            alt="Feed Image"
+            class="w-4 h-4 align-middle bg-white inline mr-2"
+            :src="`/api/images/external/${buildFeedImageKey(feed.id)}`"
+          />
+          <MarkedText
+            :text="entry.title"
+            :keyword="entryStore.search"
+            :class="{ 'line-through text-gray-500': isRead }"
+          />
+        </div>
       </div>
     </div>
     <div v-if="open" class="p-2 space-y-4">
+      <div class="text-lg font-bold">
+        <ExternalLink :href="entry.link">{{ entry.title }}</ExternalLink>
+      </div>
+      <div>
+        <span v-if="entry.author">Author: {{ entry.author }}</span>
+      </div>
       <div>
         <button v-if="!['success', 'error'].includes(fullContentStatus)" class="x-button" @click="loadFullContent">
           {{ fullContentStatus === "pending" ? "loading..." : "full content" }}
@@ -46,6 +56,7 @@ const props = defineProps<{
     title: string;
     link: string;
     date: string;
+    author?: string;
   };
   feed: {
     id: number;
