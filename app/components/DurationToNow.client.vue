@@ -1,5 +1,5 @@
 <template>
-  <span v-if="props.datetime" :title="props.datetime">{{ formatted }}</span>
+  <span v-if="props.datetime" :title="localeString">{{ formatted }}</span>
   <span v-else>Unknown date</span>
 </template>
 
@@ -14,5 +14,10 @@ const formatted = computed(() => {
   if (!props.datetime) return "Unknown date";
   const date = new Date(props.datetime);
   return formatDistanceToNow(date, { addSuffix: true });
+});
+const localeString = computed(() => {
+  if (!props.datetime) return "";
+  const date = new Date(props.datetime);
+  return date.toLocaleString();
 });
 </script>

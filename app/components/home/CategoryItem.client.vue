@@ -1,7 +1,7 @@
 <template>
   <div v-if="localSettings.showEmpty || count > 0" class="border-b dark:border-b-gray-500 last:border-0 p-2 space-y-2">
-    <div>
-      <span class="mr-4">&#x1F4C1;</span>
+    <div class="space-x-4">
+      <span>&#x1F4C1;</span>
       <a
         href="#"
         :class="{ 'text-green-700 dark:text-green-400 font-bold': selected }"
@@ -9,7 +9,6 @@
       >
         {{ category.name }}
       </a>
-      {{ " " }}
       <span>({{ count }})</span>
     </div>
     <div>

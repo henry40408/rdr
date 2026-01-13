@@ -28,10 +28,10 @@
         <summary @click.prevent="toggle">content</summary>
         <div class="mt-2 space-y-2">
           <div>
-            <a v-if="fullContentStatus === 'idle'" href="#" @click.prevent="loadFullContent">full content</a>
-            <a v-if="fullContentStatus !== 'idle'" href="#" @click.prevent="fullContentStatus = 'idle'">
+            <button v-if="fullContentStatus === 'idle'" class="x-button" @click="loadFullContent">full content</button>
+            <button v-if="fullContentStatus !== 'idle'" class="x-button x-revert" @click="fullContentStatus = 'idle'">
               read original
-            </a>
+            </button>
           </div>
           <div>
             <div v-if="fullContentStatus !== 'idle'">
@@ -109,7 +109,9 @@ const contentStatus = ref<"idle" | "pending" | "success" | "error">("idle");
 async function loadContent() {
   if (["pending", "success"].includes(contentStatus.value)) return;
 
+  error.value = "";
   content.value = "";
+
   contentStatus.value = "pending";
   try {
     const data = await $fetch(`/api/entries/${props.entry.id}/content`);
@@ -117,7 +119,7 @@ async function loadContent() {
     contentStatus.value = "success";
   } catch (e) {
     contentStatus.value = "error";
-    content.value = String(e);
+    error.value = String(e);
   }
 }
 
@@ -125,7 +127,9 @@ const fullContentStatus = ref<"idle" | "pending" | "success" | "error">("idle");
 async function loadFullContent() {
   if (["pending", "success"].includes(fullContentStatus.value)) return;
 
+  error.value = "";
   fullContent.value = "";
+
   fullContentStatus.value = "pending";
   try {
     const data = await $fetch(`/api/entries/${props.entry.id}/full-content`);
@@ -133,7 +137,7 @@ async function loadFullContent() {
     fullContentStatus.value = "success";
   } catch (e) {
     fullContentStatus.value = "error";
-    fullContent.value = String(e);
+    error.value = String(e);
   }
 }
 
@@ -141,8 +145,8 @@ const reading = ref(false);
 async function toggleRead() {
   if (reading.value) return;
   error.value = "";
+  reading.value = true;
   try {
-    reading.value = true;
     await entryStore.updateStatus(props.entry.id, isRead.value ? "unread" : "read");
   } catch (e) {
     error.value = String(e);
@@ -151,25 +155,3 @@ async function toggleRead() {
   }
 }
 </script>
-
-<style scope>
-@reference "tailwindcss";
-
-.x-content a {
-  @apply underline;
-}
-.x-content h1,
-.x-content h2,
-.x-content h3 {
-  @apply font-bold mt-4 mb-2;
-}
-.x-content img {
-  @apply max-w-full h-auto mb-2;
-}
-.x-content p {
-  @apply mb-2;
-}
-.x-content pre {
-  @apply p-2 overflow-x-auto;
-}
-</style>

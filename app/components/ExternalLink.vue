@@ -8,10 +8,3 @@
 <script setup lang="ts">
 defineProps<{ href: string }>();
 </script>
-
-<style scoped>
-@reference "tailwindcss";
-a {
-  @apply hover:underline;
-}
-</style>

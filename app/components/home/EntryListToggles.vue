@@ -49,15 +49,3 @@
 <script setup lang="ts">
 const store = useEntryStore();
 </script>
-
-<style scope>
-@reference "tailwindcss";
-
-.x-button {
-  @apply bg-gray-300 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 px-3 py-1 hover:cursor-pointer;
-}
-
-.x-selected {
-  @apply bg-green-300 dark:bg-green-800;
-}
-</style>

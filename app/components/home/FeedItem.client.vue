@@ -1,6 +1,6 @@
 <template>
-  <div v-if="localSettings.showEmpty || feed.unreadCount > 0">
-    <span class="mr-4">
+  <div v-if="localSettings.showEmpty || feed.unreadCount > 0" class="space-x-4">
+    <span>
       <img
         v-if="imageExists"
         class="bg-white inline h-4 w-4"
@@ -15,7 +15,6 @@
     >
       {{ feed.title }}
     </a>
-    {{ " " }}
     <span>({{ feed.unreadCount }})</span>
   </div>
 </template>
