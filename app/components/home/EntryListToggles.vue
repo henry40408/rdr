@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-2 md:space-x-2 md:flex md:space-y-0">
+  <div class="space-y-2 md:space-x-2 md:flex md:space-y-0 text-sm md:text-base">
     <div>
       <button class="x-button" @click.prevent="store.load()">{{ store.pending ? "..." : "Refresh" }}</button>
     </div>
@@ -34,7 +34,7 @@
       </button>
     </div>
   </div>
-  <div class="md:flex">
+  <div class="md:flex text-sm md:text-base">
     <div v-if="store.selectedCategory" class="p-2 x-button">
       {{ store.selectedCategory.name }}
       <a href="#" @click.prevent="store.setCategory(undefined)">clear</a>
