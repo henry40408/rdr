@@ -4,7 +4,7 @@
     {{ " " }}
     <a
       href="#"
-      :class="{ 'text-green-600 dark:text-green-400': selected }"
+      :class="{ 'text-green-700 dark:text-green-400 font-bold': selected }"
       @click.prevent="entryStore.setFeed(feed.id, category.id)"
     >
       {{ feed.title }}

@@ -1,50 +1,53 @@
 <template>
-  <div ref="entry" class="border-b last:border-b-0 p-2 space-y-2 border-b-gray-500">
-    <div class="text-sm">
-      <a href="#" @click.prevent="entryStore.setFeed(feed.id, category.id)">{{ feed.title }}</a>
-      &middot;
-      <a href="#" @click.prevent="entryStore.setCategory(category.id)">{{ category.name }}</a>
-      &middot; <DurationToNow :datetime="entry.date" />
-    </div>
-    <div class="flex items-center gap-2">
-      <input type="checkbox" :checked="isRead" @change="toggleRead" />
-      <img
-        v-if="imageExists"
-        alt="Feed Image"
-        class="w-4 h-4 bg-white"
-        :src="`/api/images/external/${buildFeedImageKey(feed.id)}`"
-      />
-      <ExternalLink
-        :href="entry.link"
-        :class="{
-          'line-through text-gray-500': isRead,
-        }"
-        >{{ entry.title }}</ExternalLink
-      >
-    </div>
-    <details :open="open">
-      <summary @click.prevent="toggle">content</summary>
-      <div class="mt-2 space-y-2">
-        <div>
-          <a v-if="fullContentStatus === 'idle'" href="#" @click.prevent="loadFullContent">full content</a>
-          <a v-if="fullContentStatus !== 'idle'" href="#" @click.prevent="fullContentStatus = 'idle'">
-            read original
-          </a>
-        </div>
-        <div>
-          <div v-if="fullContentStatus !== 'idle'">
-            <MarkedText class="x-content" :text="fullContent" />
-            <div v-if="fullContentStatus === 'pending'">Loading...</div>
-            <div v-else-if="fullContentStatus === 'error'">{{ fullContent }}</div>
-          </div>
-          <div v-else>
-            <MarkedText v-if="contentStatus === 'success'" :text="content" class="x-content" />
-            <div v-if="contentStatus === 'pending'">Loading...</div>
-            <div v-else-if="contentStatus === 'error'">{{ content }}</div>
-          </div>
-        </div>
+  <div ref="entry" class="border-b last:border-b-0 border-b-gray-500">
+    <div v-if="error" class="text-white bg-red-500 p-2">{{ error }}</div>
+    <div class="p-2 space-y-2">
+      <div class="text-sm">
+        <a href="#" @click.prevent="entryStore.setFeed(feed.id, category.id)">{{ feed.title }}</a>
+        &middot;
+        <a href="#" @click.prevent="entryStore.setCategory(category.id)">{{ category.name }}</a>
+        &middot; <DurationToNow :datetime="entry.date" />
       </div>
-    </details>
+      <div class="flex items-center gap-2">
+        <input type="checkbox" :checked="isRead" :disabled="reading" @change="toggleRead" />
+        <img
+          v-if="imageExists"
+          alt="Feed Image"
+          class="w-4 h-4 bg-white"
+          :src="`/api/images/external/${buildFeedImageKey(feed.id)}`"
+        />
+        <ExternalLink
+          :href="entry.link"
+          :class="{
+            'line-through text-gray-500': isRead,
+          }"
+          >{{ entry.title }}</ExternalLink
+        >
+      </div>
+      <details :open="open">
+        <summary @click.prevent="toggle">content</summary>
+        <div class="mt-2 space-y-2">
+          <div>
+            <a v-if="fullContentStatus === 'idle'" href="#" @click.prevent="loadFullContent">full content</a>
+            <a v-if="fullContentStatus !== 'idle'" href="#" @click.prevent="fullContentStatus = 'idle'">
+              read original
+            </a>
+          </div>
+          <div>
+            <div v-if="fullContentStatus !== 'idle'">
+              <MarkedText class="x-content" :text="fullContent" />
+              <div v-if="fullContentStatus === 'pending'">Loading...</div>
+              <div v-else-if="fullContentStatus === 'error'">{{ fullContent }}</div>
+            </div>
+            <div v-else>
+              <MarkedText v-if="contentStatus === 'success'" :text="content" class="x-content" />
+              <div v-if="contentStatus === 'pending'">Loading...</div>
+              <div v-else-if="contentStatus === 'error'">{{ content }}</div>
+            </div>
+          </div>
+        </div>
+      </details>
+    </div>
   </div>
 </template>
 
@@ -71,6 +74,7 @@ const props = defineProps<{
 }>();
 
 const content = ref("");
+const error = ref("");
 const fullContent = ref("");
 const open = ref(false);
 
@@ -133,8 +137,18 @@ async function loadFullContent() {
   }
 }
 
-function toggleRead() {
-  entryStore.updateStatus(props.entry.id, isRead.value ? "unread" : "read");
+const reading = ref(false);
+async function toggleRead() {
+  if (reading.value) return;
+  error.value = "";
+  try {
+    reading.value = true;
+    await entryStore.updateStatus(props.entry.id, isRead.value ? "unread" : "read");
+  } catch (e) {
+    error.value = String(e);
+  } finally {
+    reading.value = false;
+  }
 }
 </script>
 

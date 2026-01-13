@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-2 md:space-x-2 md:flex md:space-y-0">
     <div>
-      <button class="x-button" @click.prevent="store.load()">Refresh</button>
+      <button class="x-button" @click.prevent="store.load()">{{ store.pending ? "..." : "Refresh" }}</button>
     </div>
     <div>
       <button
