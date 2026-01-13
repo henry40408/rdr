@@ -21,7 +21,7 @@
         </ExternalLink>
       </div>
     </div>
-    <div v-if="open" class="p-2 space-y-2">
+    <div v-if="open" class="p-2 space-y-4">
       <div>
         <button v-if="!['success', 'error'].includes(fullContentStatus)" class="x-button" @click="loadFullContent">
           {{ fullContentStatus === "pending" ? "loading..." : "full content" }}
