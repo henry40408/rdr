@@ -45,6 +45,8 @@ export const useEntryStore = defineStore("entry", {
   },
   actions: {
     async load() {
+      const categoryStore = useCategoryStore();
+
       const headers = useRequestHeaders(["cookie"]);
       const query = this.query;
 
@@ -52,6 +54,7 @@ export const useEntryStore = defineStore("entry", {
       const [data1, data2] = await Promise.all([
         $fetch("/api/entries/count", { headers, query }),
         $fetch("/api/entries", { headers, query }),
+        categoryStore.load(),
       ]);
       this.pending = false;
 
