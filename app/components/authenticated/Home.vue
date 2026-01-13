@@ -7,6 +7,7 @@
         'transition-transform duration-200 ease-in-out',
         'md:static md:w-1/4 md:h-screen',
         'bg-gray-300 dark:bg-gray-800',
+        'text-sm md:text-base',
         leftDrawerOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
       ]"
     >
@@ -23,10 +24,10 @@
           </button>
         </div>
         <div class="font-bold">Navigation</div>
-        <nav class="space-y-2">
-          <a href="/" class="block hover:underline">Home</a>
-          <a href="#" class="block hover:underline">Feeds</a>
-          <a href="#" class="block hover:underline">Settings</a>
+        <nav class="space-x-4">
+          <a href="/">Home</a>
+          <a href="#">Feeds</a>
+          <a href="#">Settings</a>
         </nav>
         <div class="font-bold">Categories &amp; Feeds</div>
         <HomeCategoryListOptions />
