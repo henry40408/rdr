@@ -36,6 +36,6 @@
     @apply mb-2;
   }
   .x-content pre {
-    @apply p-2 overflow-x-auto;
+    @apply p-2 overflow-x-auto bg-gray-200 dark:bg-gray-800;
   }
 }
