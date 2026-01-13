@@ -16,13 +16,9 @@
           class="w-4 h-4 bg-white"
           :src="`/api/images/external/${buildFeedImageKey(feed.id)}`"
         />
-        <ExternalLink
-          :href="entry.link"
-          :class="{
-            'line-through text-gray-500': isRead,
-          }"
-          >{{ entry.title }}</ExternalLink
-        >
+        <ExternalLink :href="entry.link" :class="{ 'line-through text-gray-500': isRead }">
+          {{ entry.title }}
+        </ExternalLink>
       </div>
     </div>
     <div v-if="open" class="p-2 space-y-2">
