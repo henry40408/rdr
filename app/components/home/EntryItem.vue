@@ -1,5 +1,5 @@
 <template>
-  <div ref="entry" class="border-b last:border-b-0 border-b-gray-500">
+  <div ref="entry" :class="{ 'bg-gray-300 dark:bg-black': isRead }" class="border-b last:border-b-0 border-b-gray-500">
     <div v-if="error" class="text-white bg-red-500 p-2">{{ error }}</div>
     <div class="p-2 space-y-2">
       <div class="text-sm">
