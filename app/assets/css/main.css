@@ -30,7 +30,7 @@
     @apply font-bold mt-4 mb-2;
   }
   .x-content img {
-    @apply max-w-full h-auto mb-2 dark:bg-white;
+    @apply max-w-full h-auto mb-2 dark:bg-gray-800;
   }
   .x-content p {
     @apply mb-2;
