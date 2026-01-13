@@ -49,7 +49,7 @@
 
     <main class="flex-1 flex flex-col h-screen overflow-hidden">
       <div class="p-2 space-y-2 border-b dark:border-b-gray-500">
-        <div class="flex items-center gap-2">
+        <div class="flex items-center space-x-2">
           <button
             class="md:hidden hover:bg-gray-700 border py-1 px-3 hover:cursor-pointer"
             @click="leftDrawerOpen = true"
@@ -58,7 +58,7 @@
           </button>
           <HomeEntryListHeader />
         </div>
-        <HomeEntryListToggles />
+        <HomeEntryListOptions />
       </div>
       <div class="flex-1 overflow-y-auto">
         <HomeEntryList />

@@ -8,7 +8,7 @@
         <a href="#" @click.prevent.stop="entryStore.setCategory(category.id)">{{ category.name }}</a>
         &middot; <DurationToNow :datetime="entry.date" />
       </div>
-      <div class="flex items-center gap-2">
+      <div class="flex items-center space-x-2">
         <input type="checkbox" :checked="isRead" :disabled="reading" @change="toggleRead" />
         <img
           v-if="imageExists"

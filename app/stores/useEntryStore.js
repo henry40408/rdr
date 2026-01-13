@@ -1,5 +1,7 @@
 // @ts-check
 
+const DEFAULT_STATUS = "unread";
+
 export const useEntryStore = defineStore("entry", {
   state: () => {
     const route = useRoute();
@@ -9,7 +11,8 @@ export const useEntryStore = defineStore("entry", {
       readIds: [],
       selectedCategoryId: (route.query.categoryId && String(route.query.categoryId)) ?? undefined,
       selectedFeedId: (route.query.feedId && String(route.query.feedId)) ?? undefined,
-      status: (route.query.status && String(route.query.status)) ?? "unread",
+      search: (route.query.search && String(route.query.search)) ?? "",
+      status: (route.query.status && String(route.query.status)) ?? DEFAULT_STATUS,
       // result
       count: 0,
       /** @type {Awaited<ReturnType<typeof import("../../server/api/entries.get").default>>['items']} */
@@ -28,6 +31,7 @@ export const useEntryStore = defineStore("entry", {
         q.selectedType = "feed";
         q.selectedId = state.selectedFeedId;
       }
+      if (state.search) q.search = state.search;
       q.status = state.status;
       return q;
     },
@@ -84,6 +88,14 @@ export const useEntryStore = defineStore("entry", {
       await this.load();
     },
     /**
+     * @param {string} search
+     */
+    async setSearch(search) {
+      this.search = search;
+      await this.updateRoute();
+      await this.load();
+    },
+    /**
      * @param {'read'|'unread'|'all'|'starred'} status
      */
     async setStatus(status) {
@@ -92,10 +104,14 @@ export const useEntryStore = defineStore("entry", {
       await this.load();
     },
     async updateRoute() {
-      const categoryId = this.selectedCategoryId;
-      const feedId = this.selectedFeedId;
-      const status = this.status;
-      await navigateTo({ query: { categoryId, feedId, status } });
+      await navigateTo({
+        query: {
+          categoryId: this.selectedCategoryId,
+          feedId: this.selectedFeedId,
+          search: this.search ? this.search : undefined,
+          status: this.status !== DEFAULT_STATUS ? this.status : undefined,
+        },
+      });
     },
     /**
      * @param {number} entryId

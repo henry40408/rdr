@@ -1,7 +1,8 @@
 <template>
   <div class="space-y-2 md:space-x-2 md:flex md:space-y-0 text-sm md:text-base">
-    <div>
+    <div class="space-x-2">
       <button class="x-button" @click.prevent="store.load()">{{ store.pending ? "..." : "Refresh" }}</button>
+      <input v-model="search" type="text" class="bg-gray-700 p-1" placeholder="search..." />
     </div>
     <div>
       <button
@@ -48,4 +49,10 @@
 
 <script setup lang="ts">
 const store = useEntryStore();
+
+const search = ref(store.search);
+const debouncedSearch = debouncedRef(search, 750);
+watch(debouncedSearch, (newSearch) => {
+  store.setSearch(newSearch);
+});
 </script>
