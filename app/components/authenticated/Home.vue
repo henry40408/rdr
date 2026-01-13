@@ -2,7 +2,7 @@
   <div class="flex h-screen">
     <aside
       :class="[
-        'fixed inset-y-0 left-0 z-50 w-full p-2 flex flex-col space-y-4',
+        'fixed inset-y-0 left-0 z-50 w-full flex flex-col',
         'border-r dark:border-gray-500',
         'transition-transform duration-200 ease-in-out',
         'md:static md:w-1/4 md:h-screen',
@@ -10,41 +10,56 @@
         leftDrawerOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
       ]"
     >
-      <div class="flex justify-between items-center">
-        <div class="font-bold">
-          <a href="/" class="hover:underline">rdr</a>
+      <div class="p-2 space-y-4 border-b dark:border-b-gray-500">
+        <div class="flex justify-between items-center">
+          <div class="font-bold">
+            <a href="/" class="hover:underline">rdr</a>
+          </div>
+          <button
+            class="md:hidden hover:bg-gray-700 border py-1 px-3 hover:cursor-pointer"
+            @click="leftDrawerOpen = false"
+          >
+            &times;
+          </button>
         </div>
-        <button class="md:hidden hover:underline border py-1 px-3" @click="leftDrawerOpen = false">&times;</button>
+        <div class="font-bold">Navigation</div>
+        <nav class="space-y-2">
+          <a href="/" class="block hover:underline">Home</a>
+          <a href="#" class="block hover:underline">Feeds</a>
+          <a href="#" class="block hover:underline">Settings</a>
+        </nav>
+        <div class="font-bold">Categories &amp; Feeds</div>
+        <HomeCategoryListOptions />
       </div>
-      <div class="font-bold">Navigation</div>
-      <nav class="space-y-2">
-        <a href="/" class="block hover:underline">Home</a>
-        <a href="#" class="block hover:underline">Feeds</a>
-        <a href="#" class="block hover:underline">Settings</a>
-      </nav>
-      <div class="font-bold">Categories &amp; Feeds</div>
-      <HomeCategoryListOptions />
-      <div class="flex-1 overflow-y-auto">
+      <div class="flex-1 overflow-y-auto border-b dark:border-b-gray-500">
         <HomeCategoryList />
       </div>
-      <div class="text-sm">
-        <div>
-          Logged in as <strong>{{ session?.user?.username }}</strong>
+      <div class="p-2 space-y-2">
+        <div class="text-sm">
+          <div>
+            Logged in as <strong>{{ session?.user?.username }}</strong>
+          </div>
+          <div>Logged in at <DateTime :datetime="session?.loggedInAt" /></div>
         </div>
-        <div>Logged in at <DateTime :datetime="session?.loggedInAt" /></div>
+        <div class="text-sm">Version: {{ $config.public.version }}</div>
+        <LogoutButton class="w-full" />
       </div>
-      <LogoutButton class="w-full" />
     </aside>
 
     <main class="flex-1 flex flex-col h-screen overflow-hidden">
-      <div class="p-2 space-y-2">
+      <div class="p-2 space-y-2 border-b dark:border-b-gray-500">
         <div class="flex items-center gap-2">
-          <button class="md:hidden hover:underline border py-1 px-3" @click="leftDrawerOpen = true">&#9776;</button>
+          <button
+            class="md:hidden hover:bg-gray-700 border py-1 px-3 hover:cursor-pointer"
+            @click="leftDrawerOpen = true"
+          >
+            &#9776;
+          </button>
           <HomeEntryListHeader />
         </div>
         <HomeEntryListToggles />
       </div>
-      <div class="p-2 flex-1 overflow-y-auto">
+      <div class="flex-1 overflow-y-auto">
         <HomeEntryList />
       </div>
     </main>

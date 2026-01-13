@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div v-if="store.items.length > 0" class="border dark:border-gray-500">
+    <div v-if="store.items.length > 0">
       <HomeEntryItem
         v-for="item in store.items"
         :key="item.entry.id"
@@ -9,7 +9,7 @@
         :category="item.category"
       />
     </div>
-    <div v-else>No entries to display.</div>
+    <div v-else class="p-2">No entries to display.</div>
   </div>
 </template>
 
