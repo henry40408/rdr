@@ -28,22 +28,13 @@
         <summary @click.prevent="toggle">content</summary>
         <div class="mt-2 space-y-2">
           <div>
-            <button v-if="fullContentStatus === 'idle'" class="x-button" @click="loadFullContent">full content</button>
-            <button v-if="fullContentStatus !== 'idle'" class="x-button x-revert" @click="fullContentStatus = 'idle'">
-              read original
+            <button v-if="!['success', 'error'].includes(fullContentStatus)" class="x-button" @click="loadFullContent">
+              {{ fullContentStatus === "pending" ? "loading..." : "full content" }}
             </button>
+            <button v-else class="x-button x-revert" @click="fullContentStatus = 'idle'">revert original</button>
           </div>
           <div>
-            <div v-if="fullContentStatus !== 'idle'">
-              <MarkedText class="x-content" :text="fullContent" />
-              <div v-if="fullContentStatus === 'pending'">Loading...</div>
-              <div v-else-if="fullContentStatus === 'error'">{{ fullContent }}</div>
-            </div>
-            <div v-else>
-              <MarkedText v-if="contentStatus === 'success'" :text="content" class="x-content" />
-              <div v-if="contentStatus === 'pending'">Loading...</div>
-              <div v-else-if="contentStatus === 'error'">{{ content }}</div>
-            </div>
+            <MarkedText class="x-content" :text="mergedContent" />
           </div>
         </div>
       </details>
@@ -84,6 +75,11 @@ const imageExists = computed(
       ?.imageExists ?? false,
 );
 const isRead = computed(() => entryStore.readIds.includes(props.entry.id));
+const mergedContent = computed(() => {
+  if (fullContentStatus.value === "success") return fullContent.value;
+  if (contentStatus.value === "success") return content.value;
+  return "";
+});
 
 function onCollapseOthers(entryId: number) {
   if (entryId !== props.entry.id) open.value = false;
