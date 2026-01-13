@@ -7,14 +7,16 @@ export const useEntryStore = defineStore("entry", {
     const route = useRoute();
     return {
       // parameters
-      /** @type {number[]} */
-      readIds: [],
       selectedCategoryId: (route.query.categoryId && String(route.query.categoryId)) ?? undefined,
       selectedFeedId: (route.query.feedId && String(route.query.feedId)) ?? undefined,
       search: (route.query.search && String(route.query.search)) ?? "",
       status: (route.query.status && String(route.query.status)) ?? DEFAULT_STATUS,
       // result
       count: 0,
+      /** @type {number[]} */
+      readIds: [],
+      /** @type {number[]} */
+      starredIds: [],
       /** @type {Awaited<ReturnType<typeof import("../../server/api/entries.get").default>>['items']} */
       items: [],
       pending: false,
@@ -66,6 +68,7 @@ export const useEntryStore = defineStore("entry", {
         count: data1.count,
         items: data2.items,
         readIds: data2.items.map((i) => (i.entry.readAt ? i.entry.id : undefined)).filter((i) => !!i),
+        starredIds: data2.items.map((i) => (i.entry.starredAt ? i.entry.id : undefined)).filter((i) => !!i),
       });
     },
     /**
@@ -132,6 +135,8 @@ export const useEntryStore = defineStore("entry", {
         state.count = data.count;
         if (status === "read" && !state.readIds.includes(entryId)) state.readIds.push(entryId);
         if (status === "unread") state.readIds = state.readIds.filter((id) => id !== entryId);
+        if (status === "starred" && !state.starredIds.includes(entryId)) state.starredIds.push(entryId);
+        if (status === "unstarred") state.starredIds = state.starredIds.filter((id) => id !== entryId);
       });
     },
   },

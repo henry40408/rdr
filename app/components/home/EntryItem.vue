@@ -3,13 +3,14 @@
     <div v-if="error" class="text-white bg-red-500 p-2">{{ error }}</div>
     <div class="p-2 space-y-2 hover:bg-gray-200 hover:dark:bg-gray-800 hover:cursor-pointer" @click="toggle">
       <div class="text-sm">
+        <span v-if="isStarred" class="mr-2" title="starred">&#x2B50;</span>
         <a href="#" @click.prevent.stop="entryStore.setFeed(feed.id, category.id)">{{ feed.title }}</a>
         &middot;
         <a href="#" @click.prevent.stop="entryStore.setCategory(category.id)">{{ category.name }}</a>
         &middot; <DurationToNow :datetime="entry.date" />
       </div>
       <div class="flex items-center space-x-2">
-        <input type="checkbox" :checked="isRead" :disabled="reading" @change.prevent.stop="toggleRead" />
+        <input type="checkbox" :checked="isRead" :disabled="reading" @click.prevent.stop="toggleRead" />
         <div>
           <img
             v-if="imageExists"
@@ -32,7 +33,10 @@
       <div>
         <span v-if="entry.author">Author: {{ entry.author }}</span>
       </div>
-      <div>
+      <div class="space-x-2">
+        <button class="x-button" :disabled="starring" :class="{ 'x-selected': isStarred }" @click="toggleStar">
+          {{ starring ? "..." : isStarred ? "unstar" : "star" }}
+        </button>
         <button v-if="!['success', 'error'].includes(fullContentStatus)" class="x-button" @click="loadFullContent">
           {{ fullContentStatus === "pending" ? "loading..." : "full content" }}
         </button>
@@ -79,6 +83,7 @@ const imageExists = computed(
       ?.imageExists ?? false,
 );
 const isRead = computed(() => entryStore.readIds.includes(props.entry.id));
+const isStarred = computed(() => entryStore.starredIds.includes(props.entry.id));
 const mergedContent = computed(() => {
   if (fullContentStatus.value === "success") return fullContent.value;
   if (contentStatus.value === "success") return content.value;
@@ -152,6 +157,20 @@ async function toggleRead() {
     error.value = String(e);
   } finally {
     reading.value = false;
+  }
+}
+
+const starring = ref(false);
+async function toggleStar() {
+  if (starring.value) return;
+  error.value = "";
+  starring.value = true;
+  try {
+    await entryStore.updateStatus(props.entry.id, isStarred.value ? "unstarred" : "starred");
+  } catch (e) {
+    error.value = String(e);
+  } finally {
+    starring.value = false;
   }
 }
 </script>
