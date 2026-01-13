@@ -32,8 +32,17 @@
   .x-content h3 {
     @apply font-bold mt-4 mb-2;
   }
+  .x-content hr {
+    @apply my-4 border-t dark:border-gray-600;
+  }
   .x-content img {
     @apply max-w-full h-auto mb-2 dark:bg-gray-800;
+  }
+  .x-content ul li {
+    @apply list-disc list-inside mb-1;
+  }
+  .x-content ol li {
+    @apply list-decimal list-inside mb-1;
   }
   .x-content p {
     @apply mb-2;

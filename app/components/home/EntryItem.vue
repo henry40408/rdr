@@ -17,7 +17,7 @@
           :src="`/api/images/external/${buildFeedImageKey(feed.id)}`"
         />
         <ExternalLink :href="entry.link" :class="{ 'line-through text-gray-500': isRead }">
-          {{ entry.title }}
+          <MarkedText :text="entry.title" :keyword="entryStore.search" />
         </ExternalLink>
       </div>
     </div>
@@ -29,7 +29,7 @@
         <button v-else class="x-button x-revert" @click="fullContentStatus = 'idle'">revert original</button>
       </div>
       <div>
-        <MarkedText class="x-content" :text="mergedContent" />
+        <MarkedText class="x-content" :text="mergedContent" :keyword="entryStore.search" />
       </div>
     </div>
   </div>

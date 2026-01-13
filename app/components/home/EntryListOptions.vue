@@ -2,7 +2,7 @@
   <div class="space-y-2 md:space-x-2 md:flex md:space-y-0 text-sm md:text-base">
     <div class="space-x-2">
       <button class="x-button" @click.prevent="store.load()">{{ store.pending ? "..." : "Refresh" }}</button>
-      <input v-model="search" type="text" class="bg-gray-700 p-1" placeholder="search..." />
+      <input v-model="search" type="text" placeholder="search..." class="bg-gray-300 dark:bg-gray-800 p-1" />
     </div>
     <div>
       <button
