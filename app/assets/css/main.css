@@ -24,6 +24,9 @@
   .x-content a {
     @apply underline;
   }
+  .x-content blockquote {
+    @apply border-l-4 pl-4 italic my-2 border-gray-400 dark:border-gray-600;
+  }
   .x-content h1,
   .x-content h2,
   .x-content h3 {
