@@ -64,6 +64,15 @@
         <button v-else-if="featuresStore.summarization" class="x-button x-revert" @click="summarizationStatus = 'idle'">
           reset summary
         </button>
+        <button
+          v-if="featuresStore.save && saveStatus !== 'success'"
+          class="x-button"
+          :disabled="saveStatus === 'pending'"
+          @click="saveEntry"
+        >
+          {{ saveStatus === "pending" ? "saving..." : "save" }}
+        </button>
+        <span v-if="saveStatus === 'success'" class="text-green-600 dark:text-green-400 font-bold p-2">saved!</span>
       </div>
       <div>
         <div class="mb-4 space-y-2">
@@ -238,6 +247,20 @@ ${content}`;
     summarizationStatus.value = "success";
   } catch (e) {
     summarizationStatus.value = "error";
+    error.value = String(e);
+  }
+}
+
+const saveStatus = ref<"idle" | "pending" | "success" | "error">("idle");
+async function saveEntry() {
+  if (["pending", "success"].includes(saveStatus.value)) return;
+  error.value = "";
+  saveStatus.value = "pending";
+  try {
+    await $fetch(`/api/entries/${props.entry.id}/save`, { method: "POST" });
+    saveStatus.value = "success";
+  } catch (e) {
+    saveStatus.value = "error";
     error.value = String(e);
   }
 }
