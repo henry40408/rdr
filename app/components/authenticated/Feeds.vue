@@ -26,10 +26,10 @@
         <div class="font-bold">Navigation</div>
         <nav class="space-x-4">
           <NuxtLink href="/">Home</NuxtLink>
-          <NuxtLink href="/subscriptions">Subscriptions</NuxtLink>
+          <NuxtLink href="/feeds">Feeds</NuxtLink>
           <NuxtLink href="/settings">Settings</NuxtLink>
         </nav>
-        <div class="font-bold">Subscriptions</div>
+        <div class="font-bold">Feeds</div>
       </div>
       <div class="flex-1 overflow-y-auto border-b dark:border-b-gray-500">
         <FeedsSideCategoryList />
@@ -47,7 +47,7 @@
     </aside>
 
     <main class="p-2">
-      <div class="text-2xl font-bold">Subscriptions</div>
+      <div class="text-2xl font-bold">Categories &amp; Feeds</div>
     </main>
   </div>
 </template>

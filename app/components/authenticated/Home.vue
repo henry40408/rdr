@@ -26,7 +26,7 @@
         <div class="font-bold">Navigation</div>
         <nav class="space-x-4">
           <NuxtLink href="/">Home</NuxtLink>
-          <NuxtLink href="/subscriptions">Subscriptions</NuxtLink>
+          <NuxtLink href="/feeds">Feeds</NuxtLink>
           <NuxtLink href="/settings">Settings</NuxtLink>
         </nav>
         <div class="font-bold">Categories &amp; Feeds</div>
