@@ -60,7 +60,7 @@
         </div>
         <HomeEntryListOptions />
       </div>
-      <div class="flex-1 overflow-y-auto">
+      <div ref="list" class="flex-1 overflow-y-auto">
         <HomeEntryList />
       </div>
     </main>
@@ -86,4 +86,16 @@ const countLabel = computed(() => {
 useHead({ title: () => `(${countLabel.value}) rdr` });
 
 const leftDrawerOpen = ref(false);
+
+const el = useTemplateRef("list");
+useInfiniteScroll(
+  el,
+  () => {
+    entryStore.loadMore();
+  },
+  {
+    canLoadMore: () => entryStore.hasMore && !entryStore.pending,
+    distance: 10,
+  },
+);
 </script>

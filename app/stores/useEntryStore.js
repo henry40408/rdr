@@ -7,23 +7,23 @@ export const useEntryStore = defineStore("entry", {
     const route = useRoute();
     return {
       // parameters
+      limit: 30,
       selectedCategoryId: (route.query.categoryId && String(route.query.categoryId)) ?? undefined,
       selectedFeedId: (route.query.feedId && String(route.query.feedId)) ?? undefined,
       search: (route.query.search && String(route.query.search)) ?? "",
       status: (route.query.status && String(route.query.status)) ?? DEFAULT_STATUS,
       // result
       count: 0,
-      /** @type {number[]} */
-      readIds: [],
-      /** @type {number[]} */
-      starredIds: [],
-      /** @type {Awaited<ReturnType<typeof import("../../server/api/entries.get").default>>['items']} */
-      items: [],
+      hasMore: true,
+      items: /** @type {Awaited<ReturnType<typeof import("../../server/api/entries.get").default>>['items']} */ ([]),
       pending: false,
+      readIds: /** @type {number[]} */ ([]),
+      starredIds: /** @type {number[]} */ ([]),
     };
   },
   getters: {
     query: (state) => {
+      /** @type {Record<string, unknown>} */
       const q = {};
       if (state.selectedCategoryId) {
         q.selectedType = "category";
@@ -33,6 +33,7 @@ export const useEntryStore = defineStore("entry", {
         q.selectedType = "feed";
         q.selectedId = state.selectedFeedId;
       }
+      q.limit = state.limit;
       if (state.search) q.search = state.search;
       q.status = state.status;
       return q;
@@ -65,7 +66,10 @@ export const useEntryStore = defineStore("entry", {
       this.pending = false;
 
       this.$patch((state) => {
-        if (clearItems) state.items = [];
+        if (clearItems) {
+          state.items = [];
+          state.hasMore = true;
+        }
 
         const newItems = this.items.slice();
         for (const item of data2.items) {
@@ -74,9 +78,36 @@ export const useEntryStore = defineStore("entry", {
         }
 
         state.count = data1.count;
+        state.hasMore = data2.items.length === state.limit;
         state.items = newItems;
         state.readIds = data2.items.filter((i) => i.entry.readAt).map((i) => i.entry.id);
         state.starredIds = data2.items.filter((i) => i.entry.starredAt).map((i) => i.entry.id);
+      });
+    },
+    async loadMore() {
+      if (!this.hasMore) return;
+
+      const lastItem = this.items[this.items.length - 1];
+      if (!lastItem) return;
+
+      const headers = useRequestHeaders(["cookie"]);
+
+      const query = this.query;
+      query.cursor = lastItem.entry.date;
+      query.id = lastItem.entry.id;
+
+      this.pending = true;
+      const data = await $fetch("/api/entries", { headers, query });
+      this.pending = false;
+
+      this.$patch((state) => {
+        const newItems = state.items.slice();
+        for (const item of data.items) {
+          if (newItems.find((i) => i.entry.id === item.entry.id)) continue;
+          newItems.push(item);
+        }
+        state.hasMore = data.items.length === state.limit;
+        state.items = newItems;
       });
     },
     /**

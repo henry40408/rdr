@@ -65,7 +65,8 @@
 <script setup lang="ts">
 const categoryStore = useCategoryStore();
 const entryStore = useEntryStore();
-const templateRef = useTemplateRef("entry");
+
+const el = useTemplateRef("entry");
 
 const props = defineProps<{
   entry: {
@@ -106,7 +107,7 @@ const mergedContent = computed(() => {
 function onCollapseOpened() {
   if (!open.value) return;
   open.value = false;
-  templateRef.value?.scrollIntoView({ behavior: "smooth", block: "start" });
+  el.value?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 function onCollapseOthers(entryId: number) {
   if (entryId === props.entry.id) return;
@@ -126,7 +127,7 @@ async function toggle() {
   if (newValue) {
     eventBus.emit(EVENT_COLLAPSE_OTHERS, props.entry.id); // Collapse others
     await loadContent();
-    templateRef.value?.scrollIntoView({ behavior: "smooth", block: "start" });
+    el.value?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
   open.value = newValue;
 }
