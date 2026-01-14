@@ -1,34 +1,46 @@
 <template>
   <div ref="entry" :class="{ 'bg-gray-300 dark:bg-black': isRead }" class="border-b last:border-b-0 border-b-gray-500">
     <div v-if="error" class="text-white bg-red-500 p-2">{{ error }}</div>
-    <div class="p-2 space-y-2 hover:bg-gray-200 hover:dark:bg-gray-800 hover:cursor-pointer" @click="toggle">
-      <div class="text-sm">
-        <span v-if="isStarred" class="mr-2" title="starred">&#x2B50;</span>
-        <a href="#" @click.prevent.stop="entryStore.setFeed(feed.id, category.id)">{{ feed.title }}</a>
-        &middot;
-        <a href="#" @click.prevent.stop="entryStore.setCategory(category.id)">{{ category.name }}</a>
-        &middot; <DurationToNow :datetime="entry.date" />
-      </div>
-      <div class="flex items-center space-x-2">
-        <input type="checkbox" :checked="isRead" :disabled="reading" @click.prevent.stop="toggleRead" />
-        <div>
-          <img
-            v-if="imageExists"
-            alt="Feed Image"
-            class="w-4 h-4 align-middle bg-white inline mr-2"
-            :src="`/api/images/external/${buildFeedImageKey(feed.id)}`"
-          />
-          <MarkedText
-            :text="entry.title"
-            :keyword="entryStore.search"
-            :class="{ 'line-through text-gray-500': isRead }"
-          />
+    <div class="hover:bg-gray-200 hover:dark:bg-gray-800 hover:cursor-pointer" @click="toggle">
+      <div class="flex items-stretch pr-2">
+        <div class="flex items-center px-4 md:px-6" @click.prevent.stop="toggleRead">
+          <input type="checkbox" :checked="isRead" :disabled="reading" @click.prevent.stop="toggleRead" />
+        </div>
+        <div class="space-y-2 py-2">
+          <div class="text-sm">
+            <span v-if="isStarred" class="mr-2" title="starred">&#x2B50;</span>
+            <a href="#" @click.prevent.stop="entryStore.setFeed(feed.id, category.id)">{{ feed.title }}</a>
+            &middot;
+            <a href="#" @click.prevent.stop="entryStore.setCategory(category.id)">{{ category.name }}</a>
+            &middot; <DurationToNow :datetime="entry.date" />
+          </div>
+          <div class="flex items-center space-x-2">
+            <div>
+              <img
+                v-if="imageExists"
+                alt="Feed Image"
+                class="w-4 h-4 align-middle bg-white inline mr-2"
+                :src="`/api/images/external/${buildFeedImageKey(feed.id)}`"
+              />
+              <MarkedText
+                :text="entry.title"
+                :keyword="entryStore.search"
+                :class="{ 'line-through text-gray-500': isRead }"
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>
     <div v-if="open" class="p-2 space-y-4">
-      <div class="text-lg font-bold">
-        <ExternalLink :href="entry.link">{{ entry.title }}</ExternalLink>
+      <div>
+        <img
+          v-if="imageExists"
+          alt="Feed Image"
+          class="w-6 h-6 align-middle bg-white inline mr-2"
+          :src="`/api/images/external/${buildFeedImageKey(feed.id)}`"
+        />
+        <ExternalLink :href="entry.link" class="text-lg font-bold">{{ entry.title }}</ExternalLink>
       </div>
       <div>
         <span v-if="entry.author">Author: {{ entry.author }}</span>
@@ -152,7 +164,9 @@ async function toggleRead() {
   error.value = "";
   reading.value = true;
   try {
-    await entryStore.updateStatus(props.entry.id, isRead.value ? "unread" : "read");
+    const newStatus = isRead.value ? "unread" : "read";
+    if (newStatus === "read" && open.value) open.value = false;
+    await entryStore.updateStatus(props.entry.id, newStatus);
   } catch (e) {
     error.value = String(e);
   } finally {
