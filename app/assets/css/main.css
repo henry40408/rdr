@@ -27,6 +27,12 @@
   .x-content blockquote {
     @apply border-l-4 pl-4 italic my-2 border-gray-400 dark:border-gray-600;
   }
+  .x-content figure {
+    @apply my-4;
+  }
+  .x-content figcaption {
+    @apply text-sm text-gray-600 dark:text-gray-400;
+  }
   .x-content h1,
   .x-content h2,
   .x-content h3 {
