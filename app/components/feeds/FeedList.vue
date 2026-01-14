@@ -7,6 +7,7 @@ defineProps<{
   feeds: {
     id: number;
     title: string;
+    imageExists: boolean;
   }[];
 }>();
 </script>

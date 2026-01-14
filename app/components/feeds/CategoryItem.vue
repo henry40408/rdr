@@ -1,5 +1,10 @@
 <template>
-  <div class="border-b p-2 border-b-gray-500 dark:border-b-gray-500">{{ category.name }}</div>
+  <div class="border-b p-2 border-b-gray-500 dark:border-b-gray-500">
+    <div class="space-x-2">
+      <span>&#x1F4C1;</span>
+      <span>{{ category.name }}</span>
+    </div>
+  </div>
   <FeedsFeedList :feeds="category.feeds" />
 </template>
 
@@ -11,6 +16,7 @@ defineProps<{
     feeds: {
       id: number;
       title: string;
+      imageExists: boolean;
     }[];
   };
 }>();
