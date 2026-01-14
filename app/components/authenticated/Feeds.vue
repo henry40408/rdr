@@ -46,8 +46,11 @@
       </div>
     </aside>
 
-    <main class="p-2">
-      <div class="text-2xl font-bold">Categories &amp; Feeds</div>
+    <main class="flex-1 flex flex-col h-screen overflow-hidden">
+      <div class="p-2 border-b border-b-gray-500 dark:border-b-gray-500">
+        <div class="text-2xl font-bold">Categories &amp; Feeds</div>
+      </div>
+      <FeedsCategoryList />
     </main>
   </div>
 </template>
@@ -57,6 +60,9 @@ const store = useCategoryStore();
 const { session } = useUserSession();
 
 await callOnce(() => store.load());
+useHead({
+  title: "Feeds - rdr",
+});
 
 const leftDrawerOpen = ref(false);
 </script>
