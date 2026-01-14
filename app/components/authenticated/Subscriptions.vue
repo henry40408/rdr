@@ -29,11 +29,10 @@
           <NuxtLink href="/subscriptions">Subscriptions</NuxtLink>
           <NuxtLink href="/settings">Settings</NuxtLink>
         </nav>
-        <div class="font-bold">Categories &amp; Feeds</div>
-        <HomeCategoryListOptions />
+        <div class="font-bold">Subscriptions</div>
       </div>
       <div class="flex-1 overflow-y-auto border-b dark:border-b-gray-500">
-        <HomeCategoryList />
+        <FeedsSideCategoryList />
       </div>
       <div class="p-2 space-y-2">
         <div class="text-sm">
@@ -47,56 +46,17 @@
       </div>
     </aside>
 
-    <main class="flex-1 flex flex-col h-screen overflow-hidden">
-      <div class="p-2 space-y-2 border-b dark:border-b-gray-500">
-        <div class="flex items-center space-x-2">
-          <button
-            class="md:hidden hover:bg-gray-700 border py-1 px-3 hover:cursor-pointer"
-            @click="leftDrawerOpen = true"
-          >
-            &#9776;
-          </button>
-          <HomeEntryListHeader />
-        </div>
-        <HomeEntryListOptions />
-      </div>
-      <div ref="list" class="flex-1 overflow-y-auto">
-        <HomeEntryList />
-      </div>
+    <main class="p-2">
+      <div class="text-2xl font-bold">Subscriptions</div>
     </main>
   </div>
-  <button
-    class="fixed bottom-8 right-8 bg-gray-600 hover:bg-gray-500 text-white rounded-full w-16 h-16 text-4xl rounded-full hover:cursor-pointer"
-    @click="eventBus.emit(EVENT_COLLAPSE_OPENED)"
-  >
-    &times;
-  </button>
 </template>
 
 <script setup lang="ts">
-const entryStore = useEntryStore();
-const featuresStore = useFeaturesStore();
+const store = useCategoryStore();
 const { session } = useUserSession();
 
-await callOnce(() => Promise.all([entryStore.load(), featuresStore.load()]));
-const countLabel = computed(() => {
-  const count = entryStore.count;
-  if (count > 999) return "999+";
-  return count.toString();
-});
-useHead({ title: () => `(${countLabel.value}) rdr` });
+await callOnce(() => store.load());
 
 const leftDrawerOpen = ref(false);
-
-const el = useTemplateRef("list");
-useInfiniteScroll(
-  el,
-  () => {
-    entryStore.loadMore();
-  },
-  {
-    canLoadMore: () => entryStore.hasMore && !entryStore.pending,
-    distance: 10,
-  },
-);
 </script>

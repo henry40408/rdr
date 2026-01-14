@@ -23,7 +23,7 @@
               <img
                 v-if="imageExists"
                 alt="Feed Image"
-                class="w-4 h-4 align-middle bg-white inline mr-2"
+                class="bg-white inline h-4 w-4 mr-2"
                 :src="`/api/images/external/${buildFeedImageKey(feed.id)}`"
               />
               <MarkedText
