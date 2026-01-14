@@ -54,8 +54,24 @@
           {{ fullContentStatus === "pending" ? "loading..." : "full content" }}
         </button>
         <button v-else class="x-button x-revert" @click="fullContentStatus = 'idle'">revert original</button>
+        <button
+          v-if="featuresStore.summarization && !['success', 'error'].includes(summarizationStatus)"
+          class="x-button"
+          @click="summarize"
+        >
+          {{ summarizationStatus === "pending" ? "summarizing..." : "summarize" }}
+        </button>
+        <button v-else-if="featuresStore.summarization" class="x-button x-revert" @click="summarizationStatus = 'idle'">
+          reset summary
+        </button>
       </div>
       <div>
+        <div class="mb-4 space-y-2">
+          <UseClipboard v-if="summarizationStatus === 'success'" v-slot="{ copy, copied }" :source="summary">
+            <pre class="text-wrap bg-gray-200 dark:bg-gray-800 p-2">{{ summary }}</pre>
+            <button class="x-button" @click="copy()">{{ copied ? "copied!" : "copy" }}</button>
+          </UseClipboard>
+        </div>
         <MarkedText class="x-content" :text="mergedContent" :keyword="entryStore.search" />
       </div>
     </div>
@@ -63,8 +79,11 @@
 </template>
 
 <script setup lang="ts">
+import { UseClipboard } from "@vueuse/components";
+
 const categoryStore = useCategoryStore();
 const entryStore = useEntryStore();
+const featuresStore = useFeaturesStore();
 
 const el = useTemplateRef("entry");
 
@@ -90,6 +109,7 @@ const content = ref("");
 const error = ref("");
 const fullContent = ref("");
 const open = ref(false);
+const summary = ref("");
 
 const imageExists = computed(
   () =>
@@ -195,6 +215,30 @@ async function toggleStar() {
     error.value = String(e);
   } finally {
     starring.value = false;
+  }
+}
+
+const summarizationStatus = ref<"idle" | "pending" | "success" | "error">("idle");
+async function summarize() {
+  if (["pending", "success"].includes(summarizationStatus.value)) return;
+
+  error.value = "";
+  summary.value = "";
+
+  summarizationStatus.value = "pending";
+  try {
+    const data = await $fetch(`/api/entries/${props.entry.id}/summarize`);
+    const [prefixedTitle, content] = (data ?? "").split("\n\n");
+    const title = replaceForTiddlyWiki((prefixedTitle ?? "").replace("Title: ", ""));
+    summary.value = `${title}
+
+${props.entry.link}
+
+${content}`;
+    summarizationStatus.value = "success";
+  } catch (e) {
+    summarizationStatus.value = "error";
+    error.value = String(e);
   }
 }
 </script>

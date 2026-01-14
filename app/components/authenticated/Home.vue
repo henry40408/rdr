@@ -75,9 +75,10 @@
 
 <script setup lang="ts">
 const entryStore = useEntryStore();
+const featuresStore = useFeaturesStore();
 const { session } = useUserSession();
 
-await callOnce(() => entryStore.load());
+await callOnce(() => Promise.all([entryStore.load(), featuresStore.load()]));
 const countLabel = computed(() => {
   const count = entryStore.count;
   if (count > 999) return "999+";
