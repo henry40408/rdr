@@ -51,38 +51,36 @@
         <span v-if="entry.author">Author: {{ entry.author }}</span>
       </div>
       <div class="space-x-2">
-        <button class="x-button" :disabled="starring" :class="{ 'x-selected': isStarred }" @click="toggleStar">
+        <XButton :disabled="starring" :selected="isStarred" @click="toggleStar">
           {{ starring ? "..." : isStarred ? "unstar" : "star" }}
-        </button>
-        <button v-if="!['success', 'error'].includes(fullContentStatus)" class="x-button" @click="loadFullContent">
+        </XButton>
+        <XButton v-if="!['success', 'error'].includes(fullContentStatus)" @click="loadFullContent">
           {{ fullContentStatus === "pending" ? "loading..." : "full content" }}
-        </button>
-        <button v-else class="x-button x-revert" @click="fullContentStatus = 'idle'">revert original</button>
-        <button
+        </XButton>
+        <XButton v-else revert @click="fullContentStatus = 'idle'">revert original</XButton>
+        <XButton
           v-if="featuresStore.summarization && !['success', 'error'].includes(summarizationStatus)"
-          class="x-button"
           @click="summarize"
         >
           {{ summarizationStatus === "pending" ? "summarizing..." : "summarize" }}
-        </button>
-        <button v-else-if="featuresStore.summarization" class="x-button x-revert" @click="summarizationStatus = 'idle'">
+        </XButton>
+        <XButton v-else-if="featuresStore.summarization" revert @click="summarizationStatus = 'idle'">
           reset summary
-        </button>
-        <button
+        </XButton>
+        <XButton
           v-if="featuresStore.save && saveStatus !== 'success'"
-          class="x-button"
           :disabled="saveStatus === 'pending'"
           @click="saveEntry"
         >
           {{ saveStatus === "pending" ? "saving..." : "save" }}
-        </button>
+        </XButton>
         <span v-if="saveStatus === 'success'" class="text-green-600 dark:text-green-400 font-bold p-2">saved!</span>
       </div>
       <div>
         <div class="mb-4 space-y-2">
           <UseClipboard v-if="summarizationStatus === 'success'" v-slot="{ copy, copied }" :source="summary">
             <pre class="text-wrap bg-gray-200 dark:bg-gray-800 p-2">{{ summary }}</pre>
-            <button class="x-button" @click="copy()">{{ copied ? "copied!" : "copy" }}</button>
+            <XButton @click="copy()">{{ copied ? "copied!" : "copy" }}</XButton>
           </UseClipboard>
         </div>
         <MarkedText class="x-content" :text="mergedContent" :keyword="entryStore.search" />

@@ -1,38 +1,38 @@
 <template>
   <div class="space-y-2 md:space-x-2 md:flex md:space-y-0 text-sm md:text-base">
     <div class="space-x-2">
-      <button class="x-button" @click.prevent="store.load()">{{ store.pending ? "..." : "Refresh" }}</button>
+      <XButton @click.prevent="store.load()">{{ store.pending ? "..." : "Refresh" }}</XButton>
       <input v-model="search" type="text" placeholder="search..." class="bg-gray-300 dark:bg-gray-800 p-1" />
     </div>
     <div>
-      <button
-        class="x-button"
-        :class="{ 'x-selected font-bold': store.status === 'unread' }"
+      <XButton
+        :selected="store.status === 'unread'"
+        :class="{ 'font-bold': store.status === 'unread' }"
         @click="store.setStatus('unread')"
       >
         Unread
-      </button>
-      <button
-        class="x-button"
-        :class="{ 'x-selected font-bold': store.status === 'all' }"
+      </XButton>
+      <XButton
+        :selected="store.status === 'all'"
+        :class="{ 'font-bold': store.status === 'all' }"
         @click="store.setStatus('all')"
       >
         All
-      </button>
-      <button
-        class="x-button"
-        :class="{ 'x-selected font-bold': store.status === 'read' }"
+      </XButton>
+      <XButton
+        :selected="store.status === 'read'"
+        :class="{ 'font-bold': store.status === 'read' }"
         @click="store.setStatus('read')"
       >
         Read
-      </button>
-      <button
-        class="x-button"
-        :class="{ 'x-selected font-bold': store.status === 'starred' }"
+      </XButton>
+      <XButton
+        :selected="store.status === 'starred'"
+        :class="{ 'font-bold': store.status === 'starred' }"
         @click="store.setStatus('starred')"
       >
         Starred
-      </button>
+      </XButton>
     </div>
   </div>
   <div class="md:flex text-sm md:text-base">
