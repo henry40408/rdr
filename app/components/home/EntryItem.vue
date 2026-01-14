@@ -83,7 +83,7 @@
             <XButton @click="copy()">{{ copied ? "copied!" : "copy" }}</XButton>
           </UseClipboard>
         </div>
-        <MarkedText class="x-content" :text="mergedContent" :keyword="entryStore.search" />
+        <EntryContent :text="mergedContent" :keyword="entryStore.search" />
       </div>
     </div>
   </div>
