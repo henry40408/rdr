@@ -5,7 +5,7 @@
         'fixed inset-y-0 left-0 z-50 w-full flex flex-col',
         'border-r dark:border-gray-500',
         'transition-transform duration-200 ease-in-out',
-        'md:static md:w-1/4 md:h-screen',
+        'md:static md:basis-1/4 md:h-screen',
         'bg-gray-300 dark:bg-gray-800',
         'text-sm md:text-base',
         leftDrawerOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
@@ -47,7 +47,7 @@
       </div>
     </aside>
 
-    <main class="flex-1 flex flex-col h-screen overflow-hidden">
+    <main class="md:basis-3/4 flex flex-col h-screen overflow-hidden">
       <div class="p-2 space-y-2 border-b dark:border-b-gray-500">
         <div class="flex items-center space-x-2">
           <button

@@ -5,7 +5,7 @@
         'fixed inset-y-0 left-0 z-50 w-full flex flex-col',
         'border-r dark:border-gray-500',
         'transition-transform duration-200 ease-in-out',
-        'md:static md:w-1/4 md:h-screen',
+        'md:static md:basis-1/4 md:h-screen',
         'bg-gray-300 dark:bg-gray-800',
         'text-sm md:text-base',
         leftDrawerOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
@@ -46,11 +46,19 @@
       </div>
     </aside>
 
-    <main class="flex-1 flex flex-col h-screen overflow-hidden">
-      <div class="p-2 border-b border-b-gray-500 dark:border-b-gray-500">
+    <main class="md:basis-3/4 flex flex-col h-screen overflow-y-hidden">
+      <div class="p-2 border-b border-b-gray-500 dark:border-b-gray-500 flex items-center space-x-2">
+        <button
+          class="md:hidden hover:bg-gray-700 border py-1 px-3 hover:cursor-pointer"
+          @click="leftDrawerOpen = true"
+        >
+          &#9776;
+        </button>
         <div class="text-2xl font-bold">Categories &amp; Feeds</div>
       </div>
-      <FeedsCategoryList />
+      <div class="overflow-y-auto flex-1">
+        <FeedsCategoryList />
+      </div>
     </main>
   </div>
 </template>
