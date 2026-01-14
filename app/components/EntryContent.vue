@@ -20,6 +20,9 @@ defineProps<{
 .content :deep(blockquote) {
   @apply border-l-4 pl-4 italic my-2 border-gray-400 dark:border-gray-600;
 }
+.content :deep(code) {
+  @apply bg-gray-200 dark:bg-gray-800 px-1 rounded;
+}
 .content :deep(figure) {
   @apply my-4;
 }
@@ -48,5 +51,8 @@ defineProps<{
 }
 .content :deep(pre) {
   @apply p-2 overflow-x-auto bg-gray-200 dark:bg-gray-800;
+}
+.content :deep(table) {
+  @apply mb-4;
 }
 </style>
