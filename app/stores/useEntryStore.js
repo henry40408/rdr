@@ -50,7 +50,7 @@ export const useEntryStore = defineStore("entry", {
     },
   },
   actions: {
-    async load() {
+    async load({ clearItems = false } = {}) {
       const categoryStore = useCategoryStore();
 
       const headers = useRequestHeaders(["cookie"]);
@@ -64,47 +64,59 @@ export const useEntryStore = defineStore("entry", {
       ]);
       this.pending = false;
 
-      this.$patch({
-        count: data1.count,
-        items: data2.items,
-        readIds: data2.items.map((i) => (i.entry.readAt ? i.entry.id : undefined)).filter((i) => !!i),
-        starredIds: data2.items.map((i) => (i.entry.starredAt ? i.entry.id : undefined)).filter((i) => !!i),
+      this.$patch((state) => {
+        if (clearItems) state.items = [];
+
+        const newItems = this.items.slice();
+        for (const item of data2.items) {
+          if (newItems.find((i) => i.entry.id === item.entry.id)) continue;
+          newItems.push(item);
+        }
+
+        state.count = data1.count;
+        state.items = newItems;
+        state.readIds = data2.items.filter((i) => i.entry.readAt).map((i) => i.entry.id);
+        state.starredIds = data2.items.filter((i) => i.entry.starredAt).map((i) => i.entry.id);
       });
     },
     /**
      * @param {number|undefined} categoryId
      */
     async setCategory(categoryId) {
-      this.selectedCategoryId = categoryId === undefined ? undefined : String(categoryId);
-      this.selectedFeedId = undefined;
+      this.$patch({
+        selectedCategoryId: categoryId === undefined ? undefined : String(categoryId),
+        selectedFeedId: undefined,
+      });
       await this.updateRoute();
-      await this.load();
+      await this.load({ clearItems: true });
     },
     /**
      * @param {number|undefined} feedId
      * @param {number|undefined} categoryId
      */
     async setFeed(feedId, categoryId) {
-      this.selectedFeedId = feedId === undefined ? undefined : String(feedId);
-      this.selectedCategoryId = categoryId === undefined ? undefined : String(categoryId);
+      this.$patch({
+        selectedFeedId: feedId === undefined ? undefined : String(feedId),
+        selectedCategoryId: categoryId === undefined ? undefined : String(categoryId),
+      });
       await this.updateRoute();
-      await this.load();
+      await this.load({ clearItems: true });
     },
     /**
      * @param {string} search
      */
     async setSearch(search) {
-      this.search = search;
+      this.$patch({ search });
       await this.updateRoute();
-      await this.load();
+      await this.load({ clearItems: true });
     },
     /**
      * @param {'read'|'unread'|'all'|'starred'} status
      */
     async setStatus(status) {
-      this.status = status;
+      this.$patch({ status });
       await this.updateRoute();
-      await this.load();
+      await this.load({ clearItems: true });
     },
     async updateRoute() {
       await navigateTo({
