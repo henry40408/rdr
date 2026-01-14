@@ -9,6 +9,10 @@
         <div class="space-y-2 py-2">
           <div class="text-xs md:text-sm">
             <span v-if="isStarred" class="mr-2" title="starred">&#x2B50;</span>
+            <span v-if="fullContentStatus === 'success'" class="mr-2" title="full content">&#x1F4D6;</span>
+            <span v-if="fullContentStatus === 'pending'" class="mr-2" title="loading full content">&#x23F3;</span>
+            <span v-if="summarizationStatus === 'success'" class="mr-2" title="summarized">&#x26A1;&#xFE0F;</span>
+            <span v-if="summarizationStatus === 'pending'" class="mr-2" title="summarizing">&#x23F3;</span>
             <a href="#" @click.prevent.stop="entryStore.setFeed(feed.id, category.id)">{{ feed.title }}</a>
             &middot;
             <a href="#" @click.prevent.stop="entryStore.setCategory(category.id)">{{ category.name }}</a>
