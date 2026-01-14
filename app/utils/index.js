@@ -2,10 +2,12 @@
 
 import mitt from "mitt";
 
+export const EVENT_COLLAPSE_OPENED = "EVENT_COLLAPSE_OPENED";
 export const EVENT_COLLAPSE_OTHERS = "EVENT_COLLAPSE_OTHERS";
 
 /**
  * @typedef {object} EventType
+ * @property {void} EVENT_COLLAPSE_OPENED
  * @property {number} EVENT_COLLAPSE_OTHERS
  */
 

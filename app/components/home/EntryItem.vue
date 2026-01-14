@@ -102,13 +102,21 @@ const mergedContent = computed(() => {
   return "";
 });
 
+function onCollapseOpened() {
+  if (!open.value) return;
+  open.value = false;
+  templateRef.value?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
 function onCollapseOthers(entryId: number) {
-  if (entryId !== props.entry.id) open.value = false;
+  if (entryId === props.entry.id) return;
+  open.value = false;
 }
 onMounted(() => {
+  eventBus.on(EVENT_COLLAPSE_OPENED, onCollapseOpened);
   eventBus.on(EVENT_COLLAPSE_OTHERS, onCollapseOthers);
 });
 onUnmounted(() => {
+  eventBus.off(EVENT_COLLAPSE_OPENED, onCollapseOpened);
   eventBus.off(EVENT_COLLAPSE_OTHERS, onCollapseOthers);
 });
 

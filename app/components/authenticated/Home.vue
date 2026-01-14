@@ -67,7 +67,7 @@
   </div>
   <button
     class="fixed bottom-8 right-8 bg-gray-600 hover:bg-gray-500 text-white rounded-full w-16 h-16 text-4xl rounded-full hover:cursor-pointer"
-    @click="eventBus.emit(EVENT_COLLAPSE_OTHERS, 0)"
+    @click="eventBus.emit(EVENT_COLLAPSE_OPENED)"
   >
     &times;
   </button>
