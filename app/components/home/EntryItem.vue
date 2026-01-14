@@ -7,7 +7,7 @@
           <input type="checkbox" :checked="isRead" :disabled="reading" @click.prevent.stop="toggleRead" />
         </div>
         <div class="space-y-2 py-2">
-          <div class="text-sm">
+          <div class="text-xs md:text-sm">
             <span v-if="isStarred" class="mr-2" title="starred">&#x2B50;</span>
             <a href="#" @click.prevent.stop="entryStore.setFeed(feed.id, category.id)">{{ feed.title }}</a>
             &middot;
@@ -24,6 +24,7 @@
               />
               <MarkedText
                 :text="entry.title"
+                class="text-sm md:text-base"
                 :keyword="entryStore.search"
                 :class="{ 'line-through text-gray-500': isRead }"
               />
@@ -32,7 +33,7 @@
         </div>
       </div>
     </div>
-    <div v-if="open" class="p-2 space-y-4">
+    <div v-if="open" class="p-2 space-y-4 max-h-[80vh] overflow-y-auto">
       <div>
         <img
           v-if="imageExists"
