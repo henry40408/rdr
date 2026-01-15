@@ -14,6 +14,7 @@ export const useEntryStore = defineStore("entry", {
       status: (route.query.status && String(route.query.status)) ?? DEFAULT_STATUS,
       // result
       count: 0,
+      error: "",
       hasMore: true,
       items: /** @type {Awaited<ReturnType<typeof import("../../server/api/entries.get").default>>['items']} */ ([]),
       pending: false,
@@ -57,32 +58,36 @@ export const useEntryStore = defineStore("entry", {
       const headers = useRequestHeaders(["cookie"]);
       const query = this.query;
 
-      this.pending = true;
-      const [data1, data2] = await Promise.all([
-        $fetch("/api/entries/count", { headers, query }),
-        $fetch("/api/entries", { headers, query }),
-        categoryStore.load(),
-      ]);
-      this.pending = false;
+      this.$patch({ error: "", pending: true });
+      try {
+        const [data1, data2] = await Promise.all([
+          $fetch("/api/entries/count", { headers, query }),
+          $fetch("/api/entries", { headers, query }),
+          categoryStore.load(),
+        ]);
+        this.$patch((state) => {
+          if (clearItems) {
+            state.items = [];
+            state.hasMore = true;
+          }
 
-      this.$patch((state) => {
-        if (clearItems) {
-          state.items = [];
-          state.hasMore = true;
-        }
+          const newItems = this.items.slice();
+          for (const item of data2.items) {
+            if (newItems.find((i) => i.entry.id === item.entry.id)) continue;
+            newItems.push(item);
+          }
 
-        const newItems = this.items.slice();
-        for (const item of data2.items) {
-          if (newItems.find((i) => i.entry.id === item.entry.id)) continue;
-          newItems.push(item);
-        }
-
-        state.count = data1.count;
-        state.hasMore = data2.items.length === state.limit;
-        state.items = newItems;
-        state.readIds = data2.items.filter((i) => i.entry.readAt).map((i) => i.entry.id);
-        state.starredIds = data2.items.filter((i) => i.entry.starredAt).map((i) => i.entry.id);
-      });
+          state.count = data1.count;
+          state.hasMore = data2.items.length === state.limit;
+          state.items = newItems;
+          state.readIds = data2.items.filter((i) => i.entry.readAt).map((i) => i.entry.id);
+          state.starredIds = data2.items.filter((i) => i.entry.starredAt).map((i) => i.entry.id);
+        });
+      } catch (err) {
+        this.error = String(err);
+      } finally {
+        this.pending = false;
+      }
     },
     async loadMore() {
       if (!this.hasMore) return;
@@ -96,19 +101,23 @@ export const useEntryStore = defineStore("entry", {
       query.cursor = lastItem.entry.date;
       query.id = lastItem.entry.id;
 
-      this.pending = true;
-      const data = await $fetch("/api/entries", { headers, query });
-      this.pending = false;
-
-      this.$patch((state) => {
-        const newItems = state.items.slice();
-        for (const item of data.items) {
-          if (newItems.find((i) => i.entry.id === item.entry.id)) continue;
-          newItems.push(item);
-        }
-        state.hasMore = data.items.length === state.limit;
-        state.items = newItems;
-      });
+      this.$patch({ error: "", pending: true });
+      try {
+        const data = await $fetch("/api/entries", { headers, query });
+        this.$patch((state) => {
+          const newItems = state.items.slice();
+          for (const item of data.items) {
+            if (newItems.find((i) => i.entry.id === item.entry.id)) continue;
+            newItems.push(item);
+          }
+          state.hasMore = data.items.length === state.limit;
+          state.items = newItems;
+        });
+      } catch (err) {
+        this.error = String(err);
+      } finally {
+        this.pending = false;
+      }
     },
     /**
      * @param {number|undefined} categoryId

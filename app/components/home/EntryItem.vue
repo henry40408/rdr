@@ -7,16 +7,19 @@
           <input type="checkbox" :checked="isRead" :disabled="reading" @click.prevent.stop="toggleRead" />
         </div>
         <div class="space-y-2 py-2">
-          <div class="text-xs md:text-sm">
+          <div class="text-xs md:text-sm space-x-2">
             <span v-if="isStarred" title="starred">&#x2B50;</span>
             <span v-if="fullContentStatus === 'success'" title="full content">&#x1F4D6;</span>
             <span v-if="fullContentStatus === 'pending'" title="loading full content">&#x23F3;</span>
             <span v-if="summarizationStatus === 'success'" title="summarized">&#x26A1;&#xFE0F;</span>
             <span v-if="summarizationStatus === 'pending'" title="summarizing">&#x23F3;</span>
-            <a href="#" @click.prevent.stop="entryStore.setFeed(feed.id, category.id)">{{ feed.title }}</a>
-            &middot;
-            <a href="#" @click.prevent.stop="entryStore.setCategory(category.id)">{{ category.name }}</a>
-            &middot; <DurationToNow :datetime="entry.date" />
+            <span>
+              <a href="#" @click.prevent.stop="entryStore.setFeed(feed.id, category.id)">{{ feed.title }}</a>
+              &middot;
+              <a href="#" @click.prevent.stop="entryStore.setCategory(category.id)">{{ category.name }}</a>
+              &middot;
+              <DurationToNow :datetime="entry.date" />
+            </span>
           </div>
           <div class="flex items-center space-x-2">
             <div class="inline-flex items-center space-x-2">

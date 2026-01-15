@@ -8,14 +8,15 @@ export const useCategoryStore = defineStore("category", {
   }),
   getters: {
     filteredCategories(state) {
-      return structuredClone(toRaw(state.categories))
-        .filter((category) => {
-          category.feeds = category.feeds.filter((feed) => {
+      return state.categories
+        .map((category) => ({
+          ...category,
+          feeds: category.feeds.filter((feed) => {
             if (!state.showErrorOnly) return true;
             return feed.errorCount > 0;
-          });
-          return category.feeds.length > 0;
-        });
+          }),
+        }))
+        .filter((category) => category.feeds.length > 0);
     },
     sortedCategories(state) {
       const localSettings = useLocalSettings();

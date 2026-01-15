@@ -25,9 +25,8 @@
         </div>
         <div class="font-bold">Navigation</div>
         <nav class="space-x-4">
-          <NuxtLink href="/">Home</NuxtLink>
-          <NuxtLink href="/feeds">Feeds</NuxtLink>
-          <NuxtLink href="/settings">Settings</NuxtLink>
+          <NuxtLink to="/">Home</NuxtLink>
+          <NuxtLink to="/feeds">Feeds</NuxtLink>
         </nav>
         <div class="font-bold">Categories &amp; Feeds</div>
         <HomeCategoryListOptions />
@@ -60,6 +59,7 @@
         </div>
         <HomeEntryListOptions />
       </div>
+      <div v-if="entryStore.error" class="bg-red-500 p-2">{{ entryStore.error }}</div>
       <div ref="list" class="flex-1 overflow-y-auto">
         <HomeEntryList />
       </div>

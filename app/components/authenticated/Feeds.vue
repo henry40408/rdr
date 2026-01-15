@@ -25,9 +25,8 @@
         </div>
         <div class="font-bold">Navigation</div>
         <nav class="space-x-4">
-          <NuxtLink href="/">Home</NuxtLink>
-          <NuxtLink href="/feeds">Feeds</NuxtLink>
-          <NuxtLink href="/settings">Settings</NuxtLink>
+          <NuxtLink to="/">Home</NuxtLink>
+          <NuxtLink to="/feeds">Feeds</NuxtLink>
         </nav>
         <div class="font-bold">Feeds</div>
       </div>
