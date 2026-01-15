@@ -8,6 +8,12 @@ defineProps<{
     id: number;
     title: string;
     imageExists: boolean;
+    errorCount: number;
+    lastError?: string;
+    xmlUrl: string;
+    htmlUrl?: string;
+    fetchedAt?: string;
+    feedUpdatedAt?: string;
   }[];
 }>();
 </script>
