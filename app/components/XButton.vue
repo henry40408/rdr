@@ -1,5 +1,5 @@
 <template>
-  <button class="btn" :disabled="disabled" :class="{ selected, revert }">
+  <button class="btn" :type="type" :disabled="disabled" :class="{ selected, revert }">
     <slot />
   </button>
 </template>
@@ -9,6 +9,7 @@ defineProps<{
   selected?: boolean;
   revert?: boolean;
   disabled?: boolean;
+  type?: "button" | "submit" | "reset";
 }>();
 </script>
 
