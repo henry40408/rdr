@@ -90,4 +90,8 @@ const hasError = computed(() => props.feed.errorCount > 0);
 .x-grid div > div:first-child {
   @apply text-sm text-gray-500 dark:text-gray-400;
 }
+
+.x-grid div > div:last-child {
+  @apply break-words;
+}
 </style>

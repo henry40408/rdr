@@ -1,6 +1,6 @@
 <template>
   <div>
-    <FeedsSideCategoryItem v-for="category in store.categories" :key="category.id" :category="category" />
+    <FeedsSideCategoryItem v-for="category in store.filteredCategories" :key="category.id" :category="category" />
   </div>
 </template>
 

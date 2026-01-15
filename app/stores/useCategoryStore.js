@@ -2,11 +2,22 @@
 
 export const useCategoryStore = defineStore("category", {
   state: () => ({
-    /** @type {Awaited<ReturnType<typeof import('../../server/api/categories/index.get').default>>['categories']} */
-    categories: [],
+    categories:
+      /** @type {Awaited<ReturnType<typeof import('../../server/api/categories/index.get').default>>['categories']} */ ([]),
+    showErrorOnly: false,
   }),
   getters: {
-    sortedCategories: (state) => {
+    filteredCategories(state) {
+      return structuredClone(toRaw(state.categories))
+        .filter((category) => {
+          category.feeds = category.feeds.filter((feed) => {
+            if (!state.showErrorOnly) return true;
+            return feed.errorCount > 0;
+          });
+          return category.feeds.length > 0;
+        });
+    },
+    sortedCategories(state) {
       const localSettings = useLocalSettings();
       switch (localSettings.categoriesSort) {
         case "name_asc":
