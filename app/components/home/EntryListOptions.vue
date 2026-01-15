@@ -35,12 +35,12 @@
       </XButton>
     </div>
   </div>
-  <div class="md:flex text-sm md:text-base">
-    <div v-if="store.selectedCategory" class="p-2 x-button">
+  <div v-if="store.selectedCategory || store.selectedFeed" class="md:flex text-sm md:text-base">
+    <div v-if="store.selectedCategory" class="p-2 bg-gray-200 dark:bg-gray-700">
       {{ store.selectedCategory.name }}
       <a href="#" @click.prevent="store.setCategory(undefined)">clear</a>
     </div>
-    <div v-if="store.selectedFeed" class="p-2 x-button">
+    <div v-if="store.selectedFeed" class="p-2 bg-gray-200 dark:bg-gray-700">
       {{ store.selectedFeed.title }}
       <a href="#" @click.prevent="store.setFeed(undefined, store.selectedFeed.categoryId)">clear</a>
     </div>
