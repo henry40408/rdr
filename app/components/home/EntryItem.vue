@@ -19,11 +19,11 @@
             &middot; <DurationToNow :datetime="entry.date" />
           </div>
           <div class="flex items-center space-x-2">
-            <div>
+            <div class="inline-flex items-center space-x-2">
               <img
                 v-if="imageExists"
                 alt="Feed Image"
-                class="bg-white inline h-4 w-4 mr-2"
+                class="bg-white h-4 w-4"
                 :src="`/api/images/external/${buildFeedImageKey(feed.id)}`"
               />
               <MarkedText
@@ -38,11 +38,11 @@
       </div>
     </div>
     <div v-if="open" class="p-2 space-y-4 max-h-[80vh] overflow-y-auto">
-      <div>
+      <div class="inline-flex items-center space-x-2">
         <img
           v-if="imageExists"
           alt="Feed Image"
-          class="w-6 h-6 align-middle bg-white inline mr-2"
+          class="w-6 h-6 bg-white"
           :src="`/api/images/external/${buildFeedImageKey(feed.id)}`"
         />
         <ExternalLink :href="entry.link" class="text-lg font-bold">{{ entry.title }}</ExternalLink>
