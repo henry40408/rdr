@@ -17,6 +17,7 @@ defineProps<{
       id: number;
       title: string;
       imageExists: boolean;
+      errorCount: number;
     }[];
   };
 }>();
