@@ -14,6 +14,8 @@ defineProps<{
     htmlUrl?: string;
     fetchedAt?: string;
     feedUpdatedAt?: string;
+    disableHttp2?: boolean;
+    userAgent?: string;
   }[];
 }>();
 </script>

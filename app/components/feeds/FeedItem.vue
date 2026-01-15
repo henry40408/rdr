@@ -27,11 +27,6 @@
           <div>{{ feed.errorCount }}</div>
         </div>
         <div>
-          <div>last error</div>
-          <span v-if="feed.lastError">{{ feed.lastError }}</span>
-          <span v-else class="x-na">N/A</span>
-        </div>
-        <div>
           <div>fetched at</div>
           <span v-if="feed.fetchedAt">
             <DurationToNow :datetime="feed.fetchedAt" />
@@ -46,10 +41,27 @@
           <span v-else class="x-na">N/A</span>
         </div>
         <div>
+          <div>disable HTTP/2?</div>
+          <div>
+            <span v-if="feed.disableHttp2" class="bg-red-500 dark:bg-red-700 text-white p-1 text-sm">Yes</span>
+            <span v-else class="bg-green-500 dark:bg-green-700 text-white p-1 text-sm">No</span>
+          </div>
+        </div>
+        <div class="x-2-3">
+          <div>user agent</div>
+          <span v-if="feed.userAgent">{{ feed.userAgent }}</span>
+          <span v-else class="x-na">N/A</span>
+        </div>
+        <div class="x-full">
+          <div>last error</div>
+          <span v-if="feed.lastError">{{ feed.lastError }}</span>
+          <span v-else class="x-na">N/A</span>
+        </div>
+        <div class="x-full">
           <div>XML URL</div>
           <div>{{ feed.xmlUrl }}</div>
         </div>
-        <div>
+        <div class="x-full">
           <div>HTML URL</div>
           <div>{{ feed.htmlUrl }}</div>
         </div>
@@ -70,6 +82,8 @@ const props = defineProps<{
     htmlUrl?: string;
     fetchedAt?: string;
     feedUpdatedAt?: string;
+    disableHttp2?: boolean;
+    userAgent?: string;
   };
 }>();
 
@@ -84,7 +98,15 @@ const hasError = computed(() => props.feed.errorCount > 0);
 }
 
 .x-grid {
-  @apply grid grid-cols-1 gap-4 md:grid-cols-2;
+  @apply grid grid-cols-1 gap-2 md:grid-cols-3;
+}
+
+.x-grid .x-full {
+  @apply col-span-1 md:col-span-3;
+}
+
+.x-grid .x-2-3 {
+  @apply col-span-1 md:col-span-2;
 }
 
 .x-grid div > div:first-child {
