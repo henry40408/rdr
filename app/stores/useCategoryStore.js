@@ -11,11 +11,16 @@ export const useCategoryStore = defineStore("category", {
       return state.categories
         .map((category) => ({
           ...category,
-          feeds: category.feeds.filter((feed) => {
-            if (!state.showErrorOnly) return true;
-            return feed.errorCount > 0;
-          }),
+          feeds: category.feeds
+            .slice()
+            .sort((a, b) => a.title.localeCompare(b.title))
+            .filter((feed) => {
+              if (!state.showErrorOnly) return true;
+              return feed.errorCount > 0;
+            }),
         }))
+        .slice()
+        .sort((a, b) => a.name.localeCompare(b.name))
         .filter((category) => category.feeds.length > 0);
     },
     sortedCategories(state) {
