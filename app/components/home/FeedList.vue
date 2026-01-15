@@ -13,7 +13,6 @@ defineProps<{
       id: number;
       title: string;
       unreadCount: number;
-      errorCount: number;
     }[];
   };
 }>();
