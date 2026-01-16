@@ -54,28 +54,33 @@
         <span v-if="entry.author">Author: {{ entry.author }}</span>
       </div>
       <div class="space-x-2">
-        <XButton :disabled="starring" :selected="isStarred" @click="toggleStar">
-          {{ starring ? "..." : isStarred ? "unstar" : "star" }}
+        <XButton :pending="starring" :selected="isStarred" @click="toggleStar">
+          {{ isStarred ? "unstar" : "star" }}
         </XButton>
-        <XButton v-if="!['success', 'error'].includes(fullContentStatus)" @click="loadFullContent">
-          {{ fullContentStatus === "pending" ? "loading..." : "full content" }}
+        <XButton
+          v-if="!['success', 'error'].includes(fullContentStatus)"
+          :pending="fullContentStatus === 'pending'"
+          @click="loadFullContent"
+        >
+          full content
         </XButton>
         <XButton v-else revert @click="fullContentStatus = 'idle'">revert original</XButton>
         <XButton
           v-if="featuresStore.summarization && !['success', 'error'].includes(summarizationStatus)"
+          :pending="summarizationStatus === 'pending'"
           @click="summarize"
         >
-          {{ summarizationStatus === "pending" ? "summarizing..." : "summarize" }}
+          summarize
         </XButton>
         <XButton v-else-if="featuresStore.summarization" revert @click="summarizationStatus = 'idle'">
           reset summary
         </XButton>
         <XButton
           v-if="featuresStore.save && saveStatus !== 'success'"
-          :disabled="saveStatus === 'pending'"
+          :pending="saveStatus === 'pending'"
           @click="saveEntry"
         >
-          {{ saveStatus === "pending" ? "saving..." : "save" }}
+          save
         </XButton>
         <span v-if="saveStatus === 'success'" class="text-green-600 dark:text-green-400 font-bold p-2">saved!</span>
       </div>

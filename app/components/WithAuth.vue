@@ -8,23 +8,18 @@
         <input v-model="username" required type="text" placeholder="Username" class="w-full p-2 border" />
         <input v-model="password" required type="password" placeholder="Password" class="w-full p-2 border" />
         <div class="text-right space-x-2">
-          <button
+          <XButton
             type="button"
+            variant="secondary"
+            :pending="signingUp"
             :disabled="!systemSettings.canSignup"
-            :class="{ 'opacity-50 cursor-not-allowed': !systemSettings.canSignup }"
-            class="p-2 bg-blue-800 text-white hover:bg-blue-700 hover:cursor-pointer"
             @click="signup"
           >
             Sign Up
-          </button>
-          <button
-            type="submit"
-            :disabled="!systemSettings.canLogin"
-            :class="{ 'opacity-50 cursor-not-allowed': !systemSettings.canLogin }"
-            class="p-2 bg-green-800 text-white hover:bg-green-700 hover:cursor-pointer"
+          </XButton>
+          <XButton type="submit" variant="primary" :pending="loggingIn" :disabled="!systemSettings.canLogin"
+            >Login</XButton
           >
-            Login
-          </button>
         </div>
       </form>
     </div>
@@ -40,9 +35,12 @@ await callOnce(() => systemSettings.load());
 const error = ref("");
 const username = ref("");
 const password = ref("");
+const loggingIn = ref(false);
+const signingUp = ref(false);
 
 async function login() {
   error.value = "";
+  loggingIn.value = true;
   try {
     await $fetch("/api/login", {
       method: "POST",
@@ -53,11 +51,14 @@ async function login() {
     await fetchSession();
   } catch (e) {
     error.value = String(e);
+  } finally {
+    loggingIn.value = false;
   }
 }
 
 async function signup() {
   error.value = "";
+  signingUp.value = true;
   try {
     await $fetch("/api/signup", {
       method: "POST",
@@ -68,6 +69,8 @@ async function signup() {
     await fetchSession();
   } catch (e) {
     error.value = String(e);
+  } finally {
+    signingUp.value = false;
   }
 }
 </script>

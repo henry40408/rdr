@@ -7,9 +7,7 @@
         <span>{{ category.name }}</span>
       </div>
       <div>
-        <XButton :disabled="refreshing" @click="refresh">
-          {{ refreshing ? "Refreshing..." : "Refresh" }}
-        </XButton>
+        <XButton :pending="refreshing" @click="refresh">Refresh</XButton>
       </div>
     </div>
   </div>

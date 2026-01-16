@@ -15,18 +15,16 @@
           />
           <span v-else>&#x1F4E1;</span>
         </span>
-        <span>
+        <span :class="{ 'text-red-500 font-bold': hasError }">
           {{ feed.title }}
           <span v-if="feed.htmlUrl">
             <ExternalLink :href="feed.htmlUrl">website</ExternalLink>
           </span>
         </span>
       </div>
-      <div>
-        <XButton :disabled="refreshing" @click="refresh">
-          <span v-if="refreshing">...</span>
-          <span v-else>Refresh</span>
-        </XButton>
+      <div class="space-x-2">
+        <XButton :pending="refreshing" @click="refresh">Refresh</XButton>
+        <XButton variant="danger" :pending="deleting" @click="deleteFeed">Delete Feed</XButton>
       </div>
       <div>
         <div class="x-grid">
@@ -116,6 +114,30 @@ async function refresh() {
     error.value = String(err);
   } finally {
     refreshing.value = false;
+  }
+}
+
+const deleting = ref(false);
+async function deleteFeed() {
+  if (deleting.value) return;
+
+  const answer = confirm(
+    `Are you sure you want to delete the feed "${props.feed.title}"? This action cannot be undone.`,
+  );
+  if (!answer) return;
+
+  error.value = "";
+  deleting.value = true;
+
+  try {
+    await fetch(`/api/feeds/${props.feed.id}`, {
+      method: "DELETE",
+    });
+    await store.load();
+  } catch (err) {
+    error.value = String(err);
+  } finally {
+    deleting.value = false;
   }
 }
 </script>
