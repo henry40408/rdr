@@ -1,5 +1,5 @@
 <template>
-  <div class="border-b border-b-gray-500 dark:border-b-gray-500">
+  <div :id="`feed-${feed.id}`" class="border-b border-b-gray-500 dark:border-b-gray-500">
     <div v-if="error" class="bg-red-500 dark:bg-red-700 text-white p-2">{{ error }}</div>
     <div class="p-2 space-y-4">
       <div class="space-x-2">

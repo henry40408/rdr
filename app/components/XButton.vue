@@ -27,11 +27,10 @@ defineProps<{
   variant?: "normal" | "primary" | "secondary" | "danger";
 }>();
 
-const interval = useInterval(1000);
+const interval = useInterval(250);
 const spinner = computed(() => {
   const frames = ["...", ":..", ".:.", "..:"];
-  const index = Math.floor((interval.value / 250) % frames.length);
-  return frames[index];
+  return frames[interval.value % frames.length];
 });
 </script>
 
