@@ -1,10 +1,11 @@
 <template>
   <div :id="`category-${category.id}`" class="border-b border-b-gray-500 dark:border-b-gray-500">
     <div v-if="error" class="bg-red-500 dark:bg-red-700 text-white p-2">{{ error }}</div>
-    <div class="p-2 space-y-2">
+    <div class="p-2 space-y-4">
       <div class="space-x-2">
         <span>&#x1F4C1;</span>
         <span>{{ category.name }}</span>
+        <a :href="`/?categoryId=${category.id}`">Read</a>
       </div>
       <div class="space-x-2">
         <XButton :pending="refreshing" @click="refresh">Refresh</XButton>
@@ -24,6 +25,7 @@ const props = defineProps<{
     name: string;
     feeds: {
       id: number;
+      categoryId: number;
       title: string;
       imageExists: boolean;
       errorCount: number;

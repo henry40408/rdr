@@ -6,6 +6,7 @@
 defineProps<{
   feeds: {
     id: number;
+    categoryId: number;
     title: string;
     imageExists: boolean;
     errorCount: number;

@@ -15,10 +15,11 @@
           />
           <span v-else>&#x1F4E1;</span>
         </span>
-        <span :class="{ 'text-red-500 font-bold': hasError }">
-          {{ feed.title }}
+        <span class="space-x-2" :class="{ 'text-red-500 font-bold': hasError }">
+          <span>{{ feed.title }}</span>
+          <a :href="`/?categoryId=${feed.categoryId}&feedId=${feed.id}`">Read</a>
           <span v-if="feed.htmlUrl">
-            <ExternalLink :href="feed.htmlUrl">website</ExternalLink>
+            <ExternalLink :href="feed.htmlUrl">Website</ExternalLink>
           </span>
         </span>
       </div>
@@ -83,6 +84,7 @@ const store = useCategoryStore();
 const props = defineProps<{
   feed: {
     id: number;
+    categoryId: number;
     title: string;
     imageExists: boolean;
     errorCount: number;
