@@ -79,6 +79,15 @@ const featuresStore = useFeaturesStore();
 const { session } = useUserSession();
 
 await callOnce(() => Promise.all([entryStore.load(), featuresStore.load()]));
+
+const route = useRoute();
+watch(
+  () => route.fullPath,
+  () => {
+    entryStore.load({ clearItems: true });
+  },
+);
+
 const countLabel = computed(() => {
   const count = entryStore.count;
   if (count > 999) return "999+";

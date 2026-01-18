@@ -2,53 +2,70 @@
 
 const DEFAULT_STATUS = "unread";
 
-export const useEntryStore = defineStore("entry", {
-  state: () => {
-    const route = useRoute();
-    return {
-      // parameters
-      limit: 30,
-      selectedCategoryId: (route.query.categoryId && String(route.query.categoryId)) ?? undefined,
-      selectedFeedId: (route.query.feedId && String(route.query.feedId)) ?? undefined,
-      search: (route.query.search && String(route.query.search)) ?? "",
-      status: (route.query.status && String(route.query.status)) ?? DEFAULT_STATUS,
-      // result
-      count: 0,
-      error: "",
-      hasMore: true,
-      items: /** @type {Awaited<ReturnType<typeof import("../../server/api/entries.get").default>>['items']} */ ([]),
-      pending: false,
-      readIds: /** @type {number[]} */ ([]),
-      starredIds: /** @type {number[]} */ ([]),
-    };
-  },
+const useRouteStore = defineStore("route", {
   getters: {
-    query: (state) => {
-      /** @type {Record<string, unknown>} */
-      const q = {};
-      if (state.selectedCategoryId) {
-        q.selectedType = "category";
-        q.selectedId = state.selectedCategoryId;
-      }
-      if (state.selectedFeedId) {
-        q.selectedType = "feed";
-        q.selectedId = state.selectedFeedId;
-      }
-      q.limit = state.limit;
-      if (state.search) q.search = state.search;
-      q.status = state.status;
-      return q;
+    search() {
+      const route = useRoute();
+      return (route.query.search && String(route.query.search)) ?? "";
     },
-    selectedCategory: (state) => {
-      if (!state.selectedCategoryId) return undefined;
+    selectedCategoryId() {
+      const route = useRoute();
+      return (route.query.categoryId && String(route.query.categoryId)) ?? undefined;
+    },
+    selectedFeedId() {
+      const route = useRoute();
+      return (route.query.feedId && String(route.query.feedId)) ?? undefined;
+    },
+    status() {
+      const route = useRoute();
+      return (route.query.status && String(route.query.status)) ?? DEFAULT_STATUS;
+    },
+  },
+});
+
+export const useEntryStore = defineStore("entry", {
+  state: () => ({
+    // parameters
+    limit: 30,
+    // result
+    count: 0,
+    error: "",
+    hasMore: true,
+    items: /** @type {Awaited<ReturnType<typeof import("../../server/api/entries.get").default>>['items']} */ ([]),
+    pending: false,
+    readIds: /** @type {number[]} */ ([]),
+    starredIds: /** @type {number[]} */ ([]),
+  }),
+  getters: {
+    selectedCategory() {
+      const routeStore = useRouteStore();
+      if (!routeStore.selectedCategoryId) return undefined;
       const categoryStore = useCategoryStore();
-      return categoryStore.categories.find((c) => String(c.id) === state.selectedCategoryId);
+      return categoryStore.categories.find((c) => String(c.id) === routeStore.selectedCategoryId);
     },
-    selectedFeed: (state) => {
-      if (!state.selectedFeedId) return undefined;
+    selectedFeed() {
+      const routeStore = useRouteStore();
+      if (!routeStore.selectedFeedId) return undefined;
       const categoryStore = useCategoryStore();
       const feeds = categoryStore.categories.flatMap((c) => c.feeds);
-      return feeds.find((f) => String(f.id) === state.selectedFeedId);
+      return feeds.find((f) => String(f.id) === routeStore.selectedFeedId);
+    },
+    query(state) {
+      const routeStore = useRouteStore();
+      /** @type {Record<string, unknown>} */
+      const q = {};
+      if (routeStore.selectedCategoryId) {
+        q.selectedType = "category";
+        q.selectedId = routeStore.selectedCategoryId;
+      }
+      if (routeStore.selectedFeedId) {
+        q.selectedType = "feed";
+        q.selectedId = routeStore.selectedFeedId;
+      }
+      q.limit = state.limit;
+      if (routeStore.search) q.search = routeStore.search;
+      q.status = routeStore.status;
+      return q;
     },
   },
   actions: {
@@ -123,11 +140,8 @@ export const useEntryStore = defineStore("entry", {
      * @param {number|undefined} categoryId
      */
     async setCategory(categoryId) {
-      this.$patch({
-        selectedCategoryId: categoryId === undefined ? undefined : String(categoryId),
-        selectedFeedId: undefined,
-      });
-      await this.updateRoute();
+      const route = useRoute();
+      await navigateTo({ query: { ...route.query, categoryId, feedId: undefined } });
       await this.load({ clearItems: true });
     },
     /**
@@ -135,38 +149,25 @@ export const useEntryStore = defineStore("entry", {
      * @param {number|undefined} categoryId
      */
     async setFeed(feedId, categoryId) {
-      this.$patch({
-        selectedFeedId: feedId === undefined ? undefined : String(feedId),
-        selectedCategoryId: categoryId === undefined ? undefined : String(categoryId),
-      });
-      await this.updateRoute();
+      const route = useRoute();
+      await navigateTo({ query: { ...route.query, categoryId, feedId } });
       await this.load({ clearItems: true });
     },
     /**
      * @param {string} search
      */
     async setSearch(search) {
-      this.$patch({ search });
-      await this.updateRoute();
+      const route = useRoute();
+      await navigateTo({ query: { ...route.query, search: search === "" ? undefined : search } });
       await this.load({ clearItems: true });
     },
     /**
      * @param {'read'|'unread'|'all'|'starred'} status
      */
     async setStatus(status) {
-      this.$patch({ status });
-      await this.updateRoute();
+      const route = useRoute();
+      await navigateTo({ query: { ...route.query, status: status === DEFAULT_STATUS ? undefined : status } });
       await this.load({ clearItems: true });
-    },
-    async updateRoute() {
-      await navigateTo({
-        query: {
-          categoryId: this.selectedCategoryId,
-          feedId: this.selectedFeedId,
-          search: this.search === "" ? undefined : this.search,
-          status: this.status === DEFAULT_STATUS ? undefined : this.status,
-        },
-      });
     },
     /**
      * @param {number} entryId
